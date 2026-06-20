@@ -8,3 +8,4 @@
 #invLevelGrid{grid-template-columns:repeat(5,1fr);gap:6px;display:grid}
 .invLevelCell{color:#0f0;cursor:pointer;touch-action:manipulation;background:#000;border:2px solid #044;border-radius:4px;justify-content:center;align-items:center;width:clamp(28px,8vw,36px);height:clamp(28px,8vw,36px);font-family:Courier New,monospace;font-size:clamp(12px,3.5vw,15px);display:flex}
 .invLevelCell.selected{background:#003300;border-color:#0f0}
+.invCtrlToggle{color:#0f0;background:#000;border-color:#0a0}.invCtrlToggle:active{color:#000;background:#0f0}#invControls.ctHidden{display:none}
