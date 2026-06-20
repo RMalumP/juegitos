@@ -1,27 +1,2 @@
 /* iframe-games.js: Ajedrez y Parchís (HTML externo en games/*.js, carga por <script> al abrir) — Juegos XP. Código original sin cambios (solo separado en archivos). */
-var GAMES_BASE=new URL('../games/',document.currentScript.src).href;
-function injectResume(frameId,html){
-  // Reanudar una partida de ajedrez/damas a medias: inyecta el estado guardado
-  // como bootstrap para que el propio restaurador del iframe lo aplique al cargar.
-  if(frameId!=='chessFrame'||!html)return html;
-  var raw;try{raw=localStorage.getItem('__resumeChess');}catch(e){return html;}
-  if(!raw)return html;
-  try{localStorage.removeItem('__resumeChess');}catch(e){}
-  return html.replace('<head>','<head><script>window.__savedGameState='+raw+';</'+'script>');
-}
-function loadFrameDoc(frameId,globalName,file){var f=document.getElementById(frameId);if(!f||f.getAttribute('data-loaded'))return;f.setAttribute('data-loaded','1');if(window[globalName]){f.srcdoc=injectResume(frameId,window[globalName]);return;}var s=document.createElement('script');s.src=GAMES_BASE+file;s.onload=function(){f.srcdoc=injectResume(frameId,window[globalName]);};document.head.appendChild(s);}
-function initChess(){loadFrameDoc('chessFrame','__CHESS_HTML','chess.js');}
-function initParchis(){loadFrameDoc('parchisFrame','__PARCHIS_HTML','parchis.js');}
-function openChessTab(idx){
-  openGame("chess");
-  var f=document.getElementById("chessFrame");
-  var tries=0;
-  (function poll(){
-    tries++;
-    var w=f.contentWindow;
-    if(w&&typeof w.switchTab==="function"){try{w.switchTab(idx);}catch(e){}return;}
-    if(tries<150)setTimeout(poll,40);
-  })();
-}
-document.getElementById("sBtnDamas").onclick=function(){document.getElementById("startScreen").style.display="none";document.getElementById("creditsBtn").style.display="none";openChessTab(2);};
-(function(){var last=0;var el=document.getElementById("iconDamas");el.addEventListener("click",function(){this.parentNode.querySelectorAll(".deskIcon").forEach(function(d){d.classList.remove("sel");});this.classList.add("sel");var now=Date.now();if(now-last<400)openChessTab(2);last=now;});})();
+var GAMES_BASE=new URL("../games/",document.currentScript.src).href;function injectResume(c,e){if(c!=="chessFrame"||!e)return e;var t;try{t=localStorage.getItem("__resumeChess")}catch{return e}if(!t)return e;try{localStorage.removeItem("__resumeChess")}catch{}return e.replace("<head>","<head><script>window.__savedGameState="+t+";<\/script>")}function loadFrameDoc(c,e,t){var n=document.getElementById(c);if(!(!n||n.getAttribute("data-loaded"))){if(n.setAttribute("data-loaded","1"),window[e]){n.srcdoc=injectResume(c,window[e]);return}var r=document.createElement("script");r.src=GAMES_BASE+t,r.onload=function(){n.srcdoc=injectResume(c,window[e])},document.head.appendChild(r)}}function initChess(){loadFrameDoc("chessFrame","__CHESS_HTML","chess.js")}function initParchis(){loadFrameDoc("parchisFrame","__PARCHIS_HTML","parchis.js")}function openChessTab(c){openGame("chess");var e=document.getElementById("chessFrame"),t=0;(function n(){t++;var r=e.contentWindow;if(r&&typeof r.switchTab=="function"){try{r.switchTab(c)}catch{}return}t<150&&setTimeout(n,40)})()}document.getElementById("sBtnDamas").onclick=function(){document.getElementById("startScreen").style.display="none",document.getElementById("creditsBtn").style.display="none",openChessTab(2)},(function(){var c=0,e=document.getElementById("iconDamas");e.addEventListener("click",function(){this.parentNode.querySelectorAll(".deskIcon").forEach(function(n){n.classList.remove("sel")}),this.classList.add("sel");var t=Date.now();t-c<400&&openChessTab(2),c=t})})();
