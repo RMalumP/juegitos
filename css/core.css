@@ -6,10 +6,12 @@
 .ctrlToggle.collapsed .ctChevDown{display:none}
 .ctrlToggle.collapsed .ctChevUp{display:inline}
 /* === Guardar/Cargar datos del usuario (escritorio) === */
-#deskTools{gap:6px;display:flex;position:absolute;top:8px;right:8px}
-.deskToolBtn{color:#0a246a;cursor:pointer;user-select:none;background:linear-gradient(#fff 0,#d4d0c8 100%);border:2px solid;border-color:#fff gray gray #fff;border-radius:4px;align-items:center;gap:5px;padding:5px 10px;font-size:12px;font-weight:700;display:flex;box-shadow:1px 1px 4px #0006}
-.deskToolBtn:active{background:#d4d0c8;border-color:gray #fff #fff gray}
-.deskToolBtn .dtIco{font-size:15px}
+#deskTools{gap:4px;display:flex;position:absolute;top:8px;right:8px}
+.deskToolBtn{cursor:pointer;user-select:none;border-radius:4px;flex-direction:column;align-items:center;gap:2px;width:64px;padding:4px;display:flex}
+.deskToolBtn:hover{background:#0064ff33}
+.deskToolBtn:active{background:#0064ff59;outline:1px dotted #fff}
+.deskToolBtn .dtIco{font-size:34px;line-height:1;filter:drop-shadow(1px 1px 2px #000)}
+.deskToolBtn .dtLbl{color:#fff;text-align:center;text-shadow:1px 1px 2px #000;font-size:11px}
 #dataModal{z-index:300;background:#0009;justify-content:center;align-items:center;padding:16px;display:none;position:fixed;inset:0}
 #dataModal.show{display:flex}
 #dataBox{background:#d4d0c8;border:3px solid;border-color:#fff gray gray #fff;border-radius:6px;width:min(320px,94vw);overflow:hidden;box-shadow:4px 4px 16px #000b}
