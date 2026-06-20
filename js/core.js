@@ -3,3 +3,79 @@ const e=26,t=50,n=74,o={1:[[50,70,0]],2:[[50,28,0],[50,112,180]],3:[[50,28,0],[5
 `+Mn.join(`
 `)))}function Nn(e,t){document.getElementById(`pkOverlayBig`).textContent=e,document.getElementById(`pkOverlayMsg`).textContent=t,document.getElementById(`pkOverlayBtn`).textContent=`Siguiente mano`,document.getElementById(`pkOverlayTitle`).textContent=`Resultado de la mano`,document.getElementById(`pkOverlay`).classList.add(`show`)}function Pn(){Gt=`gameover`;let e=Ot.find(e=>!e.out)||Ot.reduce((e,t)=>e.coins>=t.coins?e:t);document.getElementById(`pkOverlayBig`).textContent=`👑`,document.getElementById(`pkOverlayTitle`).textContent=`Fin de la partida`,document.getElementById(`pkOverlayMsg`).textContent=`¡`+e.name+` gana la partida con 💰`+e.coins+`!`,document.getElementById(`pkOverlayBtn`).textContent=`Nueva partida`,document.getElementById(`pkOverlay`).classList.add(`show`)}function Hn(){let e=Ot[$t],t=e.bet+e.coins,n=Zt+Ut;return n>t&&(n=t),{min:n,max:t}}function pkOpenRaise(){Ot[$t];let{min:e,max:t}=Hn();if(t<=Zt)return;Kt=e;let n=document.getElementById(`pkRaiseSlider`);n.min=e,n.max=t,n.value=e,n.step=1,On(),document.getElementById(`pkRaisePanel`).classList.add(`show`),document.getElementById(`pkActions`).style.display=`none`}function pkCloseRaise(){document.getElementById(`pkRaisePanel`).classList.remove(`show`),document.getElementById(`pkActions`).style.display=`flex`}function On(){let{max:e}=Hn(),t=Kt>=e?`All In: `+Kt:`Subir a `+Kt;document.getElementById(`pkRaiseVal`).textContent=t,document.getElementById(`pkRaiseSlider`).value=Kt}function An(e){let{min:t,max:n}=Hn();Kt=Math.max(t,Math.min(n,Kt+e)),On()}function pkRaiseQuick(e){let t=Ot[$t],{min:n,max:o}=Hn(),l=n;e===`min`?l=n:e===`half`?l=Zt+Math.round((Dt+Zt-t.bet)/2):e===`pot`?l=Zt+(Dt+Zt-t.bet):e===`max`&&(l=o),Kt=Math.max(n,Math.min(o,l)),On()}function pkConfirmRaise(){let{max:e}=Hn();Kt>=e?(pkCloseRaise(),pkAct(`allin`)):pkAct(`raise`)}function Rn(e){let t=document.createElement(`div`);return t.className=`pkMini `+e.cl,t.innerHTML=`<div class="pkmt">`+e.v+e.s+`</div><div class="pkmm">`+l(e.v,e.s,e.cl,1.1)+`</div>`,t}function Dn(){document.getElementById(`pkStageLbl`).textContent=vn().toUpperCase(),document.getElementById(`pkPot`).textContent=`Bote: 💰`+Dt;let e=document.getElementById(`pkBoard`);e.innerHTML=``;for(let t=0;t<5;t++)if(At[t])e.appendChild(Rn(At[t]));else{let t=document.createElement(`div`);t.className=`pkBoardSlot`,e.appendChild(t)}let t=document.getElementById(`pkSeats`);t.innerHTML=``;let n=Gt===`reveal`||Gt===`handover`;Ot.forEach((e,o)=>{let l=document.createElement(`div`),s=`pkSeat`;(Gt===`peek`&&o===tn||o===$t&&(Gt===`preflop`||Gt===`flop`||Gt===`turn`||Gt===`river`))&&(s+=` active`),e.folded&&!e.out&&(s+=` folded`),e.out&&(s+=` out`),n&&e.result===`win`&&(s+=` winner`),l.className=s;let c=``;c=o===zt?`<div class="pkBadge d">D</div>`:o===cn?`<div class="pkBadge sb">SB</div>`:o===an?`<div class="pkBadge bb">BB</div>`:`<div class="pkBadge empty"></div>`;let a=``;if(e.out?a=`<span class="pkSeatStatus fold">Eliminado</span>`:Gt===`handover`&&e.result===`win`?a=`<span class="pkSeatStatus winS">GANA</span>`:e.folded?a=`<span class="pkSeatStatus fold">Retirado</span>`:e.allIn&&(a=`<span class="pkSeatStatus allin">ALL IN</span>`),l.innerHTML=c+`<span class="pkSeatName">`+e.name+`</span><span class="pkSeatCoins">💰`+e.coins+`</span>`+(e.bet>0?`<span class="pkSeatBet">▸`+e.bet+`</span>`:`<span class="pkSeatBet"></span>`)+a,!e.out&&e.hole.length){let t=document.createElement(`span`);if(t.className=`pkSeatCards`,n)if(!e.folded||e.foldRevealed){if(e.hole.forEach(e=>{let n=Rn(e);t.appendChild(n)}),e.handName&&!e.folded){let n=document.createElement(`span`);n.className=`pkSeatHand`,n.textContent=e.handName,t.appendChild(n)}}else e.hole.forEach(()=>{let e=document.createElement(`div`);e.className=`pkMini hiddenCard`,t.appendChild(e)});else e.hole.forEach(()=>{let e=document.createElement(`div`);e.className=`pkMini faceDown`,t.appendChild(e)});l.appendChild(t)}t.appendChild(l)}),document.getElementById(`pkTableHead`).offsetHeight,t.offsetHeight}function zn(){let e=document.getElementById(`pkTurn`);if(Gt!==`preflop`&&Gt!==`flop`&&Gt!==`turn`&&Gt!==`river`)return void(e.style.display=`none`);e.style.display=`flex`;let t=Ot[$t];document.getElementById(`pkTurnName`).textContent=`Turno de `+t.name+`  ·  💰`+t.coins;let n=document.getElementById(`pkHole`);n.innerHTML=``,t.hole.forEach(e=>{let t=document.createElement(`div`);t.className=`pkBig `+e.cl+(Qt?` flip`:``),t.innerHTML=`<div class="pkBack">🂠</div><div class="pkFace"><div class="pkct">`+e.v+e.s+`</div><div class="pkcm">`+l(e.v,e.s,e.cl,1.2)+`</div><div class="pkcb">`+e.v+e.s+`</div></div>`,t.onclick=Fn,n.appendChild(t)}),document.getElementById(`pkRevealHint`).textContent=Qt?`👆 Toca para ocultar antes de pasar el turno`:`👆 Toca tus cartas para verlas`;let o=Zt-t.bet;document.getElementById(`pkToCallLbl`).textContent=o>0?`Para igualar: `+Math.min(o,t.coins)+`  ·  Bote: `+Dt:`Sin apuesta — puedes pasar  ·  Bote: `+Dt;let s=document.getElementById(`pkCheckBtn`),c=document.getElementById(`pkRaiseBtn`),a=document.getElementById(`pkAllinBtn`);s.textContent=o<=0?`Pasar`:`Igualar `+Math.min(o,t.coins)+(o>=t.coins?` (all-in)`:``);let{max:d}=Hn();c.disabled=!(d>Zt&&t.coins>Math.max(0,o)),a.disabled=t.coins<=0,pkCloseRaise(),Jn(``)}function Fn(){Qt=!Qt,document.querySelectorAll(`#pkHole .pkBig`).forEach(e=>e.classList.toggle(`flip`,Qt)),document.getElementById(`pkRevealHint`).textContent=Qt?`👆 Toca para ocultar antes de pasar el turno`:`👆 Toca tus cartas para verlas`}function Jn(e){document.getElementById(`pkMsg`).textContent=e}document.getElementById(`pkOverlayBtn`).onclick=function(){document.getElementById(`pkOverlay`).classList.remove(`show`),Gt===`gameover`?Vt():en(!1)},document.getElementById(`pkNMinus`).onclick=()=>{Ft>2&&(Ft--,document.getElementById(`pkNCount`).textContent=Ft)},document.getElementById(`pkNPlus`).onclick=()=>{Ft<8&&(Ft++,document.getElementById(`pkNCount`).textContent=Ft)},document.getElementById(`pkStartBtn`).onclick=_t,document.getElementById(`pkNewGame`).onclick=Vt,document.getElementById(`tetNewGame`).onclick=()=>window.tetShowMenu&&window.tetShowMenu(),document.getElementById(`invNewGame`).onclick=()=>window.invStartNew&&window.invStartNew(),document.getElementById(`snkNewGame`).onclick=()=>window.snkStartNew&&window.snkStartNew(),document.getElementById(`pacNewGame`).onclick=()=>window.pacStartNew&&window.pacStartNew(),document.getElementById(`pkCheatBtn`).onclick=()=>document.getElementById(`pkCheatSheet`).classList.toggle(`show`),document.getElementById(`pkRaiseMinus`).onclick=()=>An(-qt),document.getElementById(`pkRaisePlus`).onclick=()=>An(qt),document.getElementById(`pkRaiseSlider`).addEventListener(`input`,function(){Kt=parseInt(this.value,10),On()}),document.getElementById(`pkPeekPrev`).onclick=()=>ln(-1),document.getElementById(`pkPeekNext`).onclick=()=>ln(1),document.getElementById(`pkPeekReady`).onclick=sn,document.getElementById(`pokerWrap`).addEventListener(`click`,e=>{wn||Gt!==`reveal`||e.target.closest(`#pkOverlay`)||e.target.closest(`#pkFoldDlg`)||e.target.closest(`#pkCheatSheet`)||jn()});document.getElementById('creditsBtn').addEventListener('click',e=>{e.stopPropagation();document.getElementById('creditsModal').classList.toggle('show');});
 document.getElementById('creditsModal').addEventListener('click',e=>{if(e.target===document.getElementById('creditsModal'))document.getElementById('creditsModal').classList.remove('show');});
+/* === Guardar/reanudar partidas a medias (Solitario, Blackjack, Ruleta, Póker) ===
+   core.js es un script plano, así que estas funciones acceden directamente a las
+   variables de estado de nivel superior de cada juego y vuelven a dibujar al
+   restaurar. window.<juego>Snapshot() devuelve el estado (o null si no hay partida)
+   y window.<juego>Restore(estado) lo aplica. */
+(function(){
+  function clone(o){return JSON.parse(JSON.stringify(o));}
+
+  /* Solitario */
+  window.solSnapshot=function(){
+    var has=(Y&&Y.some(function(c){return c.length;}))||U.length||Q.length||K.some(function(c){return c.length;});
+    return has?clone({U:U,Q:Q,K:K,Y:Y,X:X,ee:ee}):null;
+  };
+  window.solRestore=function(o){
+    U=clone(o.U);Q=clone(o.Q);K=clone(o.K);Y=clone(o.Y);X=o.X;ee=o.ee;_=null;V=[];
+    var ov=document.getElementById('solOverlay');if(ov)ov.classList.add('hidden');
+    ne();
+  };
+
+  /* Blackjack (cada mano lleva .bet sobre el propio array) */
+  window.bjSnapshot=function(){
+    if(!Me||!Me.length)return null;
+    return {Le:clone(Le),Se:clone(Se),we:we,Te:Te,je:je,Ne:Ne,Pe:Pe,He:He,
+      Me:Me.map(function(p){return {name:p.name,chips:p.chips,bet:p.bet,result:p.result,
+        hands:p.hands.map(function(h){return {c:h.slice(),bet:h.bet||0};})};})};
+  };
+  window.bjRestore=function(o){
+    Le=clone(o.Le);Se=clone(o.Se);we=o.we;Te=o.Te;je=o.je;Ne=o.Ne;Pe=o.Pe;He=o.He;
+    Me=o.Me.map(function(p){return {name:p.name,chips:p.chips,bet:p.bet,result:p.result,
+      hands:p.hands.map(function(h){var a=clone(h.c);a.bet=h.bet;return a;})};});
+    Ye();We();Xe(je);Ze();Ve('');
+  };
+
+  /* Ruleta */
+  window.roulSnapshot=function(){
+    return (st&&st.length)?clone({st:st,ct:ct,at:at,dt:dt,it:it,nt:nt}):null;
+  };
+  window.roulRestore=function(o){
+    st=clone(o.st);ct=o.ct;at=o.at;dt=o.dt;it=o.it;nt=o.nt;rt=!1;ut=!1;
+    var b=document.getElementById('roulBoard');if(b)b.classList.toggle('us',nt==='us');
+    var z=document.getElementById('roulDblZero');if(z)z.classList.toggle('hidden',nt!=='us');
+    document.querySelectorAll('.roulChip').forEach(function(c){c.classList.toggle('sel',+c.dataset.val===dt);});
+    Lt();Mt();St();
+  };
+
+  /* Póker */
+  window.pkSnapshot=function(){
+    return Gt==='idle'?null:clone({Ot:Ot,At:At,Rt:Rt,Dt:Dt,zt:zt,Ft:Ft,Jt:Jt,qt:qt,Wt:Wt,Gt:Gt,$t:$t,Zt:Zt,Ut:Ut,Qt:Qt,Kt:Kt,cn:cn,an:an,tn:tn,nn:nn});
+  };
+  window.pkRestore=function(o){
+    Ot=clone(o.Ot);At=clone(o.At);Rt=clone(o.Rt);Dt=o.Dt;zt=o.zt;Ft=o.Ft;Jt=o.Jt;qt=o.qt;Wt=o.Wt;Gt=o.Gt;$t=o.$t;Zt=o.Zt;Ut=o.Ut;Qt=o.Qt;Kt=o.Kt;cn=o.cn;an=o.an;tn=o.tn;nn=o.nn;
+    document.getElementById('pkSetup').style.display='none';
+    document.getElementById('pkTable').classList.add('show');
+    document.getElementById('pkOverlay').classList.remove('show');
+    Dn();
+    if(Gt==='peek'){document.getElementById('pkTurn').style.display='none';on();}
+    else if(Gt==='preflop'||Gt==='flop'||Gt==='turn'||Gt==='river'){document.getElementById('pkPeek').classList.remove('show');zn();}
+  };
+
+  /* Reanudar al abrir el juego (envuelve openGame conservando el comportamiento) */
+  try{
+    if(typeof openGame==='function'){
+      var _open=openGame;
+      openGame=function(k){_open(k);try{applyResume(k);}catch(e){console.error('resume',e);}};
+    }
+  }catch(e){}
+  function applyResume(k){
+    var raw;try{raw=localStorage.getItem('__resumeGames');}catch(e){return;}
+    if(!raw)return;var R;try{R=JSON.parse(raw)||{};}catch(e){return;}
+    var code={sol:'sol',Sol:'sol',bj:'bj',BJ:'bj',roul:'roul',Roul:'roul',poker:'pk',Poker:'pk'}[k];
+    var restore={sol:window.solRestore,bj:window.bjRestore,roul:window.roulRestore,pk:window.pkRestore}[code];
+    if(!code||!restore||!R[code])return;
+    try{restore(R[code]);}catch(e){console.error('resume '+code,e);}
+    delete R[code];try{localStorage.setItem('__resumeGames',JSON.stringify(R));}catch(e){}
+  }
+})();

@@ -41,13 +41,32 @@
   /* ---------- guardar ---------- */
   function snapshot(){
     var data={};
-    for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);data[k]=localStorage.getItem(k);}
+    for(var i=0;i<localStorage.length;i++){
+      var k=localStorage.key(i);
+      if(k.indexOf('__resume')===0)continue; // claves internas de reanudación
+      data[k]=localStorage.getItem(k);
+    }
     return data;
+  }
+  // Partidas a medias que cada juego mantiene en memoria (no en localStorage).
+  function collectGames(){
+    var g={};
+    [['sol',window.solSnapshot],['bj',window.bjSnapshot],['roul',window.roulSnapshot],['pk',window.pkSnapshot]].forEach(function(p){
+      try{if(typeof p[1]==='function'){var v=p[1]();if(v)g[p[0]]=v;}}catch(e){}
+    });
+    try{ // Ajedrez/Damas viven en un iframe; pedimos su estado si está cargado
+      var cf=document.getElementById('chessFrame');
+      if(cf&&cf.contentWindow&&typeof cf.contentWindow.__getGameState==='function'){
+        var cs=cf.contentWindow.__getGameState();if(cs)g.chess=cs;
+      }
+    }catch(e){}
+    return g;
   }
   function pad(n){return(n<10?'0':'')+n;}
   function save(){
-    var data=snapshot(),n=Object.keys(data).length;
-    var payload={app:'Juegos Windows XP',type:'mesaDeJuegos-save',version:VERSION,exportedAt:new Date().toISOString(),data:data};
+    var data=snapshot(),games=collectGames();
+    var n=Object.keys(data).length,gn=Object.keys(games).length;
+    var payload={app:'Juegos Windows XP',type:'mesaDeJuegos-save',version:VERSION,exportedAt:new Date().toISOString(),data:data,games:games};
     var blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
     var url=URL.createObjectURL(blob),d=new Date(),a=document.createElement('a');
     a.href=url;
@@ -55,16 +74,25 @@
     document.body.appendChild(a);a.click();a.remove();
     setTimeout(function(){URL.revokeObjectURL(url);},1000);
     dialog({icon:'💾',title:'Guardar datos',okText:'Hecho',
-      msg:n?('Se ha descargado un archivo con tus puntuaciones, estilos y controles ('+n+' elemento'+(n===1?'':'s')+').')
+      msg:(n||gn)?('Se ha descargado un archivo con tus puntuaciones, estilos y controles'+(gn?(' y '+gn+' partida'+(gn===1?'':'s')+' a medias'):'')+'.')
             :'Todavía no hay nada que guardar. Juega o personaliza algo y vuelve a intentarlo.'});
   }
 
   /* ---------- cargar ---------- */
-  function applyData(data){
+  function applyImport(data,games){
     Object.keys(data).forEach(function(k){
       var v=data[k];
       localStorage.setItem(k,typeof v==='string'?v:JSON.stringify(v));
     });
+    // Las partidas a medias se dejan en claves de reanudación que cada juego
+    // consume al abrirse tras la recarga.
+    if(games&&typeof games==='object'){
+      var core={};['sol','bj','roul','pk'].forEach(function(k){if(games[k])core[k]=games[k];});
+      if(Object.keys(core).length)localStorage.setItem('__resumeGames',JSON.stringify(core));
+      else localStorage.removeItem('__resumeGames');
+      if(games.chess)localStorage.setItem('__resumeChess',JSON.stringify(games.chess));
+      else localStorage.removeItem('__resumeChess');
+    }
   }
   function handleFile(file){
     var reader=new FileReader();
@@ -78,10 +106,11 @@
       if(!data||typeof data!=='object'){
         dialog({icon:'⚠️',title:'Cargar datos',msg:'El archivo no tiene el formato esperado.',okText:'Cerrar'});return;
       }
-      var n=Object.keys(data).length;
+      var games=(payload&&payload.games&&typeof payload.games==='object')?payload.games:null;
+      var n=Object.keys(data).length,gn=games?Object.keys(games).length:0;
       dialog({icon:'📂',title:'Cargar datos',okText:'Cargar',cancelText:'Cancelar',
-        msg:'Se restaurarán '+n+' elemento'+(n===1?'':'s')+' (puntuaciones, estilos y controles), sobrescribiendo los actuales. La página se recargará para aplicarlos. ¿Continuar?',
-        onOk:function(){applyData(data);location.reload();}});
+        msg:'Se restaurarán tus puntuaciones, estilos y controles'+(gn?(' y '+gn+' partida'+(gn===1?'':'s')+' a medias'):'')+', sobrescribiendo los actuales. La página se recargará para aplicarlos. ¿Continuar?',
+        onOk:function(){applyImport(data,games);location.reload();}});
     };
     reader.readAsText(file);
   }

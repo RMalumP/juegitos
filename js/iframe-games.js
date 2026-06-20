@@ -1,6 +1,15 @@
 /* iframe-games.js: Ajedrez y Parchís (HTML externo en games/*.js, carga por <script> al abrir) — Juegos XP. Código original sin cambios (solo separado en archivos). */
 var GAMES_BASE=new URL('../games/',document.currentScript.src).href;
-function loadFrameDoc(frameId,globalName,file){var f=document.getElementById(frameId);if(!f||f.getAttribute('data-loaded'))return;f.setAttribute('data-loaded','1');if(window[globalName]){f.srcdoc=window[globalName];return;}var s=document.createElement('script');s.src=GAMES_BASE+file;s.onload=function(){f.srcdoc=window[globalName];};document.head.appendChild(s);}
+function injectResume(frameId,html){
+  // Reanudar una partida de ajedrez/damas a medias: inyecta el estado guardado
+  // como bootstrap para que el propio restaurador del iframe lo aplique al cargar.
+  if(frameId!=='chessFrame'||!html)return html;
+  var raw;try{raw=localStorage.getItem('__resumeChess');}catch(e){return html;}
+  if(!raw)return html;
+  try{localStorage.removeItem('__resumeChess');}catch(e){}
+  return html.replace('<head>','<head><script>window.__savedGameState='+raw+';</'+'script>');
+}
+function loadFrameDoc(frameId,globalName,file){var f=document.getElementById(frameId);if(!f||f.getAttribute('data-loaded'))return;f.setAttribute('data-loaded','1');if(window[globalName]){f.srcdoc=injectResume(frameId,window[globalName]);return;}var s=document.createElement('script');s.src=GAMES_BASE+file;s.onload=function(){f.srcdoc=injectResume(frameId,window[globalName]);};document.head.appendChild(s);}
 function initChess(){loadFrameDoc('chessFrame','__CHESS_HTML','chess.js');}
 function initParchis(){loadFrameDoc('parchisFrame','__PARCHIS_HTML','parchis.js');}
 function openChessTab(idx){
