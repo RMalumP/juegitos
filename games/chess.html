@@ -1,0 +1,3143 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mesa de Juegos</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=JetBrains+Mono:wght@400;600;700&family=Outfit:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --bg: #1a1a2e;
+  --bg2: #16213e;
+  --bg3: #0f3460;
+  --accent: #e94560;
+  --accent2: #f5a623;
+  --text: #eee;
+  --text2: #aab;
+  --light-sq: #eaddc7;
+  --dark-sq: #6b8e4e;
+  --selected: rgba(255,215,0,0.55);
+  --possible: rgba(0,0,0,0.32);
+  --capture-ring: rgba(220,20,60,0.7);
+  --radius: 10px;
+  --shadow: 0 4px 24px rgba(0,0,0,0.4);
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background: var(--app-bg, linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)); color: var(--text); font-family:'Outfit',sans-serif; min-height:100vh; display:flex; flex-direction:column; align-items:center; padding-bottom:40px; }
+h1 { font-family:'Playfair Display',serif; font-size:1.6rem; margin:14px 0 4px; letter-spacing:1.5px; }
+
+/* TITLE BAR */
+.title-bar {
+  display:flex; align-items:center; justify-content:center;
+  gap:14px; margin:14px 0 4px;
+}
+.title-bar h1 { margin:0; }
+.title-action-btn {
+  width:38px; height:38px; border:none; border-radius:50%;
+  background:var(--bg2); color:var(--text); cursor:pointer;
+  font-size:1.1rem; transition:.2s; display:flex; align-items:center; justify-content:center;
+  box-shadow:var(--shadow);
+}
+.title-action-btn:hover { background:var(--accent); transform:translateY(-2px); }
+.title-action-btn:active { transform:translateY(0); }
+
+/* TABS */
+.tabs { display:flex; gap:4px; margin:8px 0 14px; }
+.tab-btn { padding:9px 20px; border:none; background:var(--bg2); color:var(--text2); border-radius:10px 10px 0 0; cursor:pointer; font-family:'Outfit',sans-serif; font-size:.9rem; font-weight:500; transition:.2s; }
+.tab-btn.active { background:var(--bg3); color:var(--accent); }
+.tab-btn:hover { background:var(--bg3); }
+.tab-content { display:none; width:100%; max-width:1100px; padding:0 8px; }
+.tab-content.active { display:flex; flex-direction:column; align-items:center; }
+
+/* PIECE STYLING */
+.piece {
+  font-family: 'Arial', sans-serif;
+  font-weight: 900;
+  line-height: 1;
+  pointer-events: none;
+  display: inline-block;
+}
+.piece.white {
+  color: var(--piece-color-white, #ffffff);
+  text-shadow:
+    -1.5px -1.5px 0 #000, 1.5px -1.5px 0 #000,
+    -1.5px 1.5px 0 #000, 1.5px 1.5px 0 #000,
+    0 0 3px rgba(0,0,0,0.6);
+}
+.piece.black {
+  color: var(--piece-color-black, #000000);
+  text-shadow:
+    -1.5px -1.5px 0 #fff, 1.5px -1.5px 0 #fff,
+    -1.5px 1.5px 0 #fff, 1.5px 1.5px 0 #fff,
+    0 0 3px rgba(255,255,255,0.4);
+}
+
+/* ========== CHESS LAYOUT ========== */
+/* Grid: 3 columns -> board column + side panel column */
+.chess-layout { display:flex; gap:16px; align-items:flex-start; flex-wrap:wrap; justify-content:center; }
+
+/* Left column: clock-black on top, board section, clock-white on bottom */
+.board-column { display:flex; flex-direction:column; gap:8px; align-items:stretch; }
+
+/* Captures bar (compact, fits over board width) */
+.cap-bar {
+  display:flex; align-items:center; gap:6px; padding:6px 10px;
+  background:var(--bg2); border-radius:8px; min-height:34px;
+  font-size:.78rem;
+}
+.cap-bar .label { color:var(--text2); font-weight:600; font-size:.72rem; }
+.cap-bar .pieces { flex:1; display:flex; flex-wrap:wrap; gap:2px; align-items:center; }
+.cap-bar .pieces .cap-piece { font-size:1.2rem; line-height:1; }
+.cap-bar .pts { font-family:'JetBrains Mono',monospace; color:var(--accent2); font-weight:700; }
+
+/* Inline clock (compact, fits over board width) */
+.clock-inline {
+  display:flex; align-items:center; gap:10px; padding:10px 14px;
+  border-radius:10px; cursor:pointer; transition:all .2s;
+  border:3px solid transparent;
+}
+.clock-inline.black-bg { background:#0a0a14; }
+.clock-inline.white-bg { background:#2a2a3e; }
+.clock-inline.is-active { border-color:var(--accent2); box-shadow:0 0 18px rgba(245,166,35,0.45); }
+.clock-inline.is-low { border-color:var(--accent); animation: lowPulse 1s infinite; }
+@keyframes lowPulse { 50% { box-shadow:0 0 24px rgba(233,69,96,0.7); } }
+.clock-inline .player-label { font-family:'Playfair Display',serif; font-size:.95rem; min-width:80px; display:flex; flex-direction:column; }
+.clock-inline .player-label small { font-size:.66rem; color:var(--text2); font-family:'Outfit',sans-serif; }
+.clock-inline .time-display {
+  flex:1; text-align:center; font-family:'JetBrains Mono',monospace;
+  font-size:2rem; font-weight:700; letter-spacing:1px; user-select:none;
+}
+.clock-inline .time-input {
+  flex:1; text-align:center; font-family:'JetBrains Mono',monospace;
+  font-size:2rem; font-weight:700; letter-spacing:1px;
+  background:rgba(0,0,0,0.4); color:var(--accent2); border:2px solid var(--accent);
+  border-radius:6px; padding:2px 6px; outline:none; width:160px;
+}
+.clock-inline .edit-btn {
+  padding:5px 9px; border:none; background:rgba(255,255,255,0.1); color:var(--text);
+  border-radius:6px; cursor:pointer; font-size:.75rem;
+}
+.clock-inline .edit-btn:hover { background:rgba(255,255,255,0.2); }
+.clock-inline.hidden { display:none; }
+
+/* Board */
+.board-section { display:inline-grid; grid-template-columns: 22px auto; grid-template-rows: auto 22px; gap: 2px; }
+.board-labels-left { grid-column:1; grid-row:1; display:grid; grid-template-rows: repeat(8, var(--cell)); }
+.board-labels-left span { display:flex; align-items:center; justify-content:center; font-family:'JetBrains Mono',monospace; font-size:.75rem; font-weight:600; color:var(--text2); }
+.board { grid-column:2; grid-row:1; display:grid; grid-template-columns: repeat(8, var(--cell)); grid-template-rows: repeat(8, var(--cell)); border:3px solid #2a2a3e; border-radius:4px; overflow:hidden; box-shadow: 0 8px 32px rgba(0,0,0,0.5); }
+.board-labels-bottom { grid-column:2; grid-row:2; display:grid; grid-template-columns: repeat(8, var(--cell)); }
+.board-labels-bottom span { display:flex; align-items:center; justify-content:center; font-family:'JetBrains Mono',monospace; font-size:.75rem; font-weight:600; color:var(--text2); }
+
+/* CELLS */
+.cell { width:var(--cell); height:var(--cell); display:flex; align-items:center; justify-content:center; font-size:calc(var(--cell)*0.72); cursor:pointer; position:relative; user-select:none; transition: background .15s; }
+.cell.light { background:var(--light-sq); }
+.cell.dark { background:var(--dark-sq); }
+.cell.selected { background:var(--selected) !important; }
+.cell.possible::after { content:''; position:absolute; width:32%; height:32%; border-radius:50%; background:var(--possible); pointer-events:none; z-index:1; }
+.cell.capture-possible { /* sin borde por defecto; se activa con .threatened */ }
+.cell.last-move { background:rgba(255,215,0,0.25) !important; }
+.cell.last-move.dark { background:rgba(200,170,60,0.45) !important; }
+.cell.king-in-check { background:rgba(220,20,60,0.35) !important; box-shadow: inset 0 0 0 3px rgba(220,20,60,0.9) !important; }
+.cell.king-checkmate { background:rgba(220,20,60,0.55) !important; animation: checkmatePulse 0.7s ease-in-out infinite !important; }
+@keyframes checkmatePulse {
+  0%   { box-shadow: inset 0 0 0 3px rgba(220,20,60,1),   0 0 0px  rgba(220,20,60,0); }
+  50%  { box-shadow: inset 0 0 0 5px rgba(220,20,60,1),   0 0 18px rgba(220,20,60,0.8); }
+  100% { box-shadow: inset 0 0 0 3px rgba(220,20,60,1),   0 0 0px  rgba(220,20,60,0); }
+}
+.cell.threatened { box-shadow: inset 0 0 0 3px rgba(220,20,60,0.85) !important; }
+.cell:hover .piece { filter: brightness(1.15); }
+
+/* SIDE PANEL */
+.side-panel { background:var(--bg2); border-radius:var(--radius); padding:10px; min-width:230px; max-width:280px; display:flex; flex-direction:column; gap:6px; box-shadow:var(--shadow); }
+.side-section { border-radius:8px; overflow:hidden; }
+.side-section-header {
+  display:flex; align-items:center; justify-content:space-between;
+  background:var(--bg3); padding:8px 12px; cursor:pointer;
+  font-family:'Outfit',sans-serif; font-size:.85rem; font-weight:600;
+  transition:.2s; user-select:none;
+}
+.side-section-header:hover { background:var(--accent); }
+.side-section-header .arrow { transition:transform .3s; font-size:.7rem; }
+.side-section-header .arrow.open { transform:rotate(180deg); }
+.side-section-body { display:none; background:rgba(0,0,0,0.2); padding:10px; }
+.side-section-body.open { display:block; }
+
+/* Clock controls inside side-panel */
+.clock-control-row { display:flex; flex-direction:column; gap:8px; }
+.clock-control-row .row { display:flex; gap:6px; align-items:center; }
+.clock-control-row select { flex:1; padding:5px 8px; border:1px solid var(--bg3); background:var(--bg); color:var(--text); border-radius:6px; font-size:.78rem; }
+.clock-control-row button { padding:6px 10px; border:none; background:var(--accent); color:#fff; border-radius:6px; cursor:pointer; font-size:.78rem; font-weight:600; }
+.clock-control-row button:hover { background:#d63050; }
+.clock-control-row .clock-toggle { width:100%; background:var(--bg3); color:var(--text); }
+.clock-control-row .clock-toggle.on { background:var(--accent2); color:#000; }
+.clock-control-row label { font-size:.75rem; color:var(--text2); }
+
+/* History inside side panel */
+.moves-list { font-family:'JetBrains Mono',monospace; font-size:.78rem; max-height:140px; overflow-y:auto; background:rgba(0,0,0,0.2); border-radius:6px; padding:4px; }
+.moves-list table { width:100%; border-collapse:collapse; }
+.moves-list th { text-align:left; color:var(--accent); font-size:.7rem; padding:3px 5px; position:sticky; top:0; background:var(--bg2); }
+.moves-list td { padding:3px 5px; color:var(--text2); cursor:pointer; }
+.moves-list td:hover { color:var(--text); background:rgba(255,255,255,0.05); }
+.moves-list tr.current-move td { color:var(--accent2); font-weight:700; }
+
+.nav-btns { display:flex; gap:4px; justify-content:center; margin-top:6px; }
+.nav-btns button { padding:5px 12px; border:none; background:var(--bg3); color:var(--text); border-radius:6px; cursor:pointer; font-size:.85rem; transition:.2s; font-weight:600; }
+.nav-btns button:hover:not(:disabled) { background:var(--accent); }
+.nav-btns button:disabled { opacity:.3; cursor:default; }
+
+/* Action buttons in side-panel */
+.side-action-btn {
+  width:100%; padding:9px; border:none; background:var(--bg3); color:var(--text);
+  border-radius:8px; cursor:pointer; font-family:'Outfit',sans-serif;
+  font-size:.85rem; font-weight:600; transition:.2s; display:flex;
+  align-items:center; justify-content:center; gap:6px;
+}
+.side-action-btn:hover { background:var(--accent); }
+.side-action-btn.rotate-btn { background:var(--bg3); }
+.side-action-btn.rotate-btn:hover { background:var(--accent2); color:#000; }
+
+/* Clock mode buttons */
+.clock-mode-btn { flex:1; padding:5px 4px; border:none; background:var(--bg3); color:var(--text2); border-radius:6px; cursor:pointer; font-size:.72rem; font-weight:600; transition:.2s; }
+.clock-mode-btn:hover { background:var(--accent); color:#fff; }
+.clock-mode-btn.active { background:var(--accent2); color:#000; }
+.turn-indicator { font-size:.95rem; margin:6px 0; padding:5px 18px; border-radius:20px; font-weight:600; border:1px solid transparent; box-sizing:border-box; min-width:160px; text-align:center; display:inline-block; }
+.turn-indicator.white-turn { background:rgba(255,255,255,0.18); color:#fff; border-color:rgba(255,255,255,0.2); }
+.turn-indicator.black-turn { background:rgba(0,0,0,0.5); color:#ddd; border-color:rgba(255,255,255,0.2); }
+
+/* ===== ROTATION MODES =====
+   Mode 0: N↑ B↓ | Board normal    | Pieces normal      | Labels: 8-1, a-h
+   Mode 1: N↑ B↓ | Board 180°      | All pieces 180°    | Labels: 1-8, h-a  | clocks/caps swapped
+   Mode 2: B↑ N↓ | Board normal    | Black pieces 180°  | Labels: 1-8, h-a  | clocks/caps swapped (no rotation)
+   Mode 3: B↑ N↓ | Board 180°      | White pieces 180°  | Labels: 8-1, a-h  | White clock/cap rotated
+*/
+
+/* MODE 1: swap column order + board reordered by JS. Pieces keep mode 0 orientation (no rotation) */
+.board-column.rotate-mode-1 { flex-direction: column-reverse; }
+
+/* MODE 2: board normal + black pieces 180° + black clock/cap 180° */
+.board-column.rotate-mode-2 .board .piece.black { transform: rotate(180deg); }
+.board-column.rotate-mode-2 #chessClockBlackRow,
+.board-column.rotate-mode-2 #capBarBlack { transform: rotate(180deg); }
+
+/* MODE 3: swap column + board 180° by JS + white pieces 180° + white clock/cap rotated */
+.board-column.rotate-mode-3 { flex-direction: column-reverse; }
+.board-column.rotate-mode-3 .board .piece.white { transform: rotate(180deg); }
+.board-column.rotate-mode-3 #chessClockWhiteRow,
+.board-column.rotate-mode-3 #capBarWhite { transform: rotate(180deg); }
+
+/* GAME OVER */
+.game-over-banner { display:none; padding:10px 22px; background:var(--accent); color:#fff; border-radius:var(--radius); font-weight:600; font-size:1rem; text-align:center; margin:8px 0; }
+.game-over-banner.visible { display:block; }
+
+/* BOTTOM ANNOTATIONS */
+.bottom-panel { width:100%; max-width:1100px; margin-top:14px; }
+.bottom-toggle { width:100%; padding:9px; border:none; background:var(--bg3); color:var(--text); border-radius:8px 8px 0 0; cursor:pointer; font-family:'Outfit',sans-serif; font-size:.88rem; display:flex; align-items:center; justify-content:space-between; }
+.bottom-toggle .arrow { transition:transform .3s; }
+.bottom-toggle .arrow.open { transform:rotate(180deg); }
+.bottom-body { display:none; background:var(--bg2); border-radius:0 0 8px 8px; padding:14px; max-height:220px; overflow-y:auto; }
+.bottom-body.open { display:flex; gap:18px; }
+.annotation-col { flex:1; }
+.annotation-col h4 { font-size:.85rem; color:var(--accent); margin-bottom:6px; font-family:'Playfair Display',serif; }
+.annotation-col .ann-list { font-family:'JetBrains Mono',monospace; font-size:.78rem; color:var(--text2); line-height:1.7; }
+
+/* ========== TAB 1: BIG CLOCK ========== */
+.big-clock-wrapper { width:100%; max-width:640px; display:flex; flex-direction:column; gap:16px; padding:20px 0; }
+.big-clock-player {
+  display:flex; flex-direction:column; align-items:center; gap:8px;
+  padding:32px 40px; border-radius:16px; cursor:pointer;
+  border:3px solid transparent; transition:all .2s;
+}
+.big-clock-player.player-black { background:#0a0a14; }
+.big-clock-player.player-white { background:#2a2a3e; }
+.big-clock-player:hover { transform:translateY(-2px); }
+.big-clock-player.is-active { border-color:var(--accent2); box-shadow:0 0 30px rgba(245,166,35,0.5); }
+.big-clock-player.is-low { border-color:var(--accent); animation: lowPulse 1s infinite; }
+.big-clock-player .player-label { font-family:'Playfair Display',serif; font-size:1.3rem; letter-spacing:1px; }
+.big-clock-player .big-time {
+  font-family:'JetBrains Mono',monospace; font-size:5rem; font-weight:700; letter-spacing:2px;
+}
+.big-clock-player .big-time-input {
+  font-family:'JetBrains Mono',monospace; font-size:5rem; font-weight:700; letter-spacing:2px;
+  background:rgba(0,0,0,0.4); color:var(--accent2); border:2px solid var(--accent);
+  border-radius:8px; padding:4px 12px; width:340px; text-align:center; outline:none;
+}
+.big-clock-player .edit-row { display:flex; gap:8px; align-items:center; font-size:.8rem; color:var(--text2); }
+.big-clock-player .edit-row button { padding:4px 10px; background:rgba(255,255,255,0.1); border:none; color:var(--text); border-radius:5px; cursor:pointer; font-size:.75rem; }
+.big-clock-player .edit-row button:hover { background:rgba(255,255,255,0.2); }
+.big-clock-player.player-black { transform:rotate(180deg); }
+.big-clock-player.player-black > * { transform:rotate(180deg); }
+
+.big-clock-middle {
+  display:flex; flex-direction:column; align-items:center; gap:10px;
+  padding:14px; background:var(--bg2); border-radius:12px; box-shadow:var(--shadow);
+}
+.big-clock-middle .preset-row { display:flex; flex-wrap:wrap; gap:6px; justify-content:center; }
+.big-clock-middle .preset-row button {
+  padding:7px 14px; border:none; background:var(--bg3); color:var(--text); border-radius:6px;
+  cursor:pointer; font-family:'Outfit',sans-serif; font-size:.82rem; font-weight:500; transition:.2s;
+}
+.big-clock-middle .preset-row button:hover { background:var(--accent); }
+.big-clock-middle .control-row { display:flex; gap:8px; }
+.big-clock-middle .control-row button {
+  padding:8px 16px; border:none; border-radius:6px; cursor:pointer;
+  font-family:'Outfit',sans-serif; font-size:.85rem; font-weight:600;
+}
+.big-clock-middle .pause-btn { background:var(--accent2); color:#000; }
+.big-clock-middle .reset-btn { background:var(--bg3); color:var(--text); }
+.big-clock-middle .status { font-size:.8rem; color:var(--text2); font-family:'JetBrains Mono',monospace; }
+
+/* PROMOTION MODAL */
+.promo-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:100; align-items:center; justify-content:center; }
+.promo-overlay.visible { display:flex; }
+.promo-box { background:var(--bg2); padding:24px; border-radius:var(--radius); display:flex; gap:14px; box-shadow:var(--shadow); }
+.promo-box .promo-choice { font-size:3rem; cursor:pointer; padding:10px; border-radius:8px; transition:.2s; pointer-events:auto; }
+.promo-box .promo-choice:hover { background:var(--bg3); transform:scale(1.15); }
+
+/* RESPONSIVE */
+@media(max-width:820px){
+  .chess-layout { flex-direction:column; align-items:center; }
+  .side-panel { max-width:100%; min-width:0; width:100%; }
+  .big-clock-player .big-time { font-size:3.5rem; }
+  .big-clock-player .big-time-input { font-size:3.5rem; width:240px; }
+
+  /* En móvil: tablero ocupa todo el ancho */
+  body { padding-left:4px; padding-right:4px; }
+  .tab-content { padding:0 2px; }
+  .board-column { width:100%; max-width:100vw; align-items:center; }
+
+  /* board-section deja de ser inline-grid y se convierte en bloque */
+  .board-section {
+    display: block !important;
+    width: var(--board-size, calc(100vw - 12px)) !important;
+    max-width: none !important;
+    margin: 0 auto;
+  }
+  /* board: cuadrado perfecto, dimensionado por JS según ancho y alto disponibles */
+  .board {
+    display: grid !important;
+    width: var(--board-size, calc(100vw - 12px)) !important;
+    height: var(--board-size, calc(100vw - 12px)) !important;
+    max-width: none !important;
+    max-height: none !important;
+    grid-template-columns: repeat(8, 1fr) !important;
+    grid-template-rows: repeat(8, 1fr) !important;
+    box-sizing: border-box;
+    margin: 0 auto;
+  }
+  /* Ocultar leyendas externas */
+  .board-labels-left, .board-labels-bottom { display:none !important; }
+
+  /* Celdas se adaptan, ya no usan --cell */
+  .cell {
+    width: auto !important;
+    height: auto !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    font-size: calc(var(--board-size, calc(100vw - 16px)) / 8 * 0.72);
+  }
+
+  /* Etiquetas embebidas en las celdas de borde */
+  .cell[data-rank]::before {
+    content: attr(data-rank);
+    position: absolute;
+    top: 1px;
+    left: 2px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    font-weight: 700;
+    color: rgba(0,0,0,0.55);
+    pointer-events: none;
+    z-index: 2;
+    line-height: 1;
+  }
+  .cell[data-file]::after {
+    content: attr(data-file);
+    position: absolute;
+    bottom: 1px;
+    right: 3px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    font-weight: 700;
+    color: rgba(0,0,0,0.55);
+    pointer-events: none;
+    z-index: 2;
+    line-height: 1;
+  }
+  /* En casillas oscuras, etiquetas claras */
+  .cell.dark[data-rank]::before,
+  .cell.dark[data-file]::after {
+    color: rgba(255,255,255,0.75);
+  }
+
+  /* Controles personalizado: ajustar */
+  .custom-controls { padding:8px; gap:6px; }
+  .custom-controls select { min-width:140px; flex:1; }
+  .custom-controls button { padding:7px 10px; font-size:.78rem; }
+}
+
+/* ========== DAMA KING PIECE (doble círculo) ========== */
+.dama-king {
+  position: relative;
+  width: 70%;
+  height: 70%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+.dama-king .ring-outer {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 3px solid;
+  box-sizing: border-box;
+}
+.dama-king .ring-inner {
+  position: absolute;
+  width: 45%;
+  height: 45%;
+  border-radius: 50%;
+  border: 2px solid;
+  box-sizing: border-box;
+}
+.dama-king.white .ring-outer {
+  border-color: var(--piece-color-white, #fff);
+  background: transparent;
+  filter:
+    drop-shadow(-1.5px -1.5px 0 #000) drop-shadow(1.5px -1.5px 0 #000)
+    drop-shadow(-1.5px 1.5px 0 #000) drop-shadow(1.5px 1.5px 0 #000);
+}
+.dama-king.white .ring-inner {
+  border-color: var(--piece-color-white, #fff);
+  background: var(--piece-color-white, #fff);
+  filter:
+    drop-shadow(-1px -1px 0 #000) drop-shadow(1px -1px 0 #000)
+    drop-shadow(-1px 1px 0 #000) drop-shadow(1px 1px 0 #000);
+}
+.dama-king.black .ring-outer {
+  border-color: var(--piece-color-black, #000);
+  background: transparent;
+  filter:
+    drop-shadow(-1.5px -1.5px 0 #fff) drop-shadow(1.5px -1.5px 0 #fff)
+    drop-shadow(-1.5px 1.5px 0 #fff) drop-shadow(1.5px 1.5px 0 #fff);
+}
+.dama-king.black .ring-inner {
+  border-color: var(--piece-color-black, #000);
+  background: var(--piece-color-black, #000);
+  filter:
+    drop-shadow(-1px -1px 0 #fff) drop-shadow(1px -1px 0 #fff)
+    drop-shadow(-1px 1px 0 #fff) drop-shadow(1px 1px 0 #fff);
+}
+/* Dama king in capture bar (smaller) */
+.cap-piece.dama-king { width:18px; height:18px; display:inline-flex; }
+
+/* ========== THEMES — Tablero ========== */
+body.theme-green { --light-sq:#eaddc7; --dark-sq:#6b8e4e; }
+body.theme-wood  { --light-sq:#f0d9b5; --dark-sq:#b58863; }
+body.theme-blue  { --light-sq:#dee3e6; --dark-sq:#788a94; }
+body.theme-gray  { --light-sq:#d8d8d8; --dark-sq:#6e6e6e; }
+body.theme-coral { --light-sq:#fce4dc; --dark-sq:#d77a5d; }
+body.theme-purple{ --light-sq:#e6dff0; --dark-sq:#7a5a9a; }
+body.theme-mint  { --light-sq:#d8f0e8; --dark-sq:#4a9e7a; }
+body.theme-night { --light-sq:#c8c8d8; --dark-sq:#2a2a4a; }
+
+/* ========== THEMES — Piezas ========== */
+/* Clásico (default): el estilo .piece.white / .piece.black ya definido */
+/* Outline (solo contorno) */
+body.pieces-outline .piece.white { color:transparent !important; -webkit-text-stroke:1.2px #fff; text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000 !important; }
+body.pieces-outline .piece.black { color:transparent !important; -webkit-text-stroke:1.2px #000; text-shadow: -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff !important; }
+/* Las fichas de damas (●) no se ven bien con outline; mantienen estilo clásico */
+body.pieces-outline .piece.dama-checker.white { color:var(--piece-color-white, #fff) !important; -webkit-text-stroke:0 !important; text-shadow: -1.5px -1.5px 0 #000, 1.5px -1.5px 0 #000, -1.5px 1.5px 0 #000, 1.5px 1.5px 0 #000, 0 0 3px rgba(0,0,0,0.6) !important; }
+body.pieces-outline .piece.dama-checker.black { color:var(--piece-color-black, #000) !important; -webkit-text-stroke:0 !important; text-shadow: -1.5px -1.5px 0 #fff, 1.5px -1.5px 0 #fff, -1.5px 1.5px 0 #fff, 1.5px 1.5px 0 #fff, 0 0 3px rgba(255,255,255,0.4) !important; }
+/* Minimalista (sin sombras gruesas) */
+body.pieces-minimal .piece.white { text-shadow: 0 1px 2px rgba(0,0,0,0.4) !important; font-weight:500 !important; }
+body.pieces-minimal .piece.black { text-shadow: 0 1px 2px rgba(255,255,255,0.3) !important; font-weight:500 !important; }
+/* Bold (más grueso y sólido) */
+body.pieces-bold .piece { font-weight:900 !important; }
+body.pieces-bold .piece.white { text-shadow: -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000, 0 0 4px rgba(0,0,0,0.8) !important; }
+body.pieces-bold .piece.black { text-shadow: -2px -2px 0 #fff, 2px -2px 0 #fff, -2px 2px 0 #fff, 2px 2px 0 #fff, 0 0 4px rgba(255,255,255,0.6) !important; }
+/* Neon */
+body.pieces-neon .piece.white { font-weight:900 !important; color:#7df9ff !important; text-shadow: 0 0 4px #7df9ff, 0 0 12px #7df9ff, 0 0 28px #00e5ff, -1px -1px 0 #005f70, 1px 1px 0 #005f70 !important; -webkit-text-stroke:0 !important; }
+body.pieces-neon .piece.black { font-weight:900 !important; color:#ff6ef7 !important; text-shadow: 0 0 4px #ff6ef7, 0 0 12px #ff6ef7, 0 0 28px #c000c0, -1px -1px 0 #5f005f, 1px 1px 0 #5f005f !important; -webkit-text-stroke:0 !important; }
+/* Flat */
+body.pieces-flat .piece { font-weight:700 !important; }
+body.pieces-flat .piece.white { color:var(--piece-color-white,#fff) !important; text-shadow:none !important; -webkit-text-stroke:0 !important; filter:drop-shadow(0 1px 0 rgba(0,0,0,0.3)) !important; }
+body.pieces-flat .piece.black { color:var(--piece-color-black,#222) !important; text-shadow:none !important; -webkit-text-stroke:0 !important; filter:drop-shadow(0 1px 0 rgba(255,255,255,0.2)) !important; }
+/* 3D Shadow */
+body.pieces-3d .piece { font-weight:900 !important; }
+body.pieces-3d .piece.white { color:var(--piece-color-white,#fff) !important; text-shadow:1px 1px 0 #bbb, 2px 2px 0 #999, 3px 3px 0 #777, 4px 4px 0 #555, 4px 4px 6px rgba(0,0,0,0.5) !important; -webkit-text-stroke:0.5px #888 !important; }
+body.pieces-3d .piece.black { color:var(--piece-color-black,#111) !important; text-shadow:1px 1px 0 #555, 2px 2px 0 #444, 3px 3px 0 #333, 4px 4px 0 #222, 4px 4px 6px rgba(0,0,0,0.7) !important; -webkit-text-stroke:0.5px #fff3 !important; }
+/* Pixel */
+body.pieces-pixel .piece { font-weight:900 !important; }
+body.pieces-pixel .piece.white { color:var(--piece-color-white,#fff) !important; text-shadow:-2px 0 0 #000,2px 0 0 #000,0 -2px 0 #000,0 2px 0 #000,-2px -2px 0 #000,2px -2px 0 #000,-2px 2px 0 #000,2px 2px 0 #000,4px 4px 0 #0008 !important; -webkit-text-stroke:0 !important; font-family:'Courier New',monospace !important; }
+body.pieces-pixel .piece.black { color:var(--piece-color-black,#111) !important; text-shadow:-2px 0 0 #fff8,2px 0 0 #fff8,0 -2px 0 #fff8,0 2px 0 #fff8,-2px -2px 0 #fff5,2px -2px 0 #fff5,-2px 2px 0 #fff5,2px 2px 0 #fff5,4px 4px 0 #0006 !important; -webkit-text-stroke:0 !important; font-family:'Courier New',monospace !important; }
+
+/* ========== THEME MODAL ========== */
+.theme-overlay {
+  display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+  background:rgba(0,0,0,0.75); z-index:200;
+  align-items:center; justify-content:center;
+  padding:20px;
+}
+.theme-overlay.visible { display:flex; }
+.theme-modal {
+  background:var(--bg2); border-radius:var(--radius);
+  padding:20px; max-width:480px; width:100%;
+  max-height:90vh; overflow-y:auto;
+  box-shadow:var(--shadow);
+}
+.theme-modal h3 {
+  font-family:'Playfair Display', serif;
+  font-size:1.2rem; margin-bottom:14px; color:var(--accent);
+  display:flex; justify-content:space-between; align-items:center;
+}
+.theme-modal .close-btn {
+  background:none; border:none; color:var(--text); font-size:1.5rem;
+  cursor:pointer; padding:0 8px;
+}
+.theme-modal .close-btn:hover { color:var(--accent); }
+.theme-section { margin-bottom:18px; }
+.theme-section-title {
+  font-size:.85rem; font-weight:600; color:var(--text2);
+  margin-bottom:8px; text-transform:uppercase; letter-spacing:1px;
+}
+.theme-grid {
+  display:grid;
+  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+  gap:8px;
+}
+.theme-option {
+  padding:8px; border-radius:8px; cursor:pointer;
+  background:var(--bg3); border:2px solid transparent;
+  transition:.2s; text-align:center;
+}
+.theme-option:hover { border-color:var(--accent); transform:translateY(-2px); }
+.theme-option.selected { border-color:var(--accent2); background:var(--bg); }
+.theme-option .swatch {
+  display:flex; height:36px; border-radius:4px; overflow:hidden;
+  margin-bottom:6px; border:1px solid rgba(255,255,255,0.1);
+}
+.theme-option .swatch > div { flex:1; }
+.theme-option .label {
+  font-size:.75rem; color:var(--text); font-weight:500;
+}
+.theme-option .preview-piece {
+  font-size:1.8rem; font-weight:900; line-height:1;
+  height:36px; display:flex; align-items:center; justify-content:center;
+  background:#6b8e4e; border-radius:4px; margin-bottom:6px;
+  color:#fff;
+}
+#preview-classic { text-shadow: -1.5px -1.5px 0 #000, 1.5px -1.5px 0 #000, -1.5px 1.5px 0 #000, 1.5px 1.5px 0 #000, 0 0 3px rgba(0,0,0,0.6); }
+#preview-outline { color:transparent; -webkit-text-stroke:1.2px #fff; text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000; }
+#preview-minimal { font-weight:500; text-shadow: 0 1px 2px rgba(0,0,0,0.4); }
+#preview-bold    { font-weight:900; text-shadow: -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000, 0 0 4px rgba(0,0,0,0.8); }
+#preview-neon    { font-weight:900; color:#7df9ff; text-shadow: 0 0 4px #7df9ff, 0 0 12px #7df9ff, 0 0 28px #00e5ff, -1px -1px 0 #005f70, 1px 1px 0 #005f70; -webkit-text-stroke:0; }
+#preview-flat    { font-weight:700; color:#fff; text-shadow:none; filter:drop-shadow(0 1px 0 rgba(0,0,0,0.4)); }
+#preview-3d      { font-weight:900; color:#fff; text-shadow:1px 1px 0 #bbb,2px 2px 0 #999,3px 3px 0 #777,4px 4px 0 #555,4px 4px 6px rgba(0,0,0,0.5); -webkit-text-stroke:0.5px #888; }
+#preview-pixel   { font-weight:900; color:#fff; font-family:'Courier New',monospace; text-shadow:-2px 0 0 #000,2px 0 0 #000,0 -2px 0 #000,0 2px 0 #000,2px 2px 0 #0008; -webkit-text-stroke:0; }
+
+/* COLOR PICKER GRID */
+.color-grid {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 6px;
+  align-items: center;
+}
+.color-option {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  aspect-ratio: 1 / 1;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 3px solid transparent;
+  transition: .2s;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+}
+.color-option:hover { transform: scale(1.1); }
+.color-option.selected {
+  border-color: var(--accent2);
+  box-shadow: 0 0 0 2px var(--bg2), 0 0 10px var(--accent2);
+}
+
+/* ========== PORTRAIT MODE (pantalla más alta que ancha: móviles + tablets vertical) ========== */
+body.portrait-mode .chess-layout { flex-direction:column; align-items:center; }
+body.portrait-mode .side-panel { max-width:100%; min-width:0; width:100%; }
+body.portrait-mode .big-clock-player .big-time { font-size:3.5rem; }
+body.portrait-mode .big-clock-player .big-time-input { font-size:3.5rem; width:240px; }
+body.portrait-mode { padding-left:4px; padding-right:4px; }
+body.portrait-mode .tab-content { padding:0 2px; }
+body.portrait-mode .board-column { width:100%; max-width:100vw; align-items:center; }
+body.portrait-mode .board-section {
+  display: block !important;
+  width: var(--board-size, calc(100vw - 12px)) !important;
+  max-width: none !important;
+  margin: 0 auto;
+}
+body.portrait-mode .board {
+  display: grid !important;
+  width: var(--board-size, calc(100vw - 12px)) !important;
+  height: var(--board-size, calc(100vw - 12px)) !important;
+  max-width: none !important;
+  max-height: none !important;
+  grid-template-columns: repeat(8, 1fr) !important;
+  grid-template-rows: repeat(8, 1fr) !important;
+  box-sizing: border-box;
+  margin: 0 auto;
+}
+body.portrait-mode .board-labels-left,
+body.portrait-mode .board-labels-bottom { display:none !important; }
+body.portrait-mode .cell {
+  width: auto !important;
+  height: auto !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  font-size: calc(var(--board-size, calc(100vw - 16px)) / 8 * 0.72);
+}
+body.portrait-mode .cell[data-rank]::before {
+  content: attr(data-rank);
+  position: absolute; top: 1px; left: 2px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px; font-weight: 700;
+  color: rgba(0,0,0,0.55); pointer-events: none; z-index: 2; line-height: 1;
+}
+body.portrait-mode .cell[data-file]::after {
+  content: attr(data-file);
+  position: absolute; bottom: 1px; right: 3px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px; font-weight: 700;
+  color: rgba(0,0,0,0.55); pointer-events: none; z-index: 2; line-height: 1;
+}
+body.portrait-mode .cell.dark[data-rank]::before,
+body.portrait-mode .cell.dark[data-file]::after { color: rgba(255,255,255,0.75); }
+body.portrait-mode .custom-controls { padding:8px; gap:6px; }
+body.portrait-mode .custom-controls select { min-width:140px; flex:1; }
+body.portrait-mode .custom-controls button { padding:7px 10px; font-size:.78rem; }
+
+/* ===== Horizontal con poca altura (móvil apaisado): compactar la cabecera ===== */
+/* Reduce título, pestañas, turno y barras de capturas para dejar sitio al tablero */
+@media (orientation:landscape) and (max-height:560px){
+  body { padding-bottom:8px; }
+  .title-bar { margin:4px 0 2px; gap:8px; }
+  .title-bar h1 { font-size:1rem; }
+  .title-action-btn { width:28px; height:28px; font-size:.85rem; }
+  .tabs { margin:2px 0 4px; }
+  .tab-btn { padding:4px 12px; font-size:.78rem; }
+  .turn-indicator { font-size:.78rem; margin:2px 0; padding:3px 12px; min-width:0; }
+  .cap-bar { min-height:0; padding:2px 8px; font-size:.66rem; }
+  .cap-bar .label { font-size:.62rem; }
+  .cap-bar .pieces .cap-piece { font-size:.95rem; }
+}
+
+/* ========== TAB 3: PERSONALIZADO ========== */
+.custom-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg2);
+  padding: 12px 16px;
+  border-radius: var(--radius);
+  margin-bottom: 14px;
+  box-shadow: var(--shadow);
+}
+.custom-controls label {
+  font-size: .85rem;
+  color: var(--text2);
+  font-weight: 500;
+}
+.custom-controls select {
+  padding: 8px 12px;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--bg3);
+  border-radius: 6px;
+  font-family: 'Outfit', sans-serif;
+  font-size: .9rem;
+  cursor: pointer;
+  min-width: 200px;
+}
+.custom-controls select:focus { outline: 2px solid var(--accent); }
+.custom-controls button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: 'Outfit', sans-serif;
+  font-size: .85rem;
+  font-weight: 600;
+  transition: .2s;
+  color: #fff;
+}
+.custom-controls .btn-play { background: #1a5c38; }
+.custom-controls .btn-play:hover { background: #237a4a; }
+.custom-controls .btn-edit { background: var(--accent2); color: #000; }
+.custom-controls .btn-edit:hover { background: #d68f1a; }
+.custom-controls .btn-clear { background: #5c1a1a; }
+.custom-controls .btn-clear:hover { background: #7a2424; }
+.custom-controls .btn-undo { background: var(--bg3); }
+.custom-controls .btn-undo:hover { background: var(--accent); }
+.custom-status {
+  text-align: center;
+  font-size: .85rem;
+  color: var(--accent2);
+  margin-bottom: 8px;
+  font-weight: 500;
+  min-height: 20px;
+}
+</style>
+</head>
+<body>
+
+<div class="title-bar">
+  <button class="title-action-btn" onclick="openThemeModal()" title="Diseño">🎨</button>
+  <h1>♔ Mesa de Juegos ♚</h1>
+  <button class="title-action-btn" onclick="saveGameAsHtml()" title="Guardar como HTML">💾</button>
+</div>
+
+<div style="display:flex;align-items:flex-end;gap:8px;flex-wrap:wrap;justify-content:center;">
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab(0)">♟ Ajedrez</button>
+    <button class="tab-btn" onclick="switchTab(1)">⏱ Reloj</button>
+    <button class="tab-btn" onclick="switchTab(2)">⛀ Damas</button>
+    <button class="tab-btn" onclick="switchTab(3)">🎨 Personalizado</button>
+  </div>
+</div>
+<div id="saveMsg" style="display:none;text-align:center;font-size:.78rem;padding:4px 12px;border-radius:6px;margin-bottom:4px;"></div>
+
+<!-- ========== TAB 0: CHESS ========== -->
+<div class="tab-content active" id="tab0">
+  <div class="turn-indicator white-turn" id="chessTurn">Turno: Blancas</div>
+  <div class="game-over-banner" id="chessGameOver"></div>
+
+  <div class="chess-layout">
+    <!-- LEFT COLUMN: Reloj Negras (top extreme) → Cap-bar Negras → Tablero → Cap-bar Blancas → Reloj Blancas (bottom extreme) -->
+    <div class="board-column" id="boardColumn">
+      <!-- Black clock at top extreme -->
+      <div class="clock-inline black-bg hidden" id="chessClockBlackRow" onclick="chessClockTap('b')">
+        <div class="player-label">♚ Negras<small>clic = mi turno acabó</small></div>
+        <span class="time-display" id="chessClockBlack">10:00</span>
+        <input class="time-input" id="chessClockBlackInput" style="display:none;" />
+        <button class="edit-btn" onclick="chessClockEdit(event,'b')">✎</button>
+      </div>
+      <!-- Black captures pegado al tablero (top, glued to board) -->
+      <div class="cap-bar" id="capBarBlack">
+        <span class="label">♚ Negras capturó:</span>
+        <span class="pieces" id="capByBlack"></span>
+        <span class="pts" id="ptsBlack">0</span>
+      </div>
+
+      <!-- Board -->
+      <div class="board-section" id="chessBoardSection">
+        <div class="board-labels-left" id="chessLabelsLeft"></div>
+        <div class="board" id="chessBoard"></div>
+        <div class="board-labels-bottom" id="chessLabelsBottom"></div>
+      </div>
+
+      <!-- White captures pegado al tablero (bottom, glued to board) -->
+      <div class="cap-bar" id="capBarWhite">
+        <span class="label">♔ Blancas capturó:</span>
+        <span class="pieces" id="capByWhite"></span>
+        <span class="pts" id="ptsWhite">0</span>
+      </div>
+      <!-- White clock at bottom extreme -->
+      <div class="clock-inline white-bg hidden" id="chessClockWhiteRow" onclick="chessClockTap('w')">
+        <div class="player-label">♔ Blancas<small>clic = mi turno acabó</small></div>
+        <span class="time-display" id="chessClockWhite">10:00</span>
+        <input class="time-input" id="chessClockWhiteInput" style="display:none;" />
+        <button class="edit-btn" onclick="chessClockEdit(event,'w')">✎</button>
+      </div>
+    </div>
+
+    <!-- RIGHT COLUMN: Side panel with collapsible sections -->
+    <div class="side-panel">
+      <!-- Clock control -->
+      <div class="side-section">
+        <div class="side-section-header" onclick="toggleSideSection('clockSection')">
+          <span>⏱ Reloj</span>
+          <span class="arrow" id="arrow-clockSection">▼</span>
+        </div>
+        <div class="side-section-body" id="body-clockSection">
+          <div class="clock-control-row">
+            <div class="row">
+              <label>Tiempo:</label>
+              <select id="chessClockPreset" onchange="chessClockPresetChange()">
+                <option value="60000">1 min</option>
+                <option value="180000">3 min</option>
+                <option value="300000">5 min</option>
+                <option value="600000" selected>10 min</option>
+                <option value="900000">15 min</option>
+                <option value="1800000">30 min</option>
+                <option value="custom">Personalizado</option>
+              </select>
+            </div>
+            <div class="row" id="clockCustomRow" style="display:none;">
+              <label>Custom:</label>
+              <input type="text" id="chessClockCustom" placeholder="mm:ss" style="width:60px;padding:4px 6px;border:1px solid var(--bg3);background:var(--bg);color:var(--text);border-radius:6px;font-size:.78rem;font-family:'JetBrains Mono',monospace;" />
+              <button onclick="chessClockApplyCustom()">Aplicar</button>
+            </div>
+            <div class="row" style="gap:4px;">
+              <button class="clock-mode-btn active" id="btnModeOff"    onclick="chessClockSetMode('off')">Sin reloj</button>
+              <button class="clock-mode-btn"        id="btnModeAuto"   onclick="chessClockSetMode('auto')">Automático</button>
+              <button class="clock-mode-btn"        id="btnModeManual" onclick="chessClockSetMode('manual')">Manual</button>
+            </div>
+            <div id="clockAutoControls" style="display:none;">
+              <button class="clock-toggle" id="chessClockStartBtn" onclick="chessClockAutoToggle()">▶ Comenzar</button>
+            </div>
+            <div id="clockManualControls" style="display:none;">
+              <div style="font-size:.72rem;color:var(--text2);text-align:center;margin-bottom:4px;">
+                Toca tu reloj para empezar/pasar turno
+              </div>
+              <button class="clock-toggle" id="chessClockManualPauseBtn" onclick="chessClockManualTogglePause()">⏸ Pausar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Reset game -->
+      <button class="side-action-btn" onclick="initChess()">↺ Reiniciar partida</button>
+
+      <!-- Rotate board -->
+      <button class="side-action-btn rotate-btn" onclick="rotateChessBoard()">🔄 Rotar tablero</button>
+
+      <!-- Split button: Jaque | Amenazas -->
+      <div style="display:flex;gap:0;border-radius:8px;overflow:hidden;">
+        <button class="side-action-btn" id="btnCheckChess" onclick="toggleCheckHighlight()" style="flex:1;border-radius:0;border-right:1px solid rgba(255,255,255,0.1);background:var(--accent);color:#fff;opacity:1;">♚ Jaque</button>
+        <button class="side-action-btn" id="btnThreatsChess" onclick="toggleThreats()" style="flex:1;border-radius:0;opacity:.6;">🎯 Amenazas</button>
+      </div>
+
+      <!-- History -->
+      <div class="side-section">
+        <div class="side-section-header" onclick="toggleSideSection('histSection')">
+          <span>📜 Historial</span>
+          <span class="arrow open" id="arrow-histSection">▼</span>
+        </div>
+        <div class="side-section-body open" id="body-histSection">
+          <div class="moves-list" id="chessMovesList"></div>
+          <div class="nav-btns">
+            <button onclick="chessNavFirst()" id="navFirst" title="Inicio">⏮</button>
+            <button onclick="chessNavBack()" id="navBack" title="Atrás">◀</button>
+            <button onclick="chessNavFwd()" id="navFwd" title="Adelante">▶</button>
+            <button onclick="chessNavLast()" id="navLast" title="Final">⏭</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Annotations bottom -->
+  <div class="bottom-panel">
+    <div style="display:flex;align-items:stretch;gap:0;">
+      <button class="bottom-toggle" onclick="toggleAnnotations()" style="flex:1;">
+        <span>📝 Anotaciones de la Partida</span>
+        <span class="arrow" id="annArrow">▼</span>
+      </button>
+      <button onclick="exportAnnotationsTxt()" title="Exportar anotaciones a TXT" style="padding:0 14px;border:none;background:var(--accent2);color:#000;cursor:pointer;font-size:.85rem;font-weight:600;font-family:'Outfit',sans-serif;transition:.2s;border-radius:0;flex-shrink:0;" onmouseover="this.style.background='#d68f1a'" onmouseout="this.style.background='var(--accent2)'">📥 TXT</button>
+    </div>
+    <div class="bottom-body" id="annBody">
+      <div class="annotation-col"><h4>♔ Blancas</h4><div class="ann-list" id="annWhite"></div></div>
+      <div class="annotation-col"><h4>♚ Negras</h4><div class="ann-list" id="annBlack"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== TAB 1: BIG CLOCK ========== -->
+<div class="tab-content" id="tab1">
+  <div class="big-clock-wrapper">
+    <div class="big-clock-player player-black" id="bigClockBlack" onclick="bigClockTap('b')">
+      <span class="player-label">♚ Negras</span>
+      <span class="big-time" id="bigTimeBlack">10:00</span>
+      <input class="big-time-input" id="bigTimeBlackInput" style="display:none;" />
+      <div class="edit-row">
+        <button onclick="bigClockEdit(event,'b')">✎ Editar</button>
+      </div>
+    </div>
+
+    <div class="big-clock-middle">
+      <div class="status" id="bigClockStatus">Pausado · Clic en Blancas para empezar</div>
+      <div class="preset-row">
+        <button onclick="bigClockSetBoth(60000)">1 min</button>
+        <button onclick="bigClockSetBoth(180000)">3 min</button>
+        <button onclick="bigClockSetBoth(300000)">5 min</button>
+        <button onclick="bigClockSetBoth(600000)">10 min</button>
+        <button onclick="bigClockSetBoth(900000)">15 min</button>
+        <button onclick="bigClockSetBoth(1800000)">30 min</button>
+      </div>
+      <div class="control-row">
+        <button class="pause-btn" onclick="bigClockTogglePause()" id="bigClockPauseBtn">⏸ Pausar</button>
+        <button class="reset-btn" onclick="bigClockReset()">↺ Reset</button>
+      </div>
+    </div>
+
+    <div class="big-clock-player player-white is-active" id="bigClockWhite" onclick="bigClockTap('w')">
+      <div class="edit-row">
+        <button onclick="bigClockEdit(event,'w')">✎ Editar</button>
+      </div>
+      <span class="big-time" id="bigTimeWhite">10:00</span>
+      <input class="big-time-input" id="bigTimeWhiteInput" style="display:none;" />
+      <span class="player-label">♔ Blancas</span>
+    </div>
+  </div>
+</div>
+
+<!-- ========== TAB 2: CHECKERS ========== -->
+<div class="tab-content" id="tab2">
+  <div class="turn-indicator white-turn" id="checkersTurn">Turno: Blancas</div>
+  <div class="game-over-banner" id="checkersGameOver"></div>
+  <div class="chess-layout">
+    <div class="board-column">
+      <div class="board-section">
+        <div class="board-labels-left" id="checkersLabelsLeft"></div>
+        <div class="board" id="checkersBoard"></div>
+        <div class="board-labels-bottom" id="checkersLabelsBottom"></div>
+      </div>
+    </div>
+    <div class="side-panel">
+      <button class="side-action-btn" onclick="initCheckers()">↺ Reiniciar damas</button>
+      <button class="side-action-btn" id="btnThreatsCheckers" onclick="toggleThreats()" style="opacity:.6;">🎯 Mostrar amenazas</button>
+      <div class="side-section">
+        <div class="side-section-header" onclick="toggleSideSection('ckCapSection')">
+          <span>Capturas</span>
+          <span class="arrow open" id="arrow-ckCapSection">▼</span>
+        </div>
+        <div class="side-section-body open" id="body-ckCapSection">
+          <div style="display:flex;flex-direction:column;gap:6px;">
+            <div class="cap-bar"><span class="label">♔ Blancas:</span><span class="pieces" id="ckCapWhite"></span></div>
+            <div class="cap-bar"><span class="label">♚ Negras:</span><span class="pieces" id="ckCapBlack"></span></div>
+          </div>
+        </div>
+      </div>
+      <div class="side-section">
+        <div class="side-section-header" onclick="toggleSideSection('ckHistSection')">
+          <span>📜 Historial</span>
+          <span class="arrow open" id="arrow-ckHistSection">▼</span>
+        </div>
+        <div class="side-section-body open" id="body-ckHistSection">
+          <div class="moves-list" id="checkersMovesList"></div>
+          <div class="nav-btns">
+            <button onclick="ckNavFirst()">⏮</button>
+            <button onclick="ckNavBack()">◀</button>
+            <button onclick="ckNavFwd()">▶</button>
+            <button onclick="ckNavLast()">⏭</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== TAB 3: PERSONALIZADO ========== -->
+<div class="tab-content" id="tab3">
+  <div class="custom-controls">
+    <label for="customPieceSelect">Pieza:</label>
+    <select id="customPieceSelect" onchange="customSelectPiece()">
+      <option value="">— Selecciona —</option>
+      <optgroup label="Ajedrez Blancas">
+        <option value="P">♙ Peón Blanco</option>
+        <option value="R">♖ Torre Blanca</option>
+        <option value="N">♘ Caballo Blanco</option>
+        <option value="B">♗ Alfil Blanco</option>
+        <option value="Q">♕ Reina Blanca</option>
+        <option value="K">♔ Rey Blanco</option>
+      </optgroup>
+      <optgroup label="Ajedrez Negras">
+        <option value="p">♟ Peón Negro</option>
+        <option value="r">♜ Torre Negra</option>
+        <option value="n">♞ Caballo Negro</option>
+        <option value="b">♝ Alfil Negro</option>
+        <option value="q">♛ Reina Negra</option>
+        <option value="k">♚ Rey Negro</option>
+      </optgroup>
+      <optgroup label="Damas">
+        <option value="wd">● Ficha Damas Blanca</option>
+        <option value="bd">● Ficha Damas Negra</option>
+        <option value="wdk">◎ Rey Damas Blanco</option>
+        <option value="bdk">◎ Rey Damas Negro</option>
+      </optgroup>
+      <option value="erase">🗑 Borrar casilla</option>
+    </select>
+    <button class="btn-play" id="customBtnPlay" onclick="customStartGame()">▶ Jugar</button>
+    <button class="btn-edit" id="customBtnEdit" onclick="customEditMode()">✎ Editar</button>
+    <button class="btn-clear" onclick="customClearBoard()">🗑 Limpiar</button>
+    <button class="btn-undo" onclick="customUndo()">↶ Deshacer</button>
+  </div>
+  <div class="chess-layout">
+    <div class="board-column">
+      <div class="board-section">
+        <div class="board-labels-left" id="customLabelsLeft"></div>
+        <div class="board" id="customBoard"></div>
+        <div class="board-labels-bottom" id="customLabelsBottom"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- THEME MODAL -->
+<div class="theme-overlay" id="themeOverlay">
+  <div class="theme-modal">
+    <h3>
+      🎨 Diseño del tablero
+      <button class="close-btn" onclick="closeThemeModal()">×</button>
+    </h3>
+
+    <div class="theme-section">
+      <div class="theme-section-title">Color del tablero</div>
+      <div class="theme-grid" id="themeBoardGrid">
+        <div class="theme-option" data-board="green" onclick="setBoardTheme('green')">
+          <div class="swatch"><div style="background:#eaddc7"></div><div style="background:#6b8e4e"></div></div>
+          <div class="label">Verde</div>
+        </div>
+        <div class="theme-option" data-board="wood" onclick="setBoardTheme('wood')">
+          <div class="swatch"><div style="background:#f0d9b5"></div><div style="background:#b58863"></div></div>
+          <div class="label">Madera</div>
+        </div>
+        <div class="theme-option" data-board="blue" onclick="setBoardTheme('blue')">
+          <div class="swatch"><div style="background:#dee3e6"></div><div style="background:#788a94"></div></div>
+          <div class="label">Azul</div>
+        </div>
+        <div class="theme-option" data-board="gray" onclick="setBoardTheme('gray')">
+          <div class="swatch"><div style="background:#d8d8d8"></div><div style="background:#6e6e6e"></div></div>
+          <div class="label">Gris</div>
+        </div>
+        <div class="theme-option" data-board="coral" onclick="setBoardTheme('coral')">
+          <div class="swatch"><div style="background:#fce4dc"></div><div style="background:#d77a5d"></div></div>
+          <div class="label">Coral</div>
+        </div>
+        <div class="theme-option" data-board="purple" onclick="setBoardTheme('purple')">
+          <div class="swatch"><div style="background:#e6dff0"></div><div style="background:#7a5a9a"></div></div>
+          <div class="label">Púrpura</div>
+        </div>
+        <div class="theme-option" data-board="mint" onclick="setBoardTheme('mint')">
+          <div class="swatch"><div style="background:#d8f0e8"></div><div style="background:#4a9e7a"></div></div>
+          <div class="label">Menta</div>
+        </div>
+        <div class="theme-option" data-board="night" onclick="setBoardTheme('night')">
+          <div class="swatch"><div style="background:#c8c8d8"></div><div style="background:#2a2a4a"></div></div>
+          <div class="label">Noche</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="theme-section">
+      <div class="theme-section-title">Color de fondo</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
+        <div class="color-option" data-bg="dark" style="background:linear-gradient(135deg,#1a1a2e,#16213e);border-radius:50%;width:32px;height:32px;flex-shrink:0;" onclick="setAppBg('dark')" title="Oscuro"></div>
+        <div class="color-option" data-bg="darker" style="background:linear-gradient(135deg,#0a0a0f,#0d1020);border-radius:50%;width:32px;height:32px;flex-shrink:0;" onclick="setAppBg('darker')" title="Muy oscuro"></div>
+        <div class="color-option" data-bg="slate" style="background:linear-gradient(135deg,#1e293b,#0f172a);border-radius:50%;width:32px;height:32px;flex-shrink:0;" onclick="setAppBg('slate')" title="Pizarra"></div>
+        <div class="color-option" data-bg="forest" style="background:linear-gradient(135deg,#1a2e1a,#0f2010);border-radius:50%;width:32px;height:32px;flex-shrink:0;" onclick="setAppBg('forest')" title="Bosque"></div>
+        <div class="color-option" data-bg="wine" style="background:linear-gradient(135deg,#2e1a1a,#200f0f);border-radius:50%;width:32px;height:32px;flex-shrink:0;" onclick="setAppBg('wine')" title="Vino"></div>
+        <div class="color-option" data-bg="ocean" style="background:linear-gradient(135deg,#0d2137,#071525);border-radius:50%;width:32px;height:32px;flex-shrink:0;" onclick="setAppBg('ocean')" title="Océano"></div>
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:.78rem;color:var(--text2);">
+          <div id="bgColorPreview" style="width:32px;height:32px;border-radius:50%;border:3px solid rgba(255,255,255,0.2);cursor:pointer;background:#1a1a2e;flex-shrink:0;position:relative;">
+            <input type="color" id="bgColorPicker" value="#1a1a2e" oninput="setAppBgCustom(this.value); document.getElementById('bgColorPreview').style.background=this.value;"
+              style="position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;border:none;padding:0;margin:0;">
+          </div>
+          Personalizado
+        </label>
+      </div>
+    </div>
+
+    <div class="theme-section">
+      <div class="theme-section-title">Estilo de piezas</div>
+      <div class="theme-grid" id="themePiecesGrid">
+        <div class="theme-option" data-pieces="classic" onclick="setPiecesTheme('classic')">
+          <div class="preview-piece" id="preview-classic">♛</div>
+          <div class="label">Clásico</div>
+        </div>
+        <div class="theme-option" data-pieces="outline" onclick="setPiecesTheme('outline')">
+          <div class="preview-piece" id="preview-outline">♛</div>
+          <div class="label">Outline</div>
+        </div>
+        <div class="theme-option" data-pieces="minimal" onclick="setPiecesTheme('minimal')">
+          <div class="preview-piece" id="preview-minimal">♛</div>
+          <div class="label">Minimal</div>
+        </div>
+        <div class="theme-option" data-pieces="bold" onclick="setPiecesTheme('bold')">
+          <div class="preview-piece" id="preview-bold">♛</div>
+          <div class="label">Bold</div>
+        </div>
+        <div class="theme-option" data-pieces="neon" onclick="setPiecesTheme('neon')">
+          <div class="preview-piece" id="preview-neon">♛</div>
+          <div class="label">Neon</div>
+        </div>
+        <div class="theme-option" data-pieces="flat" onclick="setPiecesTheme('flat')">
+          <div class="preview-piece" id="preview-flat">♛</div>
+          <div class="label">Flat</div>
+        </div>
+        <div class="theme-option" data-pieces="3d" onclick="setPiecesTheme('3d')">
+          <div class="preview-piece" id="preview-3d">♛</div>
+          <div class="label">3D</div>
+        </div>
+        <div class="theme-option" data-pieces="pixel" onclick="setPiecesTheme('pixel')">
+          <div class="preview-piece" id="preview-pixel">♛</div>
+          <div class="label">Pixel</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="theme-section">
+      <div class="theme-section-title">Color piezas Blancas</div>
+      <div class="color-grid" id="themeColorWhiteGrid">
+        <div class="color-option" data-color="#ffffff" style="background:#ffffff" onclick="setColorWhite('#ffffff')" title="Blanco"></div>
+        <div class="color-option" data-color="#f5d76e" style="background:#f5d76e" onclick="setColorWhite('#f5d76e')" title="Dorado"></div>
+        <div class="color-option" data-color="#e74c3c" style="background:#e74c3c" onclick="setColorWhite('#e74c3c')" title="Rojo"></div>
+        <div class="color-option" data-color="#3498db" style="background:#3498db" onclick="setColorWhite('#3498db')" title="Azul"></div>
+        <div class="color-option" data-color="#2ecc71" style="background:#2ecc71" onclick="setColorWhite('#2ecc71')" title="Verde"></div>
+        <div class="color-option" data-color="#e67e22" style="background:#e67e22" onclick="setColorWhite('#e67e22')" title="Naranja"></div>
+        <div class="color-option" id="customColorWhiteBtn" style="background:#ffffff;position:relative;overflow:hidden;" title="Color personalizado" onclick="document.getElementById('colorPickerWhite').click()">
+          <input type="color" id="colorPickerWhite" value="#ffffff"
+            oninput="setColorWhite(this.value); document.getElementById('customColorWhiteBtn').style.background=this.value;"
+            style="position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;border:none;padding:0;">
+        </div>
+      </div>
+    </div>
+
+    <div class="theme-section">
+      <div class="theme-section-title">Color piezas Negras</div>
+      <div class="color-grid" id="themeColorBlackGrid">
+        <div class="color-option" data-color="#000000" style="background:#000000" onclick="setColorBlack('#000000')" title="Negro"></div>
+        <div class="color-option" data-color="#5d3a1a" style="background:#5d3a1a" onclick="setColorBlack('#5d3a1a')" title="Marrón"></div>
+        <div class="color-option" data-color="#c0392b" style="background:#c0392b" onclick="setColorBlack('#c0392b')" title="Rojo oscuro"></div>
+        <div class="color-option" data-color="#2c3e50" style="background:#2c3e50" onclick="setColorBlack('#2c3e50')" title="Azul oscuro"></div>
+        <div class="color-option" data-color="#1e6b3a" style="background:#1e6b3a" onclick="setColorBlack('#1e6b3a')" title="Verde oscuro"></div>
+        <div class="color-option" data-color="#6a1b7e" style="background:#6a1b7e" onclick="setColorBlack('#6a1b7e')" title="Púrpura"></div>
+        <div class="color-option" id="customColorBlackBtn" style="background:#000000;position:relative;overflow:hidden;" title="Color personalizado" onclick="document.getElementById('colorPickerBlack').click()">
+          <input type="color" id="colorPickerBlack" value="#000000"
+            oninput="setColorBlack(this.value); document.getElementById('customColorBlackBtn').style.background=this.value;"
+            style="position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;border:none;padding:0;">
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PROMOTION MODAL -->
+<div class="promo-overlay" id="promoOverlay">
+  <div class="promo-box" id="promoBox"></div>
+</div>
+
+<!--__SAVE_INJECT_POINT__-->
+<script>
+// ===================== GLOBALS =====================
+function isPortraitMode() {
+  return window.innerHeight > window.innerWidth;
+}
+
+function applyCellSize() {
+  const vw = window.innerWidth, vh = window.innerHeight;
+  let raw;
+  if(isPortraitMode()) {
+    // Modo portrait (alto > ancho): tablero al ancho completo,
+    // dejando hueco vertical para relojes/capturas y el indicador de turno
+    document.body.classList.add('portrait-mode');
+    raw = Math.min(vw - 10, vh - 170);
+  } else {
+    // Modo landscape: el tablero se limita por la altura disponible
+    // o por el ancho menos el panel lateral, lo que sea menor.
+    document.body.classList.remove('portrait-mode');
+    // Medimos el cromo real (título + pestañas + turno + capturas), que es fijo en px,
+    // para que el tablero quepa entero a lo alto sin recortarse ni provocar scroll.
+    let above = 196, below = 96;
+    try {
+      window.scrollTo(0, 0);
+      const sec = document.querySelector('.tab-content.active .board-section');
+      if (sec) { const t = sec.getBoundingClientRect().top; if (t > 10 && t < vh) above = t; }
+      const capW = document.getElementById('capBarWhite');
+      const padB = parseFloat(getComputedStyle(document.body).paddingBottom) || 0;
+      below = (capW ? capW.offsetHeight : 34) + padB + 10;
+    } catch(e) {}
+    raw = Math.min(vw - 340, vh - above - below);
+  }
+  // Tablero cuadrado: se adapta a la pantalla completa (tablet vertical/horizontal).
+  // Tope alto solo para evitar tamaños absurdos en monitores grandes.
+  const boardPx = Math.max(Math.min(raw, 1100), 176);
+  const cell = Math.floor(boardPx / 8);
+  document.documentElement.style.setProperty('--cell', cell + 'px');
+  document.documentElement.style.setProperty('--board-size', (cell * 8) + 'px');
+}
+
+applyCellSize();
+
+window.addEventListener('resize', applyCellSize);
+window.addEventListener('orientationchange', () => { setTimeout(applyCellSize, 100); });
+
+// ===================== TABS =====================
+function switchTab(i) {
+  document.querySelectorAll('.tab-btn').forEach((b,j) => b.classList.toggle('active', j===i));
+  document.querySelectorAll('.tab-content').forEach((c,j) => c.classList.toggle('active', j===i));
+}
+
+// ===================== THREATS TOGGLE =====================
+let threatsEnabled = false;
+let checkHighlightEnabled = true;
+
+function toggleCheckHighlight(){
+  checkHighlightEnabled = !checkHighlightEnabled;
+  const btn = document.getElementById('btnCheckChess');
+  if(btn){
+    if(checkHighlightEnabled){
+      btn.style.background = 'var(--accent)';
+      btn.style.color = '#fff';
+      btn.style.opacity = '1';
+    } else {
+      btn.style.background = '';
+      btn.style.color = '';
+      btn.style.opacity = '.6';
+    }
+  }
+  renderChessBoard();
+}
+
+function toggleThreats(){
+  threatsEnabled = !threatsEnabled;
+  ['btnThreatsChess','btnThreatsCheckers'].forEach(id=>{
+    const btn = document.getElementById(id);
+    if(!btn) return;
+    if(threatsEnabled){
+      btn.style.background = 'var(--accent)';
+      btn.style.color = '#fff';
+      btn.style.opacity = '1';
+    } else {
+      btn.style.background = '';
+      btn.style.color = '';
+      btn.style.opacity = '.6';
+    }
+  });
+  renderChessBoard();
+  renderCheckersBoard();
+}
+
+function getActiveTab(){
+  const tabs = document.querySelectorAll('.tab-content');
+  for(let i=0; i<tabs.length; i++) if(tabs[i].classList.contains('active')) return i;
+  return 0;
+}
+
+// Side section toggle
+function toggleSideSection(id){
+  document.getElementById('body-'+id).classList.toggle('open');
+  document.getElementById('arrow-'+id).classList.toggle('open');
+}
+
+// ===================== PIECES =====================
+const P = { K:'♔',Q:'♕',R:'♖',B:'♗',N:'♘',P:'♙',k:'♔',q:'♕',r:'♖',b:'♗',n:'♘',p:'♙' };
+const PIECE_VAL = { P:1,N:3,B:3,R:5,Q:8,p:1,n:3,b:3,r:5,q:8,K:0,k:0 };
+const INIT_BOARD = [
+  ['r','n','b','q','k','b','n','r'],
+  ['p','p','p','p','p','p','p','p'],
+  [' ',' ',' ',' ',' ',' ',' ',' '],
+  [' ',' ',' ',' ',' ',' ',' ',' '],
+  [' ',' ',' ',' ',' ',' ',' ',' '],
+  [' ',' ',' ',' ',' ',' ',' ',' '],
+  ['P','P','P','P','P','P','P','P'],
+  ['R','N','B','Q','K','B','N','R']
+];
+
+let chess = {
+  board: [], turn:'w', selected:null, possibleMoves:[],
+  history:[], viewIndex:-1,
+  captured:{w:[],b:[]},
+  enPassant:null, castling:{K:true,Q:true,k:true,q:true},
+  kings:{w:[7,4],b:[0,4]},
+  gameOver:false, lastMove:null,
+  rotationMode:0
+};
+
+function initChess() {
+  chess.board = INIT_BOARD.map(r=>[...r]);
+  chess.turn='w'; chess.selected=null; chess.possibleMoves=[];
+  chess.history=[]; chess.viewIndex=-1;
+  chess.captured={w:[],b:[]}; chess.enPassant=null;
+  chess.castling={K:true,Q:true,k:true,q:true};
+  chess.kings={w:[7,4],b:[0,4]}; chess.gameOver=false; chess.lastMove=null;
+  chess.rotationMode = 0;
+  const colEl = document.getElementById('boardColumn');
+  colEl.classList.remove('rotate-mode-1','rotate-mode-2','rotate-mode-3');
+  document.getElementById('chessGameOver').classList.remove('visible');
+
+  // Reset clock: keep mode, reset times and state
+  chessClockStopInterval();
+  chessClock.started = false;
+  chessClock.turn = 'w';
+  const t = parseInt(document.getElementById('chessClockPreset').value);
+  chessClock.times = {w:t, b:t};
+  if(chessClock.mode === 'auto'){
+    const btn = document.getElementById('chessClockStartBtn');
+    if(btn){ btn.textContent = '▶ Comenzar'; btn.disabled = false; }
+  }
+  updateChessClockDisplay();
+
+  renderChessBoard();
+  updateChessUI();
+  updateChessClockDisplay();
+}
+
+function isWhite(p){return p>='A'&&p<='Z';}
+function isBlack(p){return p>='a'&&p<='z';}
+function colorOf(p){return isWhite(p)?'w':isBlack(p)?'b':null;}
+function colLabel(c){return String.fromCharCode(97+c);}
+function rowLabel(r){return String(8-r);}
+function sqName(r,c){return colLabel(c)+rowLabel(r);}
+
+// ===================== MOVE GENERATION =====================
+function inBounds(r,c){return r>=0&&r<8&&c>=0&&c<8;}
+
+function pseudoMoves(board,r,c,enP,castl) {
+  const p=board[r][c]; if(p===' ')return [];
+  const col=colorOf(p); const moves=[];
+  const add=(tr,tc,flag)=>{if(inBounds(tr,tc))moves.push({r:tr,c:tc,flag:flag||''});};
+  const enemy=(tr,tc)=>inBounds(tr,tc)&&board[tr][tc]!==' '&&colorOf(board[tr][tc])!==col;
+  const empty=(tr,tc)=>inBounds(tr,tc)&&board[tr][tc]===' ';
+  const up=col==='w'?-1:1;
+  const pt=p.toUpperCase();
+
+  if(pt==='P'){
+    if(empty(r+up,c)){
+      add(r+up,c);
+      if((col==='w'&&r===6)||(col==='b'&&r===1))if(empty(r+2*up,c))add(r+2*up,c,'double');
+    }
+    [-1,1].forEach(dc=>{
+      if(enemy(r+up,c+dc))add(r+up,c+dc,'capture');
+      if(enP&&enP[0]===r+up&&enP[1]===c+dc)add(r+up,c+dc,'ep');
+    });
+  }
+  if(pt==='N'){
+    [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]].forEach(([dr,dc])=>{
+      if(inBounds(r+dr,c+dc)&&colorOf(board[r+dr][c+dc])!==col)add(r+dr,c+dc);
+    });
+  }
+  if(pt==='B'||pt==='Q'){
+    [[-1,-1],[-1,1],[1,-1],[1,1]].forEach(([dr,dc])=>{
+      for(let i=1;i<8;i++){
+        const tr=r+dr*i,tc=c+dc*i;
+        if(!inBounds(tr,tc))break;
+        if(board[tr][tc]===' '){add(tr,tc);}
+        else{if(colorOf(board[tr][tc])!==col)add(tr,tc);break;}
+      }
+    });
+  }
+  if(pt==='R'||pt==='Q'){
+    [[-1,0],[1,0],[0,-1],[0,1]].forEach(([dr,dc])=>{
+      for(let i=1;i<8;i++){
+        const tr=r+dr*i,tc=c+dc*i;
+        if(!inBounds(tr,tc))break;
+        if(board[tr][tc]===' '){add(tr,tc);}
+        else{if(colorOf(board[tr][tc])!==col)add(tr,tc);break;}
+      }
+    });
+  }
+  if(pt==='K'){
+    [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]].forEach(([dr,dc])=>{
+      if(inBounds(r+dr,c+dc)&&colorOf(board[r+dr][c+dc])!==col)add(r+dr,c+dc);
+    });
+    if(castl){
+      if(col==='w'&&r===7&&c===4){
+        if(castl.K&&board[7][5]===' '&&board[7][6]===' '&&board[7][7]==='R')add(7,6,'castle-k');
+        if(castl.Q&&board[7][3]===' '&&board[7][2]===' '&&board[7][1]===' '&&board[7][0]==='R')add(7,2,'castle-q');
+      }
+      if(col==='b'&&r===0&&c===4){
+        if(castl.k&&board[0][5]===' '&&board[0][6]===' '&&board[0][7]==='r')add(0,6,'castle-k');
+        if(castl.q&&board[0][3]===' '&&board[0][2]===' '&&board[0][1]===' '&&board[0][0]==='r')add(0,2,'castle-q');
+      }
+    }
+  }
+  return moves;
+}
+
+function isSquareAttacked(board,r,c,byColor) {
+  for(let i=0;i<8;i++)for(let j=0;j<8;j++){
+    if(colorOf(board[i][j])===byColor){
+      const mvs=pseudoMoves(board,i,j,null,null);
+      if(mvs.some(m=>m.r===r&&m.c===c))return true;
+    }
+  }
+  return false;
+}
+
+function isInCheck(board,col) {
+  for(let i=0;i<8;i++)for(let j=0;j<8;j++){
+    if(board[i][j]===(col==='w'?'K':'k'))return isSquareAttacked(board,i,j,col==='w'?'b':'w');
+  }
+  return false;
+}
+
+function legalMoves(board,r,c,enP,castl) {
+  const p=board[r][c]; const col=colorOf(p);
+  let moves=pseudoMoves(board,r,c,enP,castl);
+  return moves.filter(m => {
+    if(m.flag==='castle-k'||m.flag==='castle-q'){
+      if(isInCheck(board,col))return false;
+      const dir=m.flag==='castle-k'?1:-1;
+      if(isSquareAttacked(board,r,c+dir,col==='w'?'b':'w'))return false;
+    }
+    const nb=board.map(x=>[...x]);
+    nb[m.r][m.c]=nb[r][c]; nb[r][c]=' ';
+    if(m.flag==='ep'){nb[r][m.c]=' ';}
+    if(m.flag==='castle-k'){nb[r][5]=nb[r][7];nb[r][7]=' ';}
+    if(m.flag==='castle-q'){nb[r][3]=nb[r][0];nb[r][0]=' ';}
+    return !isInCheck(nb,col);
+  });
+}
+
+function hasAnyLegalMove(board,col,enP,castl){
+  for(let i=0;i<8;i++)for(let j=0;j<8;j++){
+    if(colorOf(board[i][j])===col&&legalMoves(board,i,j,enP,castl).length>0)return true;
+  }
+  return false;
+}
+
+// ===================== EXECUTE MOVE =====================
+let pendingPromo = null;
+
+function executeChessMove(fr,fc,tr,tc,flag,promoChoice) {
+  if(chess.viewIndex < chess.history.length-1){
+    chess.history = chess.history.slice(0, chess.viewIndex+1);
+  }
+
+  const b=chess.board; const piece=b[fr][fc]; const col=colorOf(piece);
+  const captured=b[tr][tc]; const pt=piece.toUpperCase();
+  let notation = '';
+  let moveData = {fr,fc,tr,tc,piece,captured,flag,
+    prevEnP:chess.enPassant?[...chess.enPassant]:null,
+    prevCastling:{...chess.castling},
+    promo:null};
+
+  if(flag==='castle-k')notation='O-O';
+  else if(flag==='castle-q')notation='O-O-O';
+  else {
+    if(pt!=='P'){
+      notation+=pt;
+      // Disambiguation: if another same-type piece can also reach (tr,tc), add file/rank of origin
+      let sameFile=false, sameRank=false, needsDisambig=false;
+      for(let i=0;i<8;i++)for(let j=0;j<8;j++){
+        if(i===fr&&j===fc)continue;
+        if(b[i][j]===piece){
+          const otherMoves = legalMoves(b,i,j,chess.enPassant,chess.castling);
+          if(otherMoves.some(m=>m.r===tr&&m.c===tc)){
+            needsDisambig=true;
+            if(j===fc)sameFile=true;
+            if(i===fr)sameRank=true;
+          }
+        }
+      }
+      if(needsDisambig){
+        if(!sameFile)notation+=colLabel(fc);
+        else if(!sameRank)notation+=rowLabel(fr);
+        else notation+=colLabel(fc)+rowLabel(fr);
+      }
+    }
+    if(captured!==' '||flag==='ep'){if(pt==='P')notation+=colLabel(fc);notation+='x';}
+    notation+=sqName(tr,tc);
+  }
+
+  b[tr][tc]=piece; b[fr][fc]=' ';
+
+  if(flag==='ep'){
+    moveData.epCaptured = b[fr][tc];
+    b[fr][tc] = ' ';
+  }
+  if(flag==='castle-k'){b[fr][5]=b[fr][7];b[fr][7]=' ';}
+  if(flag==='castle-q'){b[fr][3]=b[fr][0];b[fr][0]=' ';}
+
+  chess.enPassant = null;
+  if(flag==='double'){chess.enPassant=[fr+ (col==='w'?-1:1),fc];}
+
+  if(pt==='K'){if(col==='w'){chess.castling.K=false;chess.castling.Q=false;}else{chess.castling.k=false;chess.castling.q=false;}}
+  if(pt==='R'){
+    if(col==='w'){if(fr===7&&fc===7)chess.castling.K=false;if(fr===7&&fc===0)chess.castling.Q=false;}
+    else{if(fr===0&&fc===7)chess.castling.k=false;if(fr===0&&fc===0)chess.castling.q=false;}
+  }
+  if(tr===0&&tc===7)chess.castling.k=false;
+  if(tr===0&&tc===0)chess.castling.q=false;
+  if(tr===7&&tc===7)chess.castling.K=false;
+  if(tr===7&&tc===0)chess.castling.Q=false;
+
+  if(pt==='K'){chess.kings[col]=[tr,tc];}
+
+  const cap = (flag==='ep') ? moveData.epCaptured : captured;
+  if(cap && cap!==' '){chess.captured[col].push(cap);}
+  moveData.capturedPiece = cap;
+
+  if(pt==='P'&&(tr===0||tr===7)){
+    if(promoChoice){
+      const pp = col==='w'?promoChoice.toUpperCase():promoChoice.toLowerCase();
+      b[tr][tc]=pp; moveData.promo=pp;
+      notation+='='+promoChoice.toUpperCase();
+    } else {
+      b[fr][fc]=piece; b[tr][tc]=captured;
+      if(flag==='ep'){b[fr][tc]=moveData.epCaptured;}
+      if(cap && cap!==' ')chess.captured[col].pop();
+      chess.enPassant = moveData.prevEnP;
+      chess.castling = moveData.prevCastling;
+      pendingPromo = {fr,fc,tr,tc,flag};
+      showPromoModal(col);
+      return;
+    }
+  }
+
+  const opp = col==='w'?'b':'w';
+  const inCk = isInCheck(b,opp);
+  const hasMove = hasAnyLegalMove(b,opp,chess.enPassant,chess.castling);
+  if(!hasMove){
+    if(inCk){notation+='#';chess.gameOver=true;moveData.result=col==='w'?'1-0':'0-1';}
+    else{notation+='½';chess.gameOver=true;moveData.result='½-½';}
+  } else if(inCk){notation+='+';}
+
+  moveData.notation=notation;
+  chess.lastMove=[fr,fc,tr,tc];
+
+  chess.history.push(moveData);
+  chess.viewIndex = chess.history.length-1;
+
+  chess.turn = opp;
+  chess.selected=null; chess.possibleMoves=[];
+
+  // Auto mode: switch clock automatically after each move
+  if(chessClock.mode === 'auto' && chessClock.started){
+    chessClockAutoSwitch(col);
+  }
+
+  renderChessBoard(); updateChessUI();
+}
+
+function showPromoModal(col){
+  const box=document.getElementById('promoBox');
+  const pieces=col==='w'?['Q','R','B','N']:['q','r','b','n'];
+  box.innerHTML='';
+  pieces.forEach(pc=>{
+    const btn=document.createElement('div');
+    btn.className='promo-choice';
+    btn.style.cursor='pointer';
+    const sp=document.createElement('span');
+    sp.className='piece '+(col==='w'?'white':'black');
+    sp.style.pointerEvents='none';
+    sp.textContent=P[pc];
+    btn.appendChild(sp);
+    btn.onclick=()=>{
+      document.getElementById('promoOverlay').classList.remove('visible');
+      const pp=pendingPromo;pendingPromo=null;
+      executeChessMove(pp.fr,pp.fc,pp.tr,pp.tc,pp.flag,pc.toUpperCase());
+    };
+    box.appendChild(btn);
+  });
+  document.getElementById('promoOverlay').classList.add('visible');
+}
+
+// ===================== CHESS CLICK =====================
+function chessClick(r,c) {
+  if(chess.gameOver)return;
+  const b=chess.board; const p=b[r][c];
+
+  if(chess.selected){
+    const [sr,sc]=chess.selected;
+    if(colorOf(p)===chess.turn){
+      // Reselect own piece - also clear lastMove since we're starting our move
+      chess.lastMove = null;
+      chess.selected=[r,c];
+      chess.possibleMoves=legalMoves(b,r,c,chess.enPassant,chess.castling);
+      renderChessBoard();return;
+    }
+    const mv=chess.possibleMoves.find(m=>m.r===r&&m.c===c);
+    if(mv){executeChessMove(sr,sc,r,c,mv.flag);return;}
+    chess.selected=null;chess.possibleMoves=[];renderChessBoard();return;
+  }
+
+  if(p!==' '&&colorOf(p)===chess.turn){
+    // Selecting own piece - clear the previous move highlight (opponent's last move)
+    chess.lastMove = null;
+    chess.selected=[r,c];
+    chess.possibleMoves=legalMoves(b,r,c,chess.enPassant,chess.castling);
+    renderChessBoard();
+  }
+}
+
+// ===================== NAVIGATION =====================
+function chessNavFirst(){chess.viewIndex=-1;rebuildChessFromHistory();renderChessBoard();updateChessUI();}
+function chessNavBack(){if(chess.viewIndex>=0){chess.viewIndex--;rebuildChessFromHistory();renderChessBoard();updateChessUI();}}
+function chessNavFwd(){if(chess.viewIndex<chess.history.length-1){chess.viewIndex++;rebuildChessFromHistory();renderChessBoard();updateChessUI();}}
+function chessNavLast(){chess.viewIndex=chess.history.length-1;rebuildChessFromHistory();renderChessBoard();updateChessUI();}
+function chessNavTo(idx){chess.viewIndex=idx;rebuildChessFromHistory();renderChessBoard();updateChessUI();}
+
+function rebuildChessFromHistory(){
+  chess.board=INIT_BOARD.map(r=>[...r]);
+  chess.castling={K:true,Q:true,k:true,q:true};
+  chess.enPassant=null;chess.kings={w:[7,4],b:[0,4]};
+  chess.captured={w:[],b:[]};chess.lastMove=null;chess.gameOver=false;
+  for(let i=0;i<=chess.viewIndex;i++){
+    replayMove(chess.history[i]);
+  }
+  chess.turn = ((chess.viewIndex+1) % 2 === 0) ? 'w' : 'b';
+  chess.selected=null;chess.possibleMoves=[];
+  if(chess.history.length>0 && chess.viewIndex === chess.history.length-1){
+    const inCk = isInCheck(chess.board,chess.turn);
+    const hasMove = hasAnyLegalMove(chess.board,chess.turn,chess.enPassant,chess.castling);
+    if(!hasMove)chess.gameOver=true;
+  }
+}
+
+function replayMove(m){
+  const b=chess.board;
+  const piece=m.piece; const col=colorOf(piece);
+  b[m.tr][m.tc]=piece; b[m.fr][m.fc]=' ';
+  if(m.flag==='ep'){b[m.fr][m.tc]=' ';}
+  if(m.flag==='castle-k'){b[m.fr][5]=b[m.fr][7];b[m.fr][7]=' ';}
+  if(m.flag==='castle-q'){b[m.fr][3]=b[m.fr][0];b[m.fr][0]=' ';}
+  if(m.flag==='double'){chess.enPassant=[m.fr+(col==='w'?-1:1),m.fc];}else{chess.enPassant=null;}
+  if(m.promo)b[m.tr][m.tc]=m.promo;
+  const pt=piece.toUpperCase();
+  if(pt==='K'){if(col==='w'){chess.castling.K=false;chess.castling.Q=false;}else{chess.castling.k=false;chess.castling.q=false;}}
+  if(pt==='R'){if(col==='w'){if(m.fr===7&&m.fc===7)chess.castling.K=false;if(m.fr===7&&m.fc===0)chess.castling.Q=false;}else{if(m.fr===0&&m.fc===7)chess.castling.k=false;if(m.fr===0&&m.fc===0)chess.castling.q=false;}}
+  if(m.tr===0&&m.tc===7)chess.castling.k=false;
+  if(m.tr===0&&m.tc===0)chess.castling.q=false;
+  if(m.tr===7&&m.tc===7)chess.castling.K=false;
+  if(m.tr===7&&m.tc===0)chess.castling.Q=false;
+  if(pt==='K')chess.kings[col]=[m.tr,m.tc];
+  if(m.capturedPiece&&m.capturedPiece!==' ')chess.captured[col].push(m.capturedPiece);
+  chess.lastMove=[m.fr,m.fc,m.tr,m.tc];
+}
+
+// ===================== ROTATION (4 modes) =====================
+function rotateChessBoard(){
+  chess.rotationMode = (chess.rotationMode + 1) % 4;
+  applyRotationMode();
+  renderChessBoard();
+  updateChessUI();
+}
+
+function applyRotationMode(){
+  const mode = chess.rotationMode;
+  const col = document.getElementById('boardColumn');
+  col.classList.remove('rotate-mode-1','rotate-mode-2','rotate-mode-3');
+  if(mode > 0) col.classList.add('rotate-mode-'+mode);
+
+  const clockBlack = document.getElementById('chessClockBlackRow');
+  const capBlack   = document.getElementById('capBarBlack');
+  const boardSec   = document.getElementById('chessBoardSection');
+  const capWhite   = document.getElementById('capBarWhite');
+  const clockWhite = document.getElementById('chessClockWhiteRow');
+
+  // Detach all 5 elements safely
+  [clockBlack, capBlack, boardSec, capWhite, clockWhite].forEach(el => {
+    if(el && el.parentNode) el.parentNode.removeChild(el);
+  });
+
+  // All modes: Black top, White bottom (same as mode 0)
+  col.appendChild(clockBlack);
+  col.appendChild(capBlack);
+  col.appendChild(boardSec);
+  col.appendChild(capWhite);
+  col.appendChild(clockWhite);
+}
+
+// ===================== RENDER =====================
+function renderChessBoard(){
+  const bd=document.getElementById('chessBoard');
+  bd.innerHTML='';
+  const mode = chess.rotationMode;
+
+  // boardFlipped: board cells rendered in reversed order (modes 1 and 3)
+  const boardFlipped = (mode === 1 || mode === 3);
+
+  // whitePerspective: labels from white's point of view (8-1, a-h)
+  // White is physically at bottom in modes 0 and 3
+  // Black is physically at bottom in modes 1 and 2
+  const whitePerspective = (mode === 0 || mode === 2);
+
+  // Left labels (ranks): always rendered upright
+  // white perspective: 8 at top → 1 at bottom
+  // black perspective: 1 at top → 8 at bottom
+  const labL=document.getElementById('chessLabelsLeft');
+  labL.innerHTML='';
+  for(let r=0;r<8;r++){
+    const sp=document.createElement('span');
+    sp.textContent = whitePerspective ? (8-r) : (r+1);
+    labL.appendChild(sp);
+  }
+
+  // Bottom labels (files): always rendered left to right, upright
+  // white perspective: a→h left to right
+  // black perspective: h→a left to right
+  const files = whitePerspective ? 'abcdefgh' : 'hgfedcba';
+  const labB=document.getElementById('chessLabelsBottom');
+  labB.innerHTML='';
+  for(let c=0;c<8;c++){
+    const sp=document.createElement('span');
+    sp.textContent = files[c];
+    labB.appendChild(sp);
+  }
+
+  // Render board cells
+  // boardFlipped: iterate rows 7→0 and cols 7→0 (so h8 is top-left visually)
+  const rowOrder = boardFlipped ? [7,6,5,4,3,2,1,0] : [0,1,2,3,4,5,6,7];
+  const colOrder = boardFlipped ? [7,6,5,4,3,2,1,0] : [0,1,2,3,4,5,6,7];
+
+  // Pre-compute check state once (for king-in-check highlight)
+  const kingInCheck = checkHighlightEnabled && !chess.gameOver && !chess.selected && isInCheck(chess.board, chess.turn);
+  // Jaque mate: siempre resaltar el rey perdedor (independiente del toggle)
+  const kingMated = chess.gameOver && chess.history.length > 0 && chess.history[chess.history.length-1].result && chess.history[chess.history.length-1].result !== '½-½';
+
+  for(const r of rowOrder){
+    for(const c of colOrder){
+      const cell=document.createElement('div');
+      cell.className='cell '+((r+c)%2===0?'light':'dark');
+      // Etiquetas embebidas (visibles solo en móvil)
+      const rankLabel = whitePerspective ? (8-r) : (r+1);
+      const fileLabel = files[colOrder.indexOf(c)];
+      if(c === colOrder[0]) cell.dataset.rank = rankLabel;
+      if(r === rowOrder[7]) cell.dataset.file = fileLabel;
+      const p=chess.board[r][c];
+      if(p!==' '){
+        const sp=document.createElement('span');
+        sp.className='piece '+(isWhite(p)?'white':'black');
+        sp.textContent=P[p];
+        cell.appendChild(sp);
+      }
+      if(chess.selected&&chess.selected[0]===r&&chess.selected[1]===c)cell.classList.add('selected');
+      const moveOnSq = chess.possibleMoves.find(m=>m.r===r&&m.c===c);
+      if(moveOnSq){
+        cell.classList.add('possible');
+        if(chess.board[r][c]!==' ' || moveOnSq.flag==='ep' || moveOnSq.flag==='capture'){
+          cell.classList.add('capture-possible');
+        }
+      }
+      if(chess.lastMove && !chess.selected){
+        const[fr,fc,tr,tc]=chess.lastMove;
+        if((r===fr&&c===fc)||(r===tr&&c===tc))cell.classList.add('last-move');
+      }
+      // Jaque: resaltar celda del rey con fondo rojo (sin texto)
+      if(checkHighlightEnabled && kingInCheck){
+        const [kr,kc] = chess.kings[chess.turn];
+        if(r===kr && c===kc) cell.classList.add('king-in-check');
+      }
+      // Jaque mate: siempre parpadear el rey perdedor
+      if(kingMated){
+        const loser = chess.history[chess.history.length-1].result === '1-0' ? 'b' : 'w';
+        const [kr,kc] = chess.kings[loser];
+        if(r===kr && c===kc) cell.classList.add('king-checkmate');
+      }
+      // Amenazas: borde rojo solo en capturas de la pieza seleccionada, si el botón está activo
+      if(threatsEnabled && chess.selected && moveOnSq){
+        if(chess.board[r][c]!==' ' || moveOnSq.flag==='ep' || moveOnSq.flag==='capture'){
+          cell.classList.add('threatened');
+        }
+      }
+      cell.onclick=(()=>{const rr=r,cc=c;return()=>chessClick(rr,cc);})();
+      bd.appendChild(cell);
+    }
+  }
+}
+
+function updateChessUI(){
+  const ti=document.getElementById('chessTurn');
+  if(chess.gameOver){
+    const last=chess.history[chess.history.length-1];
+    const res=last?last.result:'';
+    let text='';
+    if(res==='½-½')text='Tablas (Ahogado)';
+    else if(res==='1-0')text='♔ Blancas ganan por Jaque Mate';
+    else if(res==='0-1')text='♚ Negras ganan por Jaque Mate';
+    else text='Partida terminada';
+    document.getElementById('chessGameOver').textContent=text;
+    document.getElementById('chessGameOver').classList.add('visible');
+    ti.textContent='Partida terminada';ti.className='turn-indicator';
+  } else {
+    document.getElementById('chessGameOver').classList.remove('visible');
+    ti.textContent='Turno: '+(chess.turn==='w'?'Blancas':'Negras');
+    ti.className='turn-indicator '+(chess.turn==='w'?'white-turn':'black-turn');
+  }
+
+  const renderCap=(arr,id,ptsId,colorClass)=>{
+    const el=document.getElementById(id);el.innerHTML='';
+    let pts=0;
+    arr.forEach(p=>{
+      const sp=document.createElement('span');
+      sp.className='cap-piece piece '+colorClass;
+      sp.textContent=P[p];el.appendChild(sp);
+      pts+=PIECE_VAL[p]||0;
+    });
+    if(ptsId)document.getElementById(ptsId).textContent=pts+'pts';
+  };
+  // capByWhite = pieces white captured (black pieces visible) → points for white
+  renderCap(chess.captured.w,'capByWhite','ptsWhite','black');
+  // capByBlack = pieces black captured (white pieces visible) → points for black
+  renderCap(chess.captured.b,'capByBlack','ptsBlack','white');
+
+  const ml=document.getElementById('chessMovesList');
+  const totalRows = Math.ceil(chess.history.length / 2);
+  // Determinar la "fila ancla" según viewIndex
+  // Si viewIndex >= 0, la fila a centrar es la que contiene el viewIndex
+  // Si viewIndex == -1 (inicial), mostramos las primeras 3
+  let anchorRow;
+  if(chess.viewIndex < 0){
+    anchorRow = 0;
+  } else {
+    anchorRow = Math.floor(chess.viewIndex / 2);
+  }
+  // Mostrar 3 filas terminando en anchorRow (inclusive), o desde 0 si no llegan
+  let endRow = Math.max(anchorRow + 1, 3);
+  if(endRow > totalRows) endRow = totalRows;
+  let startRow = Math.max(0, endRow - 3);
+  // Si anchorRow está muy cerca del final, asegurar mostrar las últimas 3
+  if(anchorRow >= totalRows - 1){
+    endRow = totalRows;
+    startRow = Math.max(0, totalRows - 3);
+  }
+
+  let html='<table><tr><th>#</th><th>♔</th><th>♚</th></tr>';
+  if(startRow > 0){
+    html += `<tr><td colspan="3" style="text-align:center;color:var(--text2);font-size:.7rem;opacity:.6;">(${startRow} jugada${startRow>1?'s':''} anterior${startRow>1?'es':''})</td></tr>`;
+  }
+  for(let row=startRow; row<endRow; row++){
+    const i = row*2;
+    const n = row+1;
+    const wm=chess.history[i]?chess.history[i].notation:'';
+    const bm=chess.history[i+1]?chess.history[i+1].notation:'';
+    const cls1=i===chess.viewIndex?'current-move':'';
+    const cls2=(i+1)===chess.viewIndex?'current-move':'';
+    const rowCls = (cls1||cls2);
+    html+=`<tr class="${rowCls}"><td>${n}.</td>`
+      + `<td onclick="chessNavTo(${i})">${wm}</td>`
+      + `<td onclick="chessNavTo(${i+1})">${bm}</td></tr>`;
+  }
+  if(endRow < totalRows){
+    const remain = totalRows - endRow;
+    html += `<tr><td colspan="3" style="text-align:center;color:var(--text2);font-size:.7rem;opacity:.6;">(${remain} jugada${remain>1?'s':''} posterior${remain>1?'es':''})</td></tr>`;
+  }
+  html+='</table>';ml.innerHTML=html;
+  ml.scrollTop=ml.scrollHeight;
+
+  const annW=document.getElementById('annWhite');
+  const annB=document.getElementById('annBlack');
+  let wMoves=[],bMoves=[];
+  chess.history.forEach((m,i)=>{
+    const n=Math.floor(i/2)+1;
+    if(i%2===0)wMoves.push(n+'. '+m.notation);
+    else bMoves.push(n+'... '+m.notation);
+  });
+  annW.textContent=wMoves.join('   ');
+  annB.textContent=bMoves.join('   ');
+
+  document.getElementById('navFirst').disabled=chess.viewIndex<0;
+  document.getElementById('navBack').disabled=chess.viewIndex<0;
+  document.getElementById('navFwd').disabled=chess.viewIndex>=chess.history.length-1;
+  document.getElementById('navLast').disabled=chess.viewIndex>=chess.history.length-1;
+}
+
+function toggleAnnotations(){
+  document.getElementById('annBody').classList.toggle('open');
+  document.getElementById('annArrow').classList.toggle('open');
+}
+
+// ===================== CHESS CLOCK =====================
+let chessClock = {
+  mode: 'off',   // 'off' | 'auto' | 'manual'
+  started: false,
+  running: false,
+  times: {w:600000, b:600000},
+  turn: 'w',
+  intervalId: null,
+  lastTick: 0
+};
+
+function chessClockPresetChange(){
+  const val = document.getElementById('chessClockPreset').value;
+  const customRow = document.getElementById('clockCustomRow');
+  if(val === 'custom'){
+    customRow.style.display = 'flex';
+  } else {
+    customRow.style.display = 'none';
+    chessClock.times = {w:parseInt(val), b:parseInt(val)};
+    updateChessClockDisplay();
+  }
+}
+
+function chessClockApplyPreset(){
+  const val = document.getElementById('chessClockPreset').value;
+  if(val === 'custom') return;
+  chessClock.times = {w:parseInt(val), b:parseInt(val)};
+  updateChessClockDisplay();
+}
+
+function chessClockApplyCustom(){
+  const val = document.getElementById('chessClockCustom').value;
+  const ms = parseTimeInput(val);
+  if(ms !== null){
+    chessClock.times = {w:ms, b:ms};
+    updateChessClockDisplay();
+  }
+}
+
+function chessClockSetMode(mode){
+  chessClockStopInterval();
+  chessClock.mode = mode;
+  chessClock.started = false;
+  chessClock.turn = 'w';
+  const blackRow   = document.getElementById('chessClockBlackRow');
+  const whiteRow   = document.getElementById('chessClockWhiteRow');
+  const autoCtrl   = document.getElementById('clockAutoControls');
+  const manualCtrl = document.getElementById('clockManualControls');
+  ['off','auto','manual'].forEach(m => {
+    document.getElementById('btnMode'+m.charAt(0).toUpperCase()+m.slice(1))
+      .classList.toggle('active', m === mode);
+  });
+  if(mode === 'off'){
+    blackRow.classList.add('hidden');
+    whiteRow.classList.add('hidden');
+    autoCtrl.style.display   = 'none';
+    manualCtrl.style.display = 'none';
+  } else {
+    blackRow.classList.remove('hidden');
+    whiteRow.classList.remove('hidden');
+    autoCtrl.style.display   = mode === 'auto'   ? 'block' : 'none';
+    manualCtrl.style.display = mode === 'manual' ? 'block' : 'none';
+  }
+  // Actualizar el subtexto del label según el modo
+  const lblB = blackRow.querySelector('.player-label small');
+  const lblW = whiteRow.querySelector('.player-label small');
+  if(mode === 'auto'){
+    if(lblB) lblB.textContent = 'Automático';
+    if(lblW) lblW.textContent = 'Clic = iniciar tiempo';
+  } else if(mode === 'manual'){
+    if(lblB) lblB.textContent = 'clic = mi turno acabó';
+    if(lblW) lblW.textContent = 'clic = mi turno acabó';
+  } else {
+    if(lblB) lblB.textContent = '';
+    if(lblW) lblW.textContent = '';
+  }
+  const startBtn = document.getElementById('chessClockStartBtn');
+  if(startBtn){ startBtn.textContent = '▶ Comenzar'; startBtn.disabled = false; }
+  const pauseBtn = document.getElementById('chessClockManualPauseBtn');
+  if(pauseBtn){ pauseBtn.textContent = '⏸ Pausar'; pauseBtn.disabled = true; }
+  updateChessClockDisplay();
+}
+
+// AUTO: Comenzar / Pausar / Reanudar
+function chessClockAutoToggle(){
+  const btn = document.getElementById('chessClockStartBtn');
+  if(!chessClock.started){
+    chessClock.started = true;
+    chessClock.turn = 'w';
+    chessClockStartInterval();
+    btn.textContent = '⏸ Pausar';
+    // Una vez iniciado, ya no necesitamos el sublabel
+    const lblW = document.querySelector('#chessClockWhiteRow .player-label small');
+    if(lblW) lblW.textContent = 'Automático';
+  } else if(chessClock.running){
+    chessClock.running = false;
+    btn.textContent = '▶ Reanudar';
+  } else {
+    chessClock.running = true;
+    chessClock.lastTick = Date.now();
+    btn.textContent = '⏸ Pausar';
+  }
+  updateChessClockDisplay();
+}
+
+// Called after each move in auto mode
+function chessClockAutoSwitch(movedSide){
+  if(chessClock.mode !== 'auto' || !chessClock.started || !chessClock.running) return;
+  chessClock.turn = movedSide === 'w' ? 'b' : 'w';
+  chessClock.lastTick = Date.now();
+  updateChessClockDisplay();
+}
+
+// MANUAL: tap clock to start or switch turn
+// AUTO: tap on white clock to start the clock (only before started)
+function chessClockTap(side){
+  if(chess.gameOver) return;
+
+  // Modo automático: solo permite iniciar con clic en blancas si aún no se ha comenzado
+  if(chessClock.mode === 'auto'){
+    if(!chessClock.started && side === 'w'){
+      chessClockAutoToggle();
+    }
+    return;
+  }
+
+  if(chessClock.mode !== 'manual') return;
+  if(!chessClock.started){
+    if(side !== 'w') return;
+    chessClock.started = true;
+    chessClock.turn = 'w';
+    chessClockStartInterval();
+    const pb = document.getElementById('chessClockManualPauseBtn');
+    if(pb){ pb.textContent = '⏸ Pausar'; pb.disabled = false; }
+    updateChessClockDisplay();
+    return;
+  }
+  if(!chessClock.running) return; // paused, ignore tap
+  if(chessClock.turn !== side) return;
+  chessClock.turn = side === 'w' ? 'b' : 'w';
+  chessClock.lastTick = Date.now();
+  updateChessClockDisplay();
+}
+
+// MANUAL: pause / resume button
+function chessClockManualTogglePause(){
+  if(!chessClock.started) return;
+  const pb = document.getElementById('chessClockManualPauseBtn');
+  if(chessClock.running){
+    chessClock.running = false;
+    if(pb) pb.textContent = '▶ Reanudar';
+  } else {
+    chessClock.running = true;
+    chessClock.lastTick = Date.now();
+    if(pb) pb.textContent = '⏸ Pausar';
+  }
+  updateChessClockDisplay();
+}
+
+function chessClockStartInterval(){
+  if(chessClock.intervalId){ clearInterval(chessClock.intervalId); chessClock.intervalId = null; }
+  chessClock.running = true;
+  chessClock.lastTick = Date.now();
+  chessClock.intervalId = setInterval(()=>{
+    if(!chessClock.running || chess.gameOver) return;
+    const now = Date.now();
+    chessClock.times[chessClock.turn] -= now - chessClock.lastTick;
+    chessClock.lastTick = now;
+    if(chessClock.times[chessClock.turn] <= 0){
+      chessClock.times[chessClock.turn] = 0;
+      chess.gameOver = true;
+      chessClock.running = false;
+      document.getElementById('chessGameOver').textContent =
+        (chessClock.turn==='w' ? '♚ Negras' : '♔ Blancas') + ' ganan por tiempo';
+      document.getElementById('chessGameOver').classList.add('visible');
+      clearInterval(chessClock.intervalId); chessClock.intervalId = null;
+    }
+    updateChessClockDisplay();
+  }, 100);
+}
+
+function chessClockStopInterval(){
+  if(chessClock.intervalId){ clearInterval(chessClock.intervalId); chessClock.intervalId = null; }
+  chessClock.running = false;
+}
+
+function chessClockEdit(ev, side){
+  ev.stopPropagation();
+  const display = document.getElementById(side==='w' ? 'chessClockWhite' : 'chessClockBlack');
+  const input   = document.getElementById(side==='w' ? 'chessClockWhiteInput' : 'chessClockBlackInput');
+  input.value = formatTime(chessClock.times[side]);
+  display.style.display = 'none';
+  input.style.display = 'block';
+  input.focus(); input.select();
+  const commit = ()=>{
+    const ms = parseTimeInput(input.value);
+    if(ms !== null) chessClock.times[side] = ms;
+    input.style.display = 'none'; display.style.display = 'block';
+    updateChessClockDisplay();
+    input.removeEventListener('blur', commit);
+    input.removeEventListener('keydown', keyHandler);
+  };
+  const keyHandler = e => {
+    if(e.key === 'Enter') commit();
+    if(e.key === 'Escape'){ input.style.display='none'; display.style.display='block';
+      input.removeEventListener('blur',commit); input.removeEventListener('keydown',keyHandler); }
+  };
+  input.addEventListener('blur', commit);
+  input.addEventListener('keydown', keyHandler);
+}
+
+function updateChessClockDisplay(){
+  document.getElementById('chessClockWhite').textContent = formatTime(chessClock.times.w);
+  document.getElementById('chessClockBlack').textContent = formatTime(chessClock.times.b);
+  const isRunning = chessClock.running;
+  const wRow = document.getElementById('chessClockWhiteRow');
+  const bRow = document.getElementById('chessClockBlackRow');
+  wRow.classList.toggle('is-active', isRunning && chessClock.turn === 'w');
+  bRow.classList.toggle('is-active', isRunning && chessClock.turn === 'b');
+  wRow.classList.toggle('is-low', chessClock.times.w < 30000 && chessClock.times.w > 0);
+  bRow.classList.toggle('is-low', chessClock.times.b < 30000 && chessClock.times.b > 0);
+}
+
+function formatTime(ms){
+  const s=Math.max(0,Math.ceil(ms/1000));
+  const m=Math.floor(s/60);
+  return String(m).padStart(2,'0')+':'+String(s%60).padStart(2,'0');
+}
+function parseTimeInput(str){
+  const parts = str.trim().split(':');
+  if(parts.length!==2)return null;
+  const m = parseInt(parts[0]), s = parseInt(parts[1]);
+  if(isNaN(m)||isNaN(s)||s<0||s>59||m<0)return null;
+  return (m*60+s)*1000;
+}
+
+// ===================== BIG CLOCK (TAB 1) =====================
+let bigClock = {
+  times:{w:600000,b:600000},
+  turn:'w',
+  running:false,
+  gameEnded:false,
+  intervalId:null,
+  lastTick:0
+};
+
+function bigClockSetBoth(ms){
+  bigClock.times = {w:ms, b:ms};
+  bigClock.running = false;
+  bigClock.gameEnded = false;
+  bigClock.turn = 'w';
+  if(bigClock.intervalId){clearInterval(bigClock.intervalId);bigClock.intervalId=null;}
+  document.getElementById('bigClockPauseBtn').textContent='⏸ Pausar';
+  document.getElementById('bigClockStatus').textContent = 'Pausado · Clic en Blancas para empezar';
+  updateBigClockDisplay();
+}
+
+function bigClockTap(side){
+  if(bigClock.gameEnded)return;
+  if(!bigClock.running){
+    // First click: only white can start the clock, and it starts WHITE's time
+    if(side === 'w'){
+      bigClock.turn = 'w'; // White's clock starts running
+      bigClockStartInterval();
+    }
+    return;
+  }
+  // Running: tap your own clock to end your turn → opponent's clock starts
+  if(bigClock.turn !== side)return;
+  bigClock.turn = side==='w'?'b':'w';
+  bigClock.lastTick = Date.now();
+  updateBigClockDisplay();
+}
+
+function bigClockStartInterval(){
+  if(bigClock.intervalId)clearInterval(bigClock.intervalId);
+  bigClock.running = true;
+  bigClock.lastTick = Date.now();
+  document.getElementById('bigClockPauseBtn').textContent='⏸ Pausar';
+  bigClock.intervalId = setInterval(()=>{
+    if(!bigClock.running)return;
+    const now = Date.now();
+    const delta = now - bigClock.lastTick;
+    bigClock.lastTick = now;
+    bigClock.times[bigClock.turn] -= delta;
+    if(bigClock.times[bigClock.turn] <= 0){
+      bigClock.times[bigClock.turn] = 0;
+      bigClock.running = false;
+      bigClock.gameEnded = true;
+      clearInterval(bigClock.intervalId);
+      bigClock.intervalId = null;
+      document.getElementById('bigClockStatus').textContent = '⏱ Tiempo agotado: '+(bigClock.turn==='w'?'Blancas':'Negras');
+    }
+    updateBigClockDisplay();
+  },100);
+}
+
+function bigClockTogglePause(){
+  if(bigClock.running){
+    bigClock.running=false;
+    if(bigClock.intervalId){clearInterval(bigClock.intervalId);bigClock.intervalId=null;}
+    document.getElementById('bigClockPauseBtn').textContent='▶ Reanudar';
+  } else {
+    bigClockStartInterval();
+  }
+  updateBigClockDisplay();
+}
+
+function bigClockReset(){
+  bigClock.running=false;
+  bigClock.gameEnded=false;
+  if(bigClock.intervalId){clearInterval(bigClock.intervalId);bigClock.intervalId=null;}
+  bigClock.times = {w:600000, b:600000};
+  bigClock.turn = 'w';
+  document.getElementById('bigClockPauseBtn').textContent='⏸ Pausar';
+  document.getElementById('bigClockStatus').textContent = 'Pausado · Clic en Blancas para empezar';
+  updateBigClockDisplay();
+}
+
+function bigClockEdit(ev, side){
+  ev.stopPropagation();
+  const display = document.getElementById(side==='w'?'bigTimeWhite':'bigTimeBlack');
+  const input = document.getElementById(side==='w'?'bigTimeWhiteInput':'bigTimeBlackInput');
+  const wasRunning = bigClock.running;
+  if(wasRunning){bigClock.running=false;if(bigClock.intervalId){clearInterval(bigClock.intervalId);bigClock.intervalId=null;}}
+  input.value = formatTime(bigClock.times[side]);
+  display.style.display='none';
+  input.style.display='block';
+  input.focus(); input.select();
+  const commit = ()=>{
+    const ms = parseTimeInput(input.value);
+    if(ms !== null){ bigClock.times[side] = ms; }
+    input.style.display='none'; display.style.display='block';
+    updateBigClockDisplay();
+    input.removeEventListener('blur',commit);
+    input.removeEventListener('keydown',keyHandler);
+  };
+  const keyHandler = (e)=>{
+    if(e.key==='Enter'){commit();}
+    if(e.key==='Escape'){input.style.display='none';display.style.display='block';input.removeEventListener('blur',commit);input.removeEventListener('keydown',keyHandler);}
+  };
+  input.addEventListener('blur',commit);
+  input.addEventListener('keydown',keyHandler);
+}
+
+function updateBigClockDisplay(){
+  document.getElementById('bigTimeWhite').textContent = formatTime(bigClock.times.w);
+  document.getElementById('bigTimeBlack').textContent = formatTime(bigClock.times.b);
+  const wEl = document.getElementById('bigClockWhite');
+  const bEl = document.getElementById('bigClockBlack');
+  wEl.classList.toggle('is-active', bigClock.running ? (bigClock.turn==='w') : (bigClock.turn==='w' && !bigClock.running));
+  bEl.classList.toggle('is-active', bigClock.running && bigClock.turn==='b');
+  // While not running, highlight whites by default (since they start)
+  if(!bigClock.running){
+    wEl.classList.toggle('is-active', true);
+    bEl.classList.toggle('is-active', false);
+  }
+  wEl.classList.toggle('is-low', bigClock.times.w < 30000 && bigClock.times.w > 0);
+  bEl.classList.toggle('is-low', bigClock.times.b < 30000 && bigClock.times.b > 0);
+  const status = document.getElementById('bigClockStatus');
+  if(bigClock.running){
+    status.textContent = '▶ Corriendo: '+(bigClock.turn==='w'?'Blancas':'Negras');
+  }
+}
+
+// ===================== CHECKERS =====================
+const CK_EMPTY=0, CK_WHITE=1, CK_BLACK=2, CK_WKING=3, CK_BKING=4;
+
+let ck = {
+  board:[], turn:1, selected:null, possibleMoves:[],
+  history:[], viewIndex:-1,
+  captured:{1:[],2:[]},
+  gameOver:false, lastMove:null,
+  mustCapture:null, _multiCapMoves:null
+};
+
+function initCheckers(){
+  ck.board=Array.from({length:8},()=>Array(8).fill(0));
+  for(let r=0;r<3;r++)for(let c=0;c<8;c++)if((r+c)%2===1)ck.board[r][c]=CK_BLACK;
+  for(let r=5;r<8;r++)for(let c=0;c<8;c++)if((r+c)%2===1)ck.board[r][c]=CK_WHITE;
+  ck.turn=1;ck.selected=null;ck.possibleMoves=[];ck.history=[];ck.viewIndex=-1;
+  ck.captured={1:[],2:[]};ck.gameOver=false;ck.lastMove=null;ck.mustCapture=null;ck._multiCapMoves=null;
+  document.getElementById('checkersGameOver').classList.remove('visible');
+  renderCheckersBoard();updateCheckersUI();
+}
+
+function ckColorOf(p){if(p===1||p===3)return 1;if(p===2||p===4)return 2;return 0;}
+function ckIsKing(p){return p===3||p===4;}
+
+function ckGetMoves(board,r,c){
+  const p=board[r][c];if(!p)return {moves:[],captures:[]};
+  const col=ckColorOf(p);const king=ckIsKing(p);
+  const dirs=king?[[-1,-1],[-1,1],[1,-1],[1,1]]:(col===1?[[-1,-1],[-1,1]]:[[1,-1],[1,1]]);
+  const moves=[],captures=[];
+  dirs.forEach(([dr,dc])=>{
+    const nr=r+dr,nc=c+dc;
+    if(!inBounds(nr,nc))return;
+    if(board[nr][nc]===0){moves.push({r:nr,c:nc});}
+    else if(ckColorOf(board[nr][nc])!==col){
+      const jr=nr+dr,jc=nc+dc;
+      if(inBounds(jr,jc)&&board[jr][jc]===0)captures.push({r:jr,c:jc,capR:nr,capC:nc});
+    }
+  });
+  return {moves,captures};
+}
+
+function ckHasCaptures(board,col){
+  for(let r=0;r<8;r++)for(let c=0;c<8;c++){
+    if(ckColorOf(board[r][c])===col){
+      if(ckGetMoves(board,r,c).captures.length)return true;
+    }
+  }
+  return false;
+}
+
+function ckAllMoves(board,col){
+  const hasCap=ckHasCaptures(board,col);
+  const result=[];
+  for(let r=0;r<8;r++)for(let c=0;c<8;c++){
+    if(ckColorOf(board[r][c])===col){
+      const{moves,captures}=ckGetMoves(board,r,c);
+      if(hasCap){captures.forEach(m=>{result.push({...m,type:'capture',fr:r,fc:c});});}
+      else{moves.forEach(m=>{result.push({...m,type:'move',fr:r,fc:c});});}
+    }
+  }
+  return result;
+}
+
+function checkersClick(r,c){
+  if(ck.gameOver)return;
+  // Si estamos viendo el pasado, NO bloquear: al ejecutar un movimiento,
+  // recortaremos el historial y crearemos una nueva rama desde ahí.
+  const b=ck.board;const p=b[r][c];
+  if(ck.mustCapture){
+    const mv=ck.possibleMoves.find(m=>m.r===r&&m.c===c);
+    if(mv){executeCkMove(mv);return;}
+    return;
+  }
+  if(ck.selected){
+    if(ckColorOf(p)===ck.turn){
+      const allM=ckAllMoves(b,ck.turn);
+      const myM=allM.filter(m=>m.fr===r&&m.fc===c);
+      if(myM.length){ck.selected=[r,c];ck.possibleMoves=myM;renderCheckersBoard();return;}
+    }
+    const mv=ck.possibleMoves.find(m=>m.r===r&&m.c===c);
+    if(mv){executeCkMove(mv);return;}
+    ck.selected=null;ck.possibleMoves=[];renderCheckersBoard();return;
+  }
+  if(p&&ckColorOf(p)===ck.turn){
+    const allM=ckAllMoves(b,ck.turn);
+    const myM=allM.filter(m=>m.fr===r&&m.fc===c);
+    if(myM.length){ck.selected=[r,c];ck.possibleMoves=myM;renderCheckersBoard();}
+  }
+}
+
+function executeCkMove(mv){
+  // Si estamos viendo el pasado, recortar historial desde el viewIndex actual
+  if(ck.viewIndex < ck.history.length-1){
+    ck.history = ck.history.slice(0, ck.viewIndex+1);
+  }
+  const b=ck.board;const piece=b[mv.fr][mv.fc];
+  const moveData={fr:mv.fr,fc:mv.fc,tr:mv.r,tc:mv.c,piece,type:mv.type,captured:null,promoted:false};
+  b[mv.r][mv.c]=piece;b[mv.fr][mv.fc]=0;
+  if(mv.type==='capture'){
+    moveData.captured=b[mv.capR][mv.capC];
+    ck.captured[ck.turn].push(moveData.captured);
+    b[mv.capR][mv.capC]=0;
+  }
+  if((ck.turn===1&&mv.r===0)||(ck.turn===2&&mv.r===7)){
+    if(!ckIsKing(piece)){
+      b[mv.r][mv.c]=ck.turn===1?CK_WKING:CK_BKING;
+      moveData.promoted=true;
+    }
+  }
+  moveData.notation=sqName(mv.fr,mv.fc)+(mv.type==='capture'?'x':'-')+sqName(mv.r,mv.c);
+  ck.lastMove=[mv.fr,mv.fc,mv.r,mv.c];
+  if(mv.type==='capture'&&!moveData.promoted){
+    const{captures}=ckGetMoves(b,mv.r,mv.c);
+    if(captures.length){
+      ck.mustCapture=[mv.r,mv.c];
+      ck.selected=[mv.r,mv.c];
+      ck.possibleMoves=captures.map(m=>({...m,type:'capture',fr:mv.r,fc:mv.c}));
+      if(!ck._multiCapMoves)ck._multiCapMoves=[];
+      ck._multiCapMoves.push(moveData);
+      renderCheckersBoard();updateCheckersUI();return;
+    }
+  }
+  if(ck._multiCapMoves&&ck._multiCapMoves.length){
+    ck._multiCapMoves.push(moveData);
+    const combined={
+      fr:ck._multiCapMoves[0].fr,fc:ck._multiCapMoves[0].fc,
+      tr:mv.r,tc:mv.c,piece:ck._multiCapMoves[0].piece,
+      type:'capture',
+      promoted:moveData.promoted,
+      notation:ck._multiCapMoves.map(m=>m.notation).join(', '),
+      submoves:[...ck._multiCapMoves]
+    };
+    ck.history.push(combined);
+    ck._multiCapMoves=null;
+  } else {
+    ck.history.push(moveData);
+  }
+  ck.viewIndex=ck.history.length-1;
+  ck.mustCapture=null;
+  ck.selected=null;ck.possibleMoves=[];
+  ck.turn=ck.turn===1?2:1;
+  if(ckAllMoves(b,ck.turn).length===0)ck.gameOver=true;
+  renderCheckersBoard();updateCheckersUI();
+}
+
+function renderCheckersBoard(){
+  const bd=document.getElementById('checkersBoard');bd.innerHTML='';
+  const files='abcdefgh';
+  const labL=document.getElementById('checkersLabelsLeft');labL.innerHTML='';
+  for(let r=0;r<8;r++){const sp=document.createElement('span');sp.textContent=8-r;labL.appendChild(sp);}
+  const labB=document.getElementById('checkersLabelsBottom');labB.innerHTML='';
+  for(let c=0;c<8;c++){const sp=document.createElement('span');sp.textContent=files[c];labB.appendChild(sp);}
+
+  for(let r=0;r<8;r++){
+    for(let c=0;c<8;c++){
+      const cell=document.createElement('div');
+      cell.className='cell '+((r+c)%2===0?'light':'dark');
+      if(c === 0) cell.dataset.rank = 8-r;
+      if(r === 7) cell.dataset.file = files[c];
+      const p=ck.board[r][c];
+      if(p){
+        if(ckIsKing(p)){
+          // Rey de damas: círculo doble
+          const dk=document.createElement('div');
+          dk.className='dama-king '+(ckColorOf(p)===1?'white':'black');
+          dk.innerHTML='<div class="ring-outer"></div><div class="ring-inner"></div>';
+          cell.appendChild(dk);
+        } else {
+          const sp=document.createElement('span');
+          sp.className='piece dama-checker '+(ckColorOf(p)===1?'white':'black');
+          sp.textContent='●';
+          sp.style.fontSize='1.6em';
+          cell.appendChild(sp);
+        }
+      }
+      if(ck.selected&&ck.selected[0]===r&&ck.selected[1]===c)cell.classList.add('selected');
+      const moveOnSq = ck.possibleMoves.find(m=>m.r===r&&m.c===c);
+      if(moveOnSq){
+        cell.classList.add('possible');
+        if(moveOnSq.type==='capture')cell.classList.add('capture-possible');
+      }
+      if(ck.lastMove && !ck.selected){
+        const[fr,fc,tr,tc]=ck.lastMove;
+        if((r===fr&&c===fc)||(r===tr&&c===tc))cell.classList.add('last-move');
+      }
+      // Amenazas en damas: borde rojo solo en capturas de la pieza seleccionada, si el botón está activo
+      if(threatsEnabled && ck.selected && moveOnSq && moveOnSq.type==='capture'){
+        cell.classList.add('threatened');
+      }
+      cell.onclick=(()=>{const rr=r,cc=c;return()=>checkersClick(rr,cc);})();
+      bd.appendChild(cell);
+    }
+  }
+}
+
+function updateCheckersUI(){
+  const ti=document.getElementById('checkersTurn');
+  if(ck.gameOver){
+    const winner=ck.turn===1?'Negras':'Blancas';
+    document.getElementById('checkersGameOver').textContent='¡'+winner+' ganan!';
+    document.getElementById('checkersGameOver').classList.add('visible');
+    ti.textContent='Partida terminada';ti.className='turn-indicator';
+  } else {
+    document.getElementById('checkersGameOver').classList.remove('visible');
+    ti.textContent='Turno: '+(ck.turn===1?'Blancas':'Negras');
+    ti.className='turn-indicator '+(ck.turn===1?'white-turn':'black-turn');
+  }
+  const renderC=(arr,id,colorClass)=>{
+    const el=document.getElementById(id);el.innerHTML='';
+    arr.forEach(p=>{
+      if(ckIsKing(p)){
+        const dk=document.createElement('div');
+        dk.className='cap-piece dama-king '+colorClass;
+        dk.innerHTML='<div class="ring-outer"></div><div class="ring-inner"></div>';
+        el.appendChild(dk);
+      } else {
+        const sp=document.createElement('span');
+        sp.className='cap-piece piece dama-checker '+colorClass;
+        sp.textContent='●';
+        sp.style.fontSize='1.1rem';
+        el.appendChild(sp);
+      }
+    });
+  };
+  renderC(ck.captured[1],'ckCapWhite','black');
+  renderC(ck.captured[2],'ckCapBlack','white');
+  const ml=document.getElementById('checkersMovesList');
+  let html='<table><tr><th>#</th><th>Movimiento</th></tr>';
+  ck.history.forEach((m,i)=>{
+    const cls=i===ck.viewIndex?'current-move':'';
+    html+=`<tr class="${cls}"><td>${i+1}.</td><td>${m.notation}</td></tr>`;
+  });
+  html+='</table>';ml.innerHTML=html;
+}
+
+function ckNavFirst(){ck.viewIndex=-1;rebuildCkFromHistory();renderCheckersBoard();updateCheckersUI();}
+function ckNavBack(){if(ck.viewIndex>=0){ck.viewIndex--;rebuildCkFromHistory();renderCheckersBoard();updateCheckersUI();}}
+function ckNavFwd(){if(ck.viewIndex<ck.history.length-1){ck.viewIndex++;rebuildCkFromHistory();renderCheckersBoard();updateCheckersUI();}}
+function ckNavLast(){ck.viewIndex=ck.history.length-1;rebuildCkFromHistory();renderCheckersBoard();updateCheckersUI();}
+
+function rebuildCkFromHistory(){
+  ck.board=Array.from({length:8},()=>Array(8).fill(0));
+  for(let r=0;r<3;r++)for(let c=0;c<8;c++)if((r+c)%2===1)ck.board[r][c]=CK_BLACK;
+  for(let r=5;r<8;r++)for(let c=0;c<8;c++)if((r+c)%2===1)ck.board[r][c]=CK_WHITE;
+  ck.captured={1:[],2:[]};ck.lastMove=null;ck.gameOver=false;
+  ck.turn=1;
+  for(let i=0;i<=ck.viewIndex;i++){
+    const m=ck.history[i];
+    if(m.submoves){m.submoves.forEach(sm=>replayCkMove(sm,ck.turn));}
+    else{replayCkMove(m,ck.turn);}
+    ck.turn=ck.turn===1?2:1;
+  }
+  ck.selected=null;ck.possibleMoves=[];ck.mustCapture=null;
+}
+
+function replayCkMove(m,turn){
+  const b=ck.board;
+  b[m.tr][m.tc]=m.piece;b[m.fr][m.fc]=0;
+  if(m.type==='capture'){
+    const cr=Math.floor((m.fr+m.tr)/2),cc=Math.floor((m.fc+m.tc)/2);
+    const cap=b[cr][cc];
+    b[cr][cc]=0;
+    if(cap)ck.captured[turn].push(cap);
+  }
+  if(m.promoted){b[m.tr][m.tc]=ckColorOf(m.piece)===1?CK_WKING:CK_BKING;}
+  ck.lastMove=[m.fr,m.fc,m.tr,m.tc];
+}
+
+
+// ===================== EXPORT ANNOTATIONS TO TXT =====================
+function exportAnnotationsTxt(){
+  try {
+    const now = new Date();
+    const pad = n => String(n).padStart(2,'0');
+    const dateStr = now.getFullYear()+'-'+pad(now.getMonth()+1)+'-'+pad(now.getDate());
+    const timeStr = pad(now.getHours())+':'+pad(now.getMinutes());
+
+    let txt = '';
+    txt += '════════════════════════════════════════\n';
+    txt += '   MESA DE JUEGOS — Anotaciones\n';
+    txt += '════════════════════════════════════════\n';
+    txt += 'Fecha: ' + dateStr + ' ' + timeStr + '\n';
+    txt += '\n';
+
+    // ----- AJEDREZ -----
+    if(chess.history && chess.history.length > 0){
+      txt += '────────────────────────────────────────\n';
+      txt += '♟  AJEDREZ\n';
+      txt += '────────────────────────────────────────\n';
+      txt += 'Total de movimientos: ' + chess.history.length + '\n';
+      txt += 'Estado: ' + (chess.gameOver ? 'Partida terminada' : 'En curso') + '\n';
+      txt += 'Turno actual: ' + (chess.turn === 'w' ? 'Blancas' : 'Negras') + '\n';
+      txt += '\n';
+      txt += '  #    Blancas      Negras\n';
+      txt += '  ─────────────────────────────\n';
+      const totalRows = Math.ceil(chess.history.length / 2);
+      for(let row = 0; row < totalRows; row++){
+        const i = row * 2;
+        const n = String(row + 1).padStart(3, ' ');
+        const wm = chess.history[i] ? chess.history[i].notation : '';
+        const bm = chess.history[i+1] ? chess.history[i+1].notation : '';
+        txt += '  ' + n + '.   ' + wm.padEnd(12, ' ') + ' ' + bm + '\n';
+      }
+      // Capturas
+      txt += '\n';
+      const renderCaps = (arr) => arr.length ? arr.map(p => P[p] || p).join(' ') : '(ninguna)';
+      txt += 'Capturadas por Blancas: ' + renderCaps(chess.captured.w || []) + '\n';
+      txt += 'Capturadas por Negras:  ' + renderCaps(chess.captured.b || []) + '\n';
+      txt += '\n';
+    }
+
+    // ----- DAMAS -----
+    if(ck.history && ck.history.length > 0){
+      txt += '────────────────────────────────────────\n';
+      txt += '⛀  DAMAS\n';
+      txt += '────────────────────────────────────────\n';
+      txt += 'Total de movimientos: ' + ck.history.length + '\n';
+      txt += 'Estado: ' + (ck.gameOver ? 'Partida terminada' : 'En curso') + '\n';
+      txt += 'Turno actual: ' + (ck.turn === 1 ? 'Blancas' : 'Negras') + '\n';
+      txt += '\n';
+      txt += '  #   Movimiento\n';
+      txt += '  ─────────────────────────────\n';
+      ck.history.forEach((mv, idx) => {
+        const n = String(idx + 1).padStart(3, ' ');
+        const color = (idx % 2 === 0) ? 'B' : 'N';
+        const promo = mv.promoted ? ' (♔)' : '';
+        txt += '  ' + n + '. [' + color + '] ' + mv.notation + promo + '\n';
+      });
+      txt += '\n';
+      const cntCk = (arr) => arr ? arr.length : 0;
+      txt += 'Fichas capturadas por Blancas: ' + cntCk(ck.captured[1]) + '\n';
+      txt += 'Fichas capturadas por Negras:  ' + cntCk(ck.captured[2]) + '\n';
+      txt += '\n';
+    }
+
+    // ----- PERSONALIZADO -----
+    if(custom.history && custom.history.length > 0){
+      txt += '────────────────────────────────────────\n';
+      txt += '🎨  PERSONALIZADO\n';
+      txt += '────────────────────────────────────────\n';
+      txt += 'Total de acciones: ' + custom.history.length + '\n';
+      txt += 'Modo actual: ' + (custom.isGameActive ? 'Juego' : 'Colocación') + '\n';
+      txt += '\n';
+      const files = 'abcdefgh';
+      const sqName = (r, c) => files[c] + (8 - r);
+      custom.history.forEach((act, idx) => {
+        const n = String(idx + 1).padStart(3, ' ');
+        if(act.type === 'place'){
+          const piece = custom.board && act.prev !== undefined ? (act.prev || 'vacío') : '';
+          txt += '  ' + n + '. Colocar en ' + sqName(act.r, act.c) + '\n';
+        } else if(act.type === 'move'){
+          txt += '  ' + n + '. Mover ' + sqName(act.fr, act.fc) + ' → ' + sqName(act.tr, act.tc) + (act.captured ? ' (captura)' : '') + '\n';
+        } else if(act.type === 'clear'){
+          txt += '  ' + n + '. Limpiar tablero\n';
+        }
+      });
+      txt += '\n';
+    }
+
+    // Si no hay partidas
+    if((!chess.history || chess.history.length === 0) &&
+       (!ck.history    || ck.history.length    === 0) &&
+       (!custom.history|| custom.history.length=== 0)){
+      txt += '(No hay anotaciones en ninguna partida todavía)\n';
+    }
+
+    txt += '════════════════════════════════════════\n';
+    txt += '   Generado por Mesa de Juegos\n';
+    txt += '════════════════════════════════════════\n';
+
+    // Descargar
+    const fname = 'anotaciones_'+dateStr+'_'+pad(now.getHours())+pad(now.getMinutes())+'.txt';
+    const blob = new Blob([txt], {type:'text/plain;charset=utf-8'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fname;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 200);
+
+    showSaveMsg('📥 Exportado: '+fname, '#1a5c38');
+  } catch(e){
+    console.error('exportAnnotationsTxt error:', e);
+    showSaveMsg('❌ Error: '+e.message, '#5c1a1a');
+  }
+}
+
+function showSaveMsg(text, bg){
+  const el = document.getElementById('saveMsg');
+  el.textContent = text;
+  el.style.background = bg;
+  el.style.color = '#fff';
+  el.style.display = 'block';
+  setTimeout(()=>{ el.style.display='none'; }, 2500);
+}
+
+// ===================== CUSTOM MODE (Personalizado) =====================
+const custom = {
+  board: Array.from({length:8},()=>Array(8).fill(null)),
+  selectedPieceType: null,   // valor del select: 'P','p','wd','wdk','erase', etc.
+  isGameActive: false,        // false=colocación, true=juego
+  selectedCell: null,         // [r,c] de pieza seleccionada en modo juego
+  history: [],                // array de acciones: {type:'place'|'move'|'clear', ...}
+  lastMove: null              // [fr,fc,tr,tc]
+};
+
+// Mapeo de tipos a símbolo Unicode (para piezas no-rey-damas)
+const CUSTOM_UNICODE = {
+  'P':'♙','R':'♖','N':'♘','B':'♗','Q':'♕','K':'♔',
+  'p':'♟','r':'♜','n':'♞','b':'♝','q':'♛','k':'♚',
+  'wd':'●','bd':'●'
+};
+function customIsWhite(t){
+  if(!t) return false;
+  if(t==='wd' || t==='wdk') return true;
+  return t>='A' && t<='Z';
+}
+function customIsKing(t){ return t==='wdk' || t==='bdk'; }
+
+function initCustom(){
+  custom.board = Array.from({length:8},()=>Array(8).fill(null));
+  custom.selectedPieceType = null;
+  custom.isGameActive = false;
+  custom.selectedCell = null;
+  custom.history = [];
+  custom.lastMove = null;
+  const sel = document.getElementById('customPieceSelect');
+  if(sel) sel.value = '';
+  renderCustomBoard();
+  updateCustomButtons();
+}
+
+function customSelectPiece(){
+  const sel = document.getElementById('customPieceSelect');
+  custom.selectedPieceType = sel.value || null;
+  customUpdateStatus();
+}
+
+function customStartGame(){
+  custom.isGameActive = true;
+  custom.selectedCell = null;
+  updateCustomButtons();
+  renderCustomBoard();
+  customUpdateStatus();
+}
+
+function customEditMode(){
+  custom.isGameActive = false;
+  custom.selectedCell = null;
+  updateCustomButtons();
+  renderCustomBoard();
+  customUpdateStatus();
+}
+
+function updateCustomButtons(){
+  const btnPlay = document.getElementById('customBtnPlay');
+  const btnEdit = document.getElementById('customBtnEdit');
+  if(!btnPlay || !btnEdit) return;
+  if(custom.isGameActive){
+    btnPlay.style.display = 'none';
+    btnEdit.style.display = '';
+  } else {
+    btnPlay.style.display = '';
+    btnEdit.style.display = '';
+  }
+}
+
+function customUpdateStatus(){
+  // Etiqueta de estado eliminada — función conservada como no-op para compatibilidad
+}
+
+function customClearBoard(){
+  // guardar para deshacer
+  custom.history.push({type:'clear', board: custom.board.map(r=>[...r]), lastMove: custom.lastMove});
+  custom.board = Array.from({length:8},()=>Array(8).fill(null));
+  custom.selectedCell = null;
+  custom.lastMove = null;
+  renderCustomBoard();
+  customUpdateStatus();
+}
+
+function customUndo(){
+  if(custom.history.length === 0) return;
+  const action = custom.history.pop();
+  if(action.type === 'place'){
+    custom.board[action.r][action.c] = action.prev;
+  } else if(action.type === 'move'){
+    custom.board[action.fr][action.fc] = action.piece;
+    custom.board[action.tr][action.tc] = action.captured;
+    custom.lastMove = action.prevLastMove || null;
+  } else if(action.type === 'clear'){
+    custom.board = action.board.map(r=>[...r]);
+    custom.lastMove = action.lastMove || null;
+  }
+  custom.selectedCell = null;
+  renderCustomBoard();
+  customUpdateStatus();
+}
+
+function customCellClick(r, c){
+  if(custom.isGameActive){
+    // ----- MODO JUEGO: mover piezas -----
+    if(custom.selectedCell){
+      const [fr,fc] = custom.selectedCell;
+      if(fr===r && fc===c){
+        // Mismo clic: deseleccionar
+        custom.selectedCell = null;
+        renderCustomBoard();
+        customUpdateStatus();
+        return;
+      }
+      // Mover la pieza (sin restricciones)
+      const piece = custom.board[fr][fc];
+      const captured = custom.board[r][c];
+      custom.history.push({
+        type:'move', fr, fc, tr:r, tc:c,
+        piece, captured,
+        prevLastMove: custom.lastMove
+      });
+      custom.board[r][c] = piece;
+      custom.board[fr][fc] = null;
+      custom.lastMove = [fr, fc, r, c];
+      custom.selectedCell = null;
+      renderCustomBoard();
+      customUpdateStatus();
+    } else {
+      // Seleccionar pieza si hay
+      if(custom.board[r][c]){
+        custom.selectedCell = [r, c];
+        renderCustomBoard();
+        customUpdateStatus();
+      }
+    }
+  } else {
+    // ----- MODO COLOCACIÓN -----
+    if(!custom.selectedPieceType) return;
+    const prev = custom.board[r][c];
+    if(custom.selectedPieceType === 'erase'){
+      if(prev === null) return;
+      custom.history.push({type:'place', r, c, prev});
+      custom.board[r][c] = null;
+    } else {
+      custom.history.push({type:'place', r, c, prev});
+      custom.board[r][c] = custom.selectedPieceType;
+    }
+    renderCustomBoard();
+    customUpdateStatus();
+  }
+}
+
+function renderCustomBoard(){
+  const bd = document.getElementById('customBoard');
+  if(!bd) return;
+  bd.innerHTML = '';
+  const files = 'abcdefgh';
+  // labels left (1-8 from top: shows 8..1)
+  const labL = document.getElementById('customLabelsLeft');
+  labL.innerHTML = '';
+  for(let r=0;r<8;r++){
+    const sp = document.createElement('span');
+    sp.textContent = 8-r;
+    labL.appendChild(sp);
+  }
+  // labels bottom (a-h)
+  const labB = document.getElementById('customLabelsBottom');
+  labB.innerHTML = '';
+  for(let c=0;c<8;c++){
+    const sp = document.createElement('span');
+    sp.textContent = files[c];
+    labB.appendChild(sp);
+  }
+  // cells
+  for(let r=0;r<8;r++){
+    for(let c=0;c<8;c++){
+      const cell = document.createElement('div');
+      cell.className = 'cell '+((r+c)%2===0?'light':'dark');
+      if(c === 0) cell.dataset.rank = 8-r;
+      if(r === 7) cell.dataset.file = files[c];
+      const p = custom.board[r][c];
+      if(p){
+        cell.appendChild(renderCustomPiece(p));
+      }
+      // selección
+      if(custom.selectedCell && custom.selectedCell[0]===r && custom.selectedCell[1]===c){
+        cell.classList.add('selected');
+      }
+      // último movimiento
+      if(custom.lastMove && !custom.selectedCell){
+        const [fr,fc,tr,tc] = custom.lastMove;
+        if((r===fr&&c===fc) || (r===tr&&c===tc)) cell.classList.add('last-move');
+      }
+      cell.onclick = (()=>{ const rr=r, cc=c; return ()=>customCellClick(rr,cc); })();
+      bd.appendChild(cell);
+    }
+  }
+}
+
+function renderCustomPiece(type){
+  if(customIsKing(type)){
+    // Rey de damas: doble círculo
+    const dk = document.createElement('div');
+    dk.className = 'dama-king '+(customIsWhite(type)?'white':'black');
+    dk.innerHTML = '<div class="ring-outer"></div><div class="ring-inner"></div>';
+    return dk;
+  }
+  // Resto: símbolo unicode
+  const sp = document.createElement('span');
+  const isChecker = (type==='wd' || type==='bd');
+  sp.className = 'piece '+(isChecker?'dama-checker ':'')+(customIsWhite(type)?'white':'black');
+  sp.textContent = CUSTOM_UNICODE[type] || '?';
+  if(isChecker){
+    sp.style.fontSize = '1.6em'; // estilo damas: punto grande
+  }
+  return sp;
+}
+
+// ===================== THEME SYSTEM =====================
+const THEME_KEY = 'mesaDeJuegos_theme';
+let currentTheme = { board: 'blue', pieces: 'minimal', colorWhite: '#ffffff', colorBlack: '#000000', appBg: 'dark' };
+
+const APP_BG_MAP = {
+  dark:   'linear-gradient(135deg,#1a1a2e 0%,#16213e 100%)',
+  darker: 'linear-gradient(135deg,#0a0a0f 0%,#0d1020 100%)',
+  slate:  'linear-gradient(135deg,#1e293b 0%,#0f172a 100%)',
+  forest: 'linear-gradient(135deg,#1a2e1a 0%,#0f2010 100%)',
+  wine:   'linear-gradient(135deg,#2e1a1a 0%,#200f0f 100%)',
+  ocean:  'linear-gradient(135deg,#0d2137 0%,#071525 100%)',
+};
+
+function loadTheme(){
+  try {
+    const raw = localStorage.getItem(THEME_KEY);
+    if(raw){
+      const t = JSON.parse(raw);
+      currentTheme = {
+        board: t.board || 'blue',
+        pieces: t.pieces || 'minimal',
+        colorWhite: t.colorWhite || '#ffffff',
+        colorBlack: t.colorBlack || '#000000',
+        appBg: t.appBg || 'dark',
+        appBgCustom: t.appBgCustom || null
+      };
+    }
+  } catch(e){}
+  applyTheme();
+}
+
+function saveTheme(){
+  try { localStorage.setItem(THEME_KEY, JSON.stringify(currentTheme)); } catch(e){}
+}
+
+function applyTheme(){
+  // Quitar clases viejas y aplicar nuevas
+  document.body.classList.remove('theme-green','theme-wood','theme-blue','theme-gray','theme-coral','theme-purple','theme-mint','theme-night');
+  document.body.classList.remove('pieces-classic','pieces-outline','pieces-minimal','pieces-bold','pieces-neon','pieces-flat','pieces-3d','pieces-pixel');
+  document.body.classList.add('theme-'+currentTheme.board);
+  document.body.classList.add('pieces-'+currentTheme.pieces);
+  // Aplicar variables de color para las fichas
+  document.documentElement.style.setProperty('--piece-color-white', currentTheme.colorWhite || '#ffffff');
+  document.documentElement.style.setProperty('--piece-color-black', currentTheme.colorBlack || '#000000');
+  // Aplicar color de fondo
+  const bgVal = currentTheme.appBgCustom
+    ? currentTheme.appBgCustom
+    : (APP_BG_MAP[currentTheme.appBg] || APP_BG_MAP.dark);
+  document.documentElement.style.setProperty('--app-bg', bgVal);
+  // Sincronizar pickers de color de fondo
+  const bgPicker = document.getElementById('bgColorPicker');
+  if(bgPicker && currentTheme.appBgCustom){
+    bgPicker.value = currentTheme.appBgCustom;
+  }
+  // Sincronizar pickers de color de piezas
+  const cpW = document.getElementById('colorPickerWhite');
+  if(cpW){ cpW.value = currentTheme.colorWhite || '#ffffff'; }
+  const cpWBtn = document.getElementById('customColorWhiteBtn');
+  if(cpWBtn) cpWBtn.style.background = currentTheme.colorWhite || '#ffffff';
+  const cpB = document.getElementById('colorPickerBlack');
+  if(cpB){ cpB.value = currentTheme.colorBlack || '#000000'; }
+  const cpBBtn = document.getElementById('customColorBlackBtn');
+  if(cpBBtn) cpBBtn.style.background = currentTheme.colorBlack || '#000000';
+  // Marcar selección en el modal
+  document.querySelectorAll('#themeBoardGrid .theme-option').forEach(el => {
+    el.classList.toggle('selected', el.dataset.board === currentTheme.board);
+  });
+  document.querySelectorAll('#themePiecesGrid .theme-option').forEach(el => {
+    el.classList.toggle('selected', el.dataset.pieces === currentTheme.pieces);
+  });
+  document.querySelectorAll('#themeColorWhiteGrid .color-option').forEach(el => {
+    el.classList.toggle('selected', el.dataset.color === currentTheme.colorWhite);
+  });
+  document.querySelectorAll('#themeColorBlackGrid .color-option').forEach(el => {
+    el.classList.toggle('selected', el.dataset.color === currentTheme.colorBlack);
+  });
+  // Marcar selección de fondo
+  document.querySelectorAll('[data-bg]').forEach(el => {
+    el.classList.toggle('selected', !currentTheme.appBgCustom && el.dataset.bg === currentTheme.appBg);
+  });
+}
+
+function setColorWhite(color){
+  currentTheme.colorWhite = color;
+  applyTheme();
+  saveTheme();
+}
+function setColorBlack(color){
+  currentTheme.colorBlack = color;
+  applyTheme();
+  saveTheme();
+}
+
+function setBoardTheme(name){
+  currentTheme.board = name;
+  applyTheme();
+  saveTheme();
+}
+
+function setAppBg(name){
+  currentTheme.appBg = name;
+  currentTheme.appBgCustom = null;
+  applyTheme();
+  saveTheme();
+}
+
+function setAppBgCustom(color){
+  currentTheme.appBgCustom = color;
+  applyTheme();
+  saveTheme();
+}
+
+function setPiecesTheme(name){
+  currentTheme.pieces = name;
+  applyTheme();
+  saveTheme();
+}
+
+function openThemeModal(){
+  document.getElementById('themeOverlay').classList.add('visible');
+  applyTheme(); // refrescar marcas
+}
+
+function closeThemeModal(){
+  document.getElementById('themeOverlay').classList.remove('visible');
+}
+
+// Cerrar modal al hacer clic en el fondo
+document.addEventListener('click', (e) => {
+  const overlay = document.getElementById('themeOverlay');
+  if(e.target === overlay) closeThemeModal();
+});
+
+// ===================== INIT =====================
+loadTheme();
+initChess();
+initCheckers();
+initCustom();
+updateChessClockDisplay();
+updateBigClockDisplay();
+
+// Si hay un estado guardado inyectado en este archivo, aplicarlo ahora
+if(typeof window.__savedGameState !== 'undefined' && window.__savedGameState){
+  try {
+    const s = window.__savedGameState;
+    // Theme
+    if(s.theme){ currentTheme = s.theme; applyTheme(); saveTheme(); }
+    // Chess
+    chess.board        = s.chess.board;
+    chess.turn         = s.chess.turn;
+    chess.history      = s.chess.history;
+    chess.viewIndex    = s.chess.viewIndex;
+    chess.captured     = s.chess.captured;
+    chess.enPassant    = s.chess.enPassant;
+    chess.castling     = s.chess.castling;
+    chess.kings        = s.chess.kings;
+    chess.gameOver     = s.chess.gameOver;
+    chess.lastMove     = s.chess.lastMove;
+    chess.rotationMode = s.chess.rotationMode || 0;
+    chess.selected     = null;
+    chess.possibleMoves= [];
+    const col = document.getElementById('boardColumn');
+    if(col){
+      col.classList.remove('rotate-mode-1','rotate-mode-2','rotate-mode-3');
+      if(chess.rotationMode > 0) col.classList.add('rotate-mode-'+chess.rotationMode);
+    }
+    if(typeof applyRotationMode === 'function') applyRotationMode();
+    // Clock: setear modo, luego sobreescribir times
+    chessClockStopInterval();
+    chessClockSetMode(s.chessClock.mode || 'off');
+    chessClock.times   = s.chessClock.times;
+    chessClock.turn    = s.chessClock.turn;
+    chessClock.started = s.chessClock.started;
+    chessClock.running = false;
+    updateChessClockDisplay();
+    // Checkers
+    ck.board     = s.ck.board;
+    ck.turn      = s.ck.turn;
+    ck.history   = s.ck.history;
+    ck.viewIndex = s.ck.viewIndex;
+    ck.captured  = s.ck.captured;
+    ck.gameOver  = s.ck.gameOver;
+    ck.lastMove  = s.ck.lastMove;
+    ck.selected  = null;
+    ck.possibleMoves = [];
+    ck.mustCapture   = null;
+    // Big clock
+    bigClock.times   = s.bigClock.times;
+    bigClock.turn    = s.bigClock.turn;
+    bigClock.running = false;
+    updateBigClockDisplay();
+    // Custom
+    if(s.custom){
+      custom.board             = s.custom.board;
+      custom.selectedPieceType = s.custom.selectedPieceType;
+      custom.isGameActive      = s.custom.isGameActive;
+      custom.selectedCell      = s.custom.selectedCell;
+      custom.history           = s.custom.history;
+      custom.lastMove          = s.custom.lastMove;
+      const customSel = document.getElementById('customPieceSelect');
+      if(customSel && custom.selectedPieceType) customSel.value = custom.selectedPieceType;
+      updateCustomButtons();
+    }
+    // Re-renderizar
+    renderChessBoard();
+    updateChessUI();
+    renderCheckersBoard();
+    updateCheckersUI();
+    renderCustomBoard();
+    // Pestaña activa
+    if(typeof s.activeTab === 'number') switchTab(s.activeTab);
+    // Limpiar para que no se aplique de nuevo si se recarga manualmente
+    delete window.__savedGameState;
+  } catch(e){
+    console.error('Error restaurando estado guardado:', e);
+  }
+}
+
+// ===================== SAVE AS HTML (nuevo, simple) =====================
+function saveGameAsHtml(){
+  try {
+    // 1) Recopilar estado completo (con deep clone)
+    const dc = (o) => JSON.parse(JSON.stringify(o));
+    const state = {
+      chess: {
+        board: dc(chess.board), turn: chess.turn, history: dc(chess.history),
+        viewIndex: chess.viewIndex, captured: dc(chess.captured),
+        enPassant: chess.enPassant, castling: dc(chess.castling),
+        kings: dc(chess.kings), gameOver: chess.gameOver,
+        lastMove: chess.lastMove ? dc(chess.lastMove) : null,
+        rotationMode: chess.rotationMode || 0
+      },
+      chessClock: {
+        mode: chessClock.mode, times: dc(chessClock.times),
+        turn: chessClock.turn, started: chessClock.started, running: false
+      },
+      ck: {
+        board: dc(ck.board), turn: ck.turn, history: dc(ck.history),
+        viewIndex: ck.viewIndex, captured: dc(ck.captured),
+        gameOver: ck.gameOver, lastMove: ck.lastMove ? dc(ck.lastMove) : null
+      },
+      bigClock: {
+        times: dc(bigClock.times), turn: bigClock.turn, running: false
+      },
+      custom: {
+        board: dc(custom.board),
+        selectedPieceType: custom.selectedPieceType,
+        isGameActive: custom.isGameActive,
+        selectedCell: custom.selectedCell ? dc(custom.selectedCell) : null,
+        history: dc(custom.history),
+        lastMove: custom.lastMove ? dc(custom.lastMove) : null
+      },
+      theme: dc(currentTheme),
+      activeTab: getActiveTab()
+    };
+
+    // 2) Limpiar el DOM mutado para que el HTML serializado quede "como el original"
+    const idsToClean = [
+      'chessBoard','chessLabelsLeft','chessLabelsBottom',
+      'checkersBoard','checkersLabelsLeft','checkersLabelsBottom',
+      'customBoard','customLabelsLeft','customLabelsBottom',
+      'chessMovesList','capByWhite','capByBlack',
+      'ckCapWhite','ckCapBlack','annWhite','annBlack','saveMsg'
+    ];
+    const snapshots = idsToClean.map(id => {
+      const el = document.getElementById(id);
+      return el ? { id, html: el.innerHTML, display: el.style.display } : null;
+    }).filter(Boolean);
+    snapshots.forEach(s => { const el = document.getElementById(s.id); el.innerHTML = ''; });
+    // Cerrar modales (corregido: 'promoOverlay' en lugar de 'promotionOverlay')
+    const modalIds = ['themeOverlay','promoOverlay'];
+    const modalSnaps = modalIds.map(id => {
+      const el = document.getElementById(id);
+      return el ? { id, classes: el.className } : null;
+    }).filter(Boolean);
+    modalSnaps.forEach(s => { const el = document.getElementById(s.id); el.classList.remove('visible'); });
+    // Quitar bootstrap previo si existe
+    const oldBoot = document.getElementById('__savedStateBootstrap');
+    if(oldBoot) oldBoot.remove();
+    // Quitar clase portrait-mode para que el HTML guardado detecte orientación al abrirse
+    const hadPortrait = document.body.classList.contains('portrait-mode');
+    document.body.classList.remove('portrait-mode');
+
+    // 3) Capturar HTML
+    let docHtml = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+
+    // 4) Restaurar el DOM de la página activa (para no afectar al usuario)
+    snapshots.forEach(s => { const el = document.getElementById(s.id); if(el) el.innerHTML = s.html; });
+    modalSnaps.forEach(s => { const el = document.getElementById(s.id); if(el) el.className = s.classes; });
+    if(hadPortrait) document.body.classList.add('portrait-mode');
+
+    // 5) Inyectar el script de estado usando el marcador __SAVE_INJECT_POINT__
+    // Ese marcador está en el HTML justo antes del bloque <script> del juego.
+    // Usamos el marcador en lugar de buscar <script> para evitar fallos cuando
+    // el navegador serializa el tag con atributos (ej: type="text/javascript").
+    const stateJson = JSON.stringify(state).replace(/<\/script/gi, '<\\/script');
+    const stateScript = '<script id="__savedStateBootstrap">window.__savedGameState=' + stateJson + ';<\/script>\n';
+
+    if(docHtml.includes('<!--__SAVE_INJECT_POINT__-->')) {
+      docHtml = docHtml.replace('<!--__SAVE_INJECT_POINT__-->', stateScript + '<!--__SAVE_INJECT_POINT__-->');
+    } else {
+      // Fallback: buscar el tag script de apertura del bloque principal (puede tener atributos)
+      docHtml = docHtml.replace(/<script(\s[^>]*)?>/, (match) => stateScript + match);
+    }
+
+    // 6) Descargar
+    const now = new Date();
+    const pad = n => String(n).padStart(2,'0');
+    const fname = 'mesa_de_juegos_' + now.getFullYear() + '-' + pad(now.getMonth()+1) + '-' + pad(now.getDate()) + '_' + pad(now.getHours()) + pad(now.getMinutes()) + '.html';
+    const blob = new Blob([docHtml], {type:'text/html;charset=utf-8'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fname;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 200);
+
+    showSaveMsg('💾 Descargado: ' + fname, '#1a5c38');
+  } catch(e){
+    console.error('saveGameAsHtml error:', e);
+    showSaveMsg('❌ Error: ' + e.message, '#5c1a1a');
+  }
+}
+</script>
+</body>
+</html>

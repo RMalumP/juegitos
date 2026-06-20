@@ -1,0 +1,91 @@
+{
+  "breakdown": {
+    "A": {
+      "reqs": 3,
+      "raw": 272142,
+      "gz": 97671,
+      "js": 174668,
+      "jsgz": 77173
+    },
+    "B": {
+      "reqs": 19,
+      "raw": 221911,
+      "gz": 65605,
+      "js": 122620,
+      "jsgz": 39731
+    },
+    "C": {
+      "reqs": 8,
+      "raw": 149255,
+      "gz": 40229,
+      "js": 67510,
+      "jsgz": 20446
+    }
+  },
+  "timing": {
+    "plain": {
+      "A": {
+        "scriptMs": 7,
+        "dcl": 52,
+        "load": 52,
+        "fcp": 72,
+        "tetMs": 33,
+        "tetBytes": 0,
+        "chMs": 47,
+        "chBytes": 0
+      },
+      "B": {
+        "scriptMs": 9,
+        "dcl": 78,
+        "load": 78,
+        "fcp": 88,
+        "tetMs": 32,
+        "tetBytes": 0,
+        "chMs": 26,
+        "chBytes": 31068
+      },
+      "C": {
+        "scriptMs": 2,
+        "dcl": 47,
+        "load": 47,
+        "fcp": 68,
+        "tetMs": 40,
+        "tetBytes": 5301,
+        "chMs": 58,
+        "chBytes": 31068
+      }
+    },
+    "mobile": {
+      "A": {
+        "scriptMs": 35,
+        "dcl": 814,
+        "load": 814,
+        "fcp": 496,
+        "tetMs": 120,
+        "tetBytes": 0,
+        "chMs": 80,
+        "chBytes": 0
+      },
+      "B": {
+        "scriptMs": 36,
+        "dcl": 855,
+        "load": 856,
+        "fcp": 668,
+        "tetMs": 112,
+        "tetBytes": 0,
+        "chMs": 360,
+        "chBytes": 31068
+      },
+      "C": {
+        "scriptMs": 10,
+        "dcl": 542,
+        "load": 542,
+        "fcp": 508,
+        "tetMs": 264,
+        "tetBytes": 5301,
+        "chMs": 364,
+        "chBytes": 31068
+      }
+    }
+  }
+}
