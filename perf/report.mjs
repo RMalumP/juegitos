@@ -96,11 +96,11 @@ css/core.css            ← reset + chrome de ventanas + escritorio/taskbar + ju
 css/games/*.css         ← roul, poker, tetris, invaders, snake, pacman, sudoku, asteroids
 js/core.js              ← gestor de ventanas + Buscaminas/Solitario/Carta/Blackjack/Ruleta/Póker
 js/games/*.js           ← sudoku, tetris, invaders, snake, pacman, asteroids (carga bajo demanda)
-js/iframe-games.js      ← Ajedrez/Parchís: cargan games/*.html al abrir (antes: blob inline)
+js/iframe-games.js      ← Ajedrez/Parchís: inyectan games/*.js (<script>) al abrir + srcdoc
 js/window-bars.js       ← utilidad de barras de título
 js/lazy-loader.js       ← define stubs init* que descargan el módulo del juego al abrirlo
-games/chess.html        ← Ajedrez (antes embebido como gzip+base64 dentro de script.js)
-games/parchis.html      ← Parchís (íd.)
+games/chess.js          ← Ajedrez: HTML como global (antes gzip+base64 inline en script.js)
+games/parchis.js        ← Parchís (íd.)
 perf/baseline/          ← versión A original (fuente del build + baseline de la comparativa)
 perf/eager/index.html   ← versión B
 perf/{build,verify,measure,report}.mjs
@@ -114,6 +114,12 @@ comportamiento de C es *cuándo* se ejecuta el módulo de cada juego (al abrirlo
 \`perf/verify.mjs\` (Playwright) comprueba en las tres variantes que el escritorio,
 los juegos de canvas (Tetris), del núcleo (Blackjack), lazy (Sudoku) y de iframe
 (Ajedrez) funcionan sin errores de consola.
+
+**Compatibilidad \`file://\`:** Ajedrez y Parchís se cargan por **inyección de
+\`<script>\`** (no \`fetch\`), así que la app funciona también abriendo \`index.html\`
+con doble clic, sin servidor. \`perf/verify.mjs\` incluye una prueba bajo \`file://\`
+que confirma escritorio + Tetris (lazy) + Ajedrez (con acceso a \`switchTab\` para
+cambiar a Damas).
 
 ## Cómo reproducir
 

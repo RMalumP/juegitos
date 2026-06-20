@@ -166,24 +166,34 @@ write('js/games/pacman.js', jsHeader('pacman.js') + jsPac);
 write('js/games/asteroids.js', jsHeader('asteroids.js') + jsAst);
 
 /* ---------------------------------------------------------------------------
- * 3) Externalizar Ajedrez/Parchís: blob gz+base64 -> games/*.html
+ * 3) Externalizar Ajedrez/Parchís: blob gz+base64 -> games/*.js
+ *    El HTML va como global (window.__CHESS_HTML) en un .js que se carga por
+ *    inyección de <script> (NO fetch) para que funcione también en file://.
+ *    Se mantiene srcdoc (no src) para conservar el acceso a contentWindow
+ *    (switchTab de Damas) bajo cualquier origen, incluido file://.
  * ------------------------------------------------------------------------- */
 function decodeBlob(name) {
   const m = ORIG_JS.match(new RegExp(name + '="([^"]+)"'));
   if (!m) throw new Error('No se encontró ' + name);
   return zlib.gunzipSync(Buffer.from(m[1], 'base64')).toString('utf8');
 }
-write('games/chess.html', decodeBlob('CHESS_HTML_GZ_B64'));
-write('games/parchis.html', decodeBlob('PARCHIS_HTML_GZ_B64'));
-console.log('\n== iframe games externalizados ==');
-console.log('  games/chess.html   ', fs.statSync(p('games/chess.html')).size, 'B');
-console.log('  games/parchis.html ', fs.statSync(p('games/parchis.html')).size, 'B');
+const chessHtml = decodeBlob('CHESS_HTML_GZ_B64');
+const parchisHtml = decodeBlob('PARCHIS_HTML_GZ_B64');
+// JSON.stringify -> literal de string JS seguro (escapa comillas, \, saltos…).
+// En un .js EXTERNO, un "</script>" dentro del string no termina nada (eso solo
+// afecta a scripts inline), así que es seguro embeber el HTML del juego.
+write('games/chess.js', '/* Ajedrez (HTML del juego) — generado desde el blob original. */\nwindow.__CHESS_HTML=' + JSON.stringify(chessHtml) + ';\n');
+write('games/parchis.js', '/* Parchís (HTML del juego) — generado desde el blob original. */\nwindow.__PARCHIS_HTML=' + JSON.stringify(parchisHtml) + ';\n');
+console.log('\n== iframe games externalizados (carga por <script>, file://-compatible) ==');
+console.log('  games/chess.js   ', fs.statSync(p('games/chess.js')).size, 'B');
+console.log('  games/parchis.js ', fs.statSync(p('games/parchis.js')).size, 'B');
 
-// iframe-games.js: init por fetch+srcdoc (idéntico a srcdoc original) + openChessTab/Damas verbatim
-const iframeGames = jsHeader('iframe-games.js: Ajedrez y Parchís (HTML externo, carga bajo demanda al abrir)') +
+// iframe-games.js: inyecta el .js del juego y luego pone srcdoc + openChessTab/Damas verbatim
+const iframeGames = jsHeader('iframe-games.js: Ajedrez y Parchís (HTML externo en games/*.js, carga por <script> al abrir)') +
 `var GAMES_BASE=new URL('../games/',document.currentScript.src).href;
-function initChess(){var f=document.getElementById('chessFrame');if(f.getAttribute('data-loaded'))return;f.setAttribute('data-loaded','1');fetch(GAMES_BASE+'chess.html').then(function(r){return r.text();}).then(function(html){f.srcdoc=html;});}
-function initParchis(){var f=document.getElementById('parchisFrame');if(f.getAttribute('data-loaded'))return;f.setAttribute('data-loaded','1');fetch(GAMES_BASE+'parchis.html').then(function(r){return r.text();}).then(function(html){f.srcdoc=html;});}
+function loadFrameDoc(frameId,globalName,file){var f=document.getElementById(frameId);if(!f||f.getAttribute('data-loaded'))return;f.setAttribute('data-loaded','1');if(window[globalName]){f.srcdoc=window[globalName];return;}var s=document.createElement('script');s.src=GAMES_BASE+file;s.onload=function(){f.srcdoc=window[globalName];};document.head.appendChild(s);}
+function initChess(){loadFrameDoc('chessFrame','__CHESS_HTML','chess.js');}
+function initParchis(){loadFrameDoc('parchisFrame','__PARCHIS_HTML','parchis.js');}
 ` + openChessTabSrc + '\n';
 write('js/iframe-games.js', iframeGames);
 console.log('  js/iframe-games.js ', fs.statSync(p('js/iframe-games.js')).size, 'B');

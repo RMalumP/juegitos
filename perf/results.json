@@ -9,82 +9,82 @@
     },
     "B": {
       "reqs": 19,
-      "raw": 221911,
-      "gz": 65605,
-      "js": 122620,
-      "jsgz": 39731
+      "raw": 221954,
+      "gz": 65688,
+      "js": 122663,
+      "jsgz": 39814
     },
     "C": {
       "reqs": 8,
-      "raw": 149255,
-      "gz": 40229,
-      "js": 67510,
-      "jsgz": 20446
+      "raw": 149298,
+      "gz": 40312,
+      "js": 67553,
+      "jsgz": 20529
     }
   },
   "timing": {
     "plain": {
       "A": {
         "scriptMs": 7,
-        "dcl": 52,
-        "load": 52,
-        "fcp": 72,
-        "tetMs": 33,
+        "dcl": 59,
+        "load": 59,
+        "fcp": 76,
+        "tetMs": 39,
         "tetBytes": 0,
-        "chMs": 47,
+        "chMs": 22,
         "chBytes": 0
       },
       "B": {
-        "scriptMs": 9,
-        "dcl": 78,
-        "load": 78,
-        "fcp": 88,
-        "tetMs": 32,
+        "scriptMs": 10,
+        "dcl": 82,
+        "load": 83,
+        "fcp": 92,
+        "tetMs": 39,
         "tetBytes": 0,
-        "chMs": 26,
-        "chBytes": 31068
+        "chMs": 30,
+        "chBytes": 31366
       },
       "C": {
         "scriptMs": 2,
-        "dcl": 47,
-        "load": 47,
-        "fcp": 68,
-        "tetMs": 40,
+        "dcl": 52,
+        "load": 52,
+        "fcp": 72,
+        "tetMs": 43,
         "tetBytes": 5301,
-        "chMs": 58,
-        "chBytes": 31068
+        "chMs": 42,
+        "chBytes": 31366
       }
     },
     "mobile": {
       "A": {
-        "scriptMs": 35,
-        "dcl": 814,
-        "load": 814,
-        "fcp": 496,
-        "tetMs": 120,
+        "scriptMs": 33,
+        "dcl": 813,
+        "load": 813,
+        "fcp": 500,
+        "tetMs": 117,
         "tetBytes": 0,
-        "chMs": 80,
+        "chMs": 82,
         "chBytes": 0
       },
       "B": {
-        "scriptMs": 36,
-        "dcl": 855,
+        "scriptMs": 34,
+        "dcl": 856,
         "load": 856,
-        "fcp": 668,
-        "tetMs": 112,
+        "fcp": 664,
+        "tetMs": 111,
         "tetBytes": 0,
-        "chMs": 360,
-        "chBytes": 31068
+        "chMs": 363,
+        "chBytes": 31366
       },
       "C": {
         "scriptMs": 10,
-        "dcl": 542,
+        "dcl": 541,
         "load": 542,
-        "fcp": 508,
-        "tetMs": 264,
+        "fcp": 496,
+        "tetMs": 250,
         "tetBytes": 5301,
-        "chMs": 364,
-        "chBytes": 31068
+        "chMs": 360,
+        "chBytes": 31366
       }
     }
   }

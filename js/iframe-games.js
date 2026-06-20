@@ -1,7 +1,8 @@
-/* iframe-games.js: Ajedrez y Parchís (HTML externo, carga bajo demanda al abrir) — Juegos XP. Código original sin cambios (solo separado en archivos). */
+/* iframe-games.js: Ajedrez y Parchís (HTML externo en games/*.js, carga por <script> al abrir) — Juegos XP. Código original sin cambios (solo separado en archivos). */
 var GAMES_BASE=new URL('../games/',document.currentScript.src).href;
-function initChess(){var f=document.getElementById('chessFrame');if(f.getAttribute('data-loaded'))return;f.setAttribute('data-loaded','1');fetch(GAMES_BASE+'chess.html').then(function(r){return r.text();}).then(function(html){f.srcdoc=html;});}
-function initParchis(){var f=document.getElementById('parchisFrame');if(f.getAttribute('data-loaded'))return;f.setAttribute('data-loaded','1');fetch(GAMES_BASE+'parchis.html').then(function(r){return r.text();}).then(function(html){f.srcdoc=html;});}
+function loadFrameDoc(frameId,globalName,file){var f=document.getElementById(frameId);if(!f||f.getAttribute('data-loaded'))return;f.setAttribute('data-loaded','1');if(window[globalName]){f.srcdoc=window[globalName];return;}var s=document.createElement('script');s.src=GAMES_BASE+file;s.onload=function(){f.srcdoc=window[globalName];};document.head.appendChild(s);}
+function initChess(){loadFrameDoc('chessFrame','__CHESS_HTML','chess.js');}
+function initParchis(){loadFrameDoc('parchisFrame','__PARCHIS_HTML','parchis.js');}
 function openChessTab(idx){
   openGame("chess");
   var f=document.getElementById("chessFrame");

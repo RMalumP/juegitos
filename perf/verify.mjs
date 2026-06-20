@@ -96,7 +96,49 @@ for (const v of VARIANTS) {
   await ctx.close();
 }
 
+/* ===================================================================== *
+ *  PRUEBA file:// — la app lazy abierta con doble clic (sin servidor).
+ *  Valida que Ajedrez/Parchís (inyección de <script>) y los juegos lazy
+ *  funcionan sin fetch ni servidor HTTP.
+ * ===================================================================== */
+{
+  console.log('\n=== file:// (sin servidor, doble clic en index.html) ===');
+  const ctx = await browser.newContext();
+  const page = await ctx.newPage();
+  const errors = [];
+  const isExternal = (t) => /googleapis|gstatic|ERR_CERT|net::ERR|Failed to load resource/i.test(t);
+  page.on('console', m => { if (m.type() === 'error' && !isExternal(m.text())) errors.push(m.text()); });
+  page.on('pageerror', e => { if (!isExternal(e.message)) errors.push('PAGEERROR: ' + e.message); });
+
+  await page.goto('file://' + path.join(ROOT, 'index.html'), { waitUntil: 'load' });
+  await page.waitForTimeout(300);
+  const icons = await page.locator('.deskIcon').count();
+  console.log(`  iconos escritorio: ${icons} ${icons===15?'✓':'✗'}`);
+
+  // Tetris lazy (inyección de <script> desde file://)
+  await page.evaluate(() => window.openGame && window.openGame('tetris'));
+  await page.waitForFunction(() => typeof window.initTetris==='function' && !window.initTetris.__lazy, { timeout: 5000 }).catch(()=>{});
+  const tetReal = await page.evaluate(() => typeof window.initTetris==='function' && !window.initTetris.__lazy);
+  console.log(`  Tetris lazy cargado por <script>: ${tetReal?'✓':'✗'}`);
+
+  // Ajedrez (inyección de games/chess.js + srcdoc + acceso a switchTab)
+  await page.evaluate(() => window.openGame && window.openGame('chess'));
+  await page.waitForFunction(() => { const f=document.getElementById('chessFrame'); return f && f.srcdoc && f.srcdoc.length>1000; }, { timeout: 6000 }).catch(()=>{});
+  const chess = await page.evaluate(() => {
+    const f = document.getElementById('chessFrame');
+    let hasSwitch = false; try { hasSwitch = typeof f.contentWindow.switchTab === 'function'; } catch(e) {}
+    return { srcdocLen: f && f.srcdoc ? f.srcdoc.length : 0, hasSwitch };
+  });
+  console.log(`  Ajedrez (script+srcdoc): srcdoc=${chess.srcdocLen}B, switchTab accesible=${chess.hasSwitch?'✓':'✗'}`);
+
+  const fileOk = icons===15 && tetReal && chess.srcdocLen>1000;
+  if (errors.length) { allOk = false; console.log(`  ✗ ERRORES (${errors.length}):`); errors.slice(0,6).forEach(e => console.log('     ', e.slice(0,140))); }
+  else console.log('  ✓ sin errores de consola');
+  if (!fileOk) allOk = false;
+  await ctx.close();
+}
+
 await browser.close();
 server.close();
-console.log(allOk ? '\n=== RESULTADO: TODAS LAS VARIANTES OK ===' : '\n=== RESULTADO: HAY FALLOS (ver arriba) ===');
+console.log(allOk ? '\n=== RESULTADO: TODAS LAS VARIANTES OK (HTTP + file://) ===' : '\n=== RESULTADO: HAY FALLOS (ver arriba) ===');
 process.exit(allOk ? 0 : 1);
