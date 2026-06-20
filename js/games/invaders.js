@@ -74,7 +74,7 @@
   let hintShown=false;
 
   function buildStars(){stars=Array.from({length:60},()=>({x:Math.random()*480,y:Math.random()*320,b:Math.random()}));}
-  function buildBunkers(){bunkers=[];for(let bx of [80,190,300,410])for(let r=0;r<4;r++)for(let c=0;c<8;c++)bunkers.push({x:bx+6*c,y:248+6*r,alive:true});}
+  function buildBunkers(){bunkers=[];for(let bx of [36,156,276,396])for(let r=0;r<4;r++)for(let c=0;c<8;c++)bunkers.push({x:bx+6*c,y:248+6*r,alive:true});}
 
   function spawnLevel(lvl){
     level=Math.max(1,Math.min(MAX_LEVEL,lvl));
@@ -90,7 +90,7 @@
   function reset(){
     score=0;lives=3;shipVel=0;timeAcc=0;
     gameOver=false;victory=false;transition=false;transTimer=0;
-    player={x:240,y:296,w:28,h:14,cooldown:0};
+    player={x:240,y:286,w:28,h:14,cooldown:0};
     buildStars();buildBunkers();spawnLevel(startLevel);
     scoreEl.textContent=' 0';livesEl.textContent=lives;
   }
@@ -154,7 +154,7 @@
       if(hit)eBullets.splice(bi,1);
     }
 
-    for(let i of invaders){if(i.alive&&i.y+i.h>=292){gameOver=true;break;}}
+    for(let i of invaders){if(i.alive&&i.y+i.h>=282){gameOver=true;break;}}
   }
 
   /* ---------- Render ---------- */
