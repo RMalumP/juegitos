@@ -9,8 +9,13 @@
       document.head.appendChild(s);
     });
   }
-  function css(url){ if(cache[url])return; cache[url]=1;
-    var l=document.createElement('link'); l.rel='stylesheet'; l.href=url; document.head.appendChild(l);
+  function css(url){ if(cache[url])return cache[url];
+    return cache[url]=new Promise(function(res){
+      var l=document.createElement('link'); l.rel='stylesheet'; l.href=url;
+      // Resolver al cargar (o fallar) para que el init mida el canvas con el CSS YA aplicado.
+      l.onload=function(){res();}; l.onerror=function(){res();};
+      document.head.appendChild(l);
+    });
   }
   // game -> { js, css, init }
   var GAMES={
@@ -25,8 +30,9 @@
   Object.keys(GAMES).forEach(function(key){
     var g=GAMES[key];
     window[g.init]=function(){
-      css(base+g.css);
-      load(base+g.js).then(function(){
+      // Esperar a CSS *y* JS: si el init corre antes de aplicarse el CSS del juego,
+      // el canvas se mide contra un layout sin estilos (pequeño/descolocado).
+      Promise.all([css(base+g.css),load(base+g.js)]).then(function(){
         // tras cargar, window[init] es la función real (sobrescribe el stub)
         if(window[g.init]&&window[g.init].__lazy)return; // seguridad
         window[g.init]();

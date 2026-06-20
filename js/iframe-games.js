@@ -14,5 +14,5 @@ function openChessTab(idx){
     if(tries<150)setTimeout(poll,40);
   })();
 }
-document.getElementById("sBtnDamas").onclick=function(){document.getElementById("startScreen").style.display="none";openChessTab(2);};
+document.getElementById("sBtnDamas").onclick=function(){document.getElementById("startScreen").style.display="none";document.getElementById("creditsBtn").style.display="none";openChessTab(2);};
 (function(){var last=0;var el=document.getElementById("iconDamas");el.addEventListener("click",function(){this.parentNode.querySelectorAll(".deskIcon").forEach(function(d){d.classList.remove("sel");});this.classList.add("sel");var now=Date.now();if(now-last<400)openChessTab(2);last=now;});})();
