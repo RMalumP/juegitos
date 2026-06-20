@@ -54,9 +54,9 @@
     return {
       rows:rows,cols:9,
       speed:Math.min(0.35+0.10*(lvl-1),1.7),
-      speedCap:Math.min(2.6+0.25*lvl,5),
-      speedStep:0.05+0.006*lvl,
-      descend:10+Math.min(lvl,8),
+      speedCap:Math.min(2.4+0.15*lvl,4),
+      speedStep:0.05+0.005*lvl,
+      descend:10+Math.min(lvl-1,6)*0.5,
       fireBase:Math.max(34-3*lvl,7),
       fireRand:22,
       bulletSpeed:3.2+0.28*lvl,
