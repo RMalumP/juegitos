@@ -1,6 +1,6 @@
 /* invaders.js — Juegos XP. Niveles ampliados (más velocidades + nuevos enemigos) y selector de nivel estilo Pac-Man. */
 (function(){
-  var INV_DEF={left:'ArrowLeft',right:'ArrowRight',fire:'Space'},invKeys=Object.assign({},INV_DEF);
+  var INV_DEF={left:'ArrowLeft',right:'ArrowRight',fire:'Space',newgame:'Enter'},invKeys=Object.assign({},INV_DEF);
   try{var _ik=localStorage.getItem('invKeyMap');if(_ik)invKeys=Object.assign({},INV_DEF,JSON.parse(_ik));}catch(_e){}
 
   const canvas=document.getElementById('invC'),ctx=canvas.getContext('2d'),
@@ -17,7 +17,7 @@
 
   /* ---------- Reasignar teclas ---------- */
   function invKeyName(c){return {ArrowLeft:'←',ArrowRight:'→',ArrowUp:'↑',ArrowDown:'↓',Space:'Space',Enter:'Enter',KeyW:'W',KeyA:'A',KeyS:'S',KeyD:'D',KeyJ:'J',KeyK:'K',KeyL:'L',KeyI:'I',KeyC:'C',KeyF:'F'}[c]||c;}
-  function invOpenRemap(){var b=document.getElementById('invRemapKeys');b.innerHTML='';[{k:'left',l:'Mover ←'},{k:'right',l:'Mover →'},{k:'fire',l:'Disparar'}].forEach(function(it){var r=document.createElement('div');r.className='invRemapRow';var la=document.createElement('div');la.className='invRemapLabel';la.textContent=it.l;var ke=document.createElement('div');ke.className='invRemapKey';ke.textContent=invKeyName(invKeys[it.k]);ke.addEventListener('click',function(){ke.classList.add('waiting');ke.textContent='Pulsa tecla...';var g=function(ev){ev.preventDefault();ev.stopPropagation();invKeys[it.k]=ev.code;ke.textContent=invKeyName(ev.code);ke.classList.remove('waiting');document.removeEventListener('keydown',g,true);};document.addEventListener('keydown',g,true);});r.appendChild(la);r.appendChild(ke);b.appendChild(r);});document.getElementById('invRemapModal').classList.add('active');}
+  function invOpenRemap(){var b=document.getElementById('invRemapKeys');b.innerHTML='';[{k:'left',l:'Mover ←'},{k:'right',l:'Mover →'},{k:'fire',l:'Disparar'},{k:'newgame',l:'Nueva partida'}].forEach(function(it){var r=document.createElement('div');r.className='invRemapRow';var la=document.createElement('div');la.className='invRemapLabel';la.textContent=it.l;var ke=document.createElement('div');ke.className='invRemapKey';ke.textContent=invKeyName(invKeys[it.k]);ke.addEventListener('click',function(){ke.classList.add('waiting');ke.textContent='Pulsa tecla...';var g=function(ev){ev.preventDefault();ev.stopPropagation();invKeys[it.k]=ev.code;ke.textContent=invKeyName(ev.code);ke.classList.remove('waiting');document.removeEventListener('keydown',g,true);};document.addEventListener('keydown',g,true);});r.appendChild(la);r.appendChild(ke);b.appendChild(r);});document.getElementById('invRemapModal').classList.add('active');}
   function invCloseRemap(){document.getElementById('invRemapModal').classList.remove('active');try{localStorage.setItem('invKeyMap',JSON.stringify(invKeys));}catch(_e){}}
   document.getElementById('invRemapBtn')?.addEventListener('click',invOpenRemap);
   document.getElementById('inv-remap-close')?.addEventListener('click',invCloseRemap);
@@ -284,7 +284,7 @@
   fireBtn.addEventListener('pointerup',fireBtnUp);
   fireBtn.addEventListener('pointerleave',fireBtnUp);
   fireBtn.addEventListener('pointercancel',fireBtnUp);
-  document.addEventListener('keydown',e=>{if(document.getElementById('invRemapModal')?.classList.contains('active'))return;if(e.code===invKeys.left)keys[-1]=true;if(e.code===invKeys.right)keys[1]=true;if(e.code===invKeys.fire){e.preventDefault();fire();}});
+  document.addEventListener('keydown',e=>{if(document.getElementById('invRemapModal')?.classList.contains('active'))return;if(e.code===invKeys.newgame&&!e.repeat&&!gameOver&&!victory&&!document.getElementById('winInv').classList.contains('hidden')){e.preventDefault();window.invStartNew&&window.invStartNew();return;}if(e.code===invKeys.left)keys[-1]=true;if(e.code===invKeys.right)keys[1]=true;if(e.code===invKeys.fire){e.preventDefault();fire();}});
   document.addEventListener('keyup',e=>{if(document.getElementById('invRemapModal')?.classList.contains('active'))return;if(e.code===invKeys.left)keys[-1]=false;if(e.code===invKeys.right)keys[1]=false;});
 
   /* ---------- Arranque ---------- */
