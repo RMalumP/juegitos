@@ -177,7 +177,10 @@
   document.addEventListener("keydown",function(e){
     if(document.getElementById("pongRemapModal")?.classList.contains("active"))return;
     if(document.getElementById("winPong").classList.contains("hidden"))return;
-    if(e.code===keys.newgame){e.preventDefault();showStart(true);return;}
+    if(e.code===keys.newgame){e.preventDefault();
+      if(document.getElementById("pongStartScreen").style.display!=="none"||over)startPlay();
+      else showStart(true);
+      return;}
     if(e.code===keys.p1up){key.p1u=true;e.preventDefault();}
     else if(e.code===keys.p1down){key.p1d=true;e.preventDefault();}
     else if(e.code===keys.p2up){key.p2u=true;e.preventDefault();}

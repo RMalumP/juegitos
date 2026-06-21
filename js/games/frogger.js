@@ -272,7 +272,10 @@
   document.addEventListener("keydown",function(e){
     if(document.getElementById("frogRemapModal")?.classList.contains("active"))return;
     if(document.getElementById("winFrog").classList.contains("hidden"))return;
-    if(e.code===keys.newgame){e.preventDefault();showStartScreen();return;}
+    if(e.code===keys.newgame){e.preventDefault();
+      if(document.getElementById("frogStartScreen").style.display!=="none"||over)startPlay();
+      else showStartScreen();
+      return;}
     if(e.repeat)return;
     if(e.code===keys.up||e.code==="KeyW"){e.preventDefault();moveFrog(0,-1);}
     else if(e.code===keys.down||e.code==="KeyS"){e.preventDefault();moveFrog(0,1);}
