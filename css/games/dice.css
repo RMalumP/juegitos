@@ -48,6 +48,7 @@
 .diceDie.coin{background:linear-gradient(#ffe9a8,#e8c45a);border-color:#c9a227}
 .diceDie.coin .diceDieTag{color:#6a531a;font-weight:700}
 .diceSum{color:#7ef0a8;align-self:center;font-size:20px;font-weight:700}
+.diceCoinSum{color:#ffd86b;align-self:center;font-size:14px;font-weight:700}
 #diceRollRow{justify-content:center;flex-shrink:0;display:flex}
 #diceRollBtn{color:#12251a;cursor:pointer;letter-spacing:1px;background:linear-gradient(#ffe27a,#f0b83f);border:none;border-radius:10px;padding:12px 44px;font-family:Courier New,monospace;font-size:clamp(15px,4.5vw,20px);font-weight:700}
 #diceRollBtn:active{filter:brightness(.92)}

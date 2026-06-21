@@ -114,7 +114,10 @@
     if(!roll){box.classList.remove("show");return;}
     box.classList.add("show");
     roll.vals.forEach(function(v,i){box.appendChild(dieCell(faces[i],v,coins[i]));});
-    if(roll.sum){var sum=document.createElement("div");sum.className="diceSum";sum.textContent="Σ "+roll.sum;box.appendChild(sum);}
+    var dsum=0,hasDie=false,caras=0,cruces=0;
+    roll.vals.forEach(function(v,i){if(coins[i]){if(v===1)caras++;else cruces++;}else{dsum+=v;hasDie=true;}});
+    if(hasDie){var sm=document.createElement("div");sm.className="diceSum";sm.textContent="Σ "+dsum;box.appendChild(sm);}
+    if(caras+cruces>0){var cs=document.createElement("div");cs.className="diceCoinSum";cs.textContent="🪙 "+caras+" cara"+(caras===1?"":"s")+" · "+cruces+" cruz"+(cruces===1?"":"ces");box.appendChild(cs);}
   }
   function renderHist(){
     var box=$("diceHist");box.innerHTML="";
@@ -127,9 +130,11 @@
         if(h.coinsArr&&h.coinsArr[i])return "🪙"+(v===1?"Cara":"Cruz");
         return (h.facesArr[i]===6&&v>=1&&v<=6)?PIPS[v]+v:v+"";
       }).join("  ");
-      var sm=document.createElement("span");sm.className="diceHistSum";sm.textContent="Σ "+h.sum;
+      var anyDie=h.facesArr.some(function(f,i){return !(h.coinsArr&&h.coinsArr[i]);});
       var rd=document.createElement("span");rd.className="diceHistRound";rd.textContent="R"+h.round;
-      row.append(rd,nm,dc,sm);box.appendChild(row);
+      row.append(rd,nm,dc);
+      if(anyDie){var sm=document.createElement("span");sm.className="diceHistSum";sm.textContent="Σ "+h.sum;row.append(sm);}
+      box.appendChild(row);
     });
     box.scrollTop=box.scrollHeight;
   }
@@ -140,7 +145,7 @@
     rolling=true;$("diceRollBtn").disabled=true;
     var name=players[turn];
     var vals=faces.map(function(f){return 1+Math.floor(Math.random()*f);});
-    var sum=vals.reduce(function(a,b){return a+b;},0);
+    var sum=0;for(var si=0;si<vals.length;si++)if(!coins[si])sum+=vals[si];  /* las monedas no suman */
     vibrate(20);
     /* animación breve */
     var ticks=0,iv=setInterval(function(){
