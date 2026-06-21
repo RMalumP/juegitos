@@ -28,15 +28,28 @@
   ];
   var lanes=[];
 
-  var frog={col:6,row:START},maxRow,lives,score,level,filled,running=false,paused=false,over=false,dying=false,deathTimer=0,raf=null;
+  var frog={col:6,row:START},maxRow,lives,score,level,filled,running=false,paused=false,over=false,dying=false,deathTimer=0,raf=null,gtime=0;
 
   function buildLanes(){
-    lanes=[];
+    lanes=[];gtime=0;
     BASE.forEach(function(c){
       var step=c.len+c.gap,count=Math.ceil((COLS+c.len+c.gap)/step)+1,T=count*step,items=[];
-      for(var i=0;i<count;i++)items.push({x:i*step+(c.dir<0?0.5:0)});
-      lanes.push({row:c.row,kind:c.kind,sprite:c.sprite,dir:c.dir,speed:c.speed,len:c.len,T:T,items:items});
+      for(var i=0;i<count;i++)items.push({x:i*step+(c.dir<0?0.5:0),ph:(i*0.41)%1});
+      /* niveles difíciles: las tortugas se sumergen (nivel >= 4) */
+      var dive=c.sprite==="🐢"&&level>=4;
+      lanes.push({row:c.row,kind:c.kind,sprite:c.sprite,dir:c.dir,speed:c.speed,len:c.len,T:T,items:items,dive:dive});
     });
+    /* niveles difíciles: serpiente cruzando la mediana (nivel >= 6) */
+    if(level>=6){
+      var sp=1.3+(level-6)*0.15,len=1,gap=8,step=len+gap,count=Math.ceil((COLS+len+gap)/step)+1,T=count*step,items=[];
+      for(var i=0;i<count;i++)items.push({x:i*step});
+      lanes.push({row:MEDIAN,kind:"car",sprite:"🐍",dir:-1,speed:sp,len:len,T:T,items:items});
+    }
+  }
+  /* tortuga sumergida: no es plataforma y se dibuja como agua */
+  function submerged(l,it){
+    if(!l.dive)return false;
+    return ((gtime*0.45+it.ph)%1)>0.62;
   }
   function laneAt(row){for(var i=0;i<lanes.length;i++)if(lanes[i].row===row)return lanes[i];return null;}
   function mult(){return 1+(level-1)*0.18;}
@@ -113,6 +126,7 @@
   }
 
   function step(dt){
+    gtime+=dt;
     /* mover obstáculos siempre */
     lanes.forEach(function(l){
       var v=l.dir*l.speed*mult()*dt;
@@ -130,7 +144,7 @@
         for(var i=0;i<l.items.length;i++){var it=l.items[i];if(c>=it.x&&c<it.x+l.len){die();return;}}
       }else{ /* río: hay que ir sobre un tronco/tortuga */
         var on=null;
-        for(var j=0;j<l.items.length;j++){var p=l.items[j];if(c>=p.x&&c<p.x+l.len){on=p;break;}}
+        for(var j=0;j<l.items.length;j++){var p=l.items[j];if(c>=p.x&&c<p.x+l.len&&!submerged(l,p)){on=p;break;}}
         if(!on){die();return;}
         frog.col+=l.dir*l.speed*mult()*dt;
         if(frog.col+0.5<0||frog.col+0.5>COLS){die();return;}
@@ -148,6 +162,13 @@
   function emoji(s,col,row){
     ctx.fillText(s,col*CELL+CELL/2,row*CELL+CELL/2+1);
   }
+  /* los emojis (coches, tortugas, serpiente) miran a la izquierda por defecto;
+     si el carril va hacia la derecha (dir>0) se voltean para mirar a donde van */
+  function emojiDir(s,col,row,dir){
+    var x=col*CELL+CELL/2,y=row*CELL+CELL/2+1;
+    if(dir>0){ctx.save();ctx.translate(x,y);ctx.scale(-1,1);ctx.fillText(s,0,0);ctx.restore();}
+    else ctx.fillText(s,x,y);
+  }
   function draw(){
     for(var r=0;r<ROWS;r++){ctx.fillStyle=rowBg(r);ctx.fillRect(0,r*CELL,W,CELL);}
     ctx.font=Math.floor(CELL*0.78)+"px serif";
@@ -157,9 +178,13 @@
     /* carriles */
     lanes.forEach(function(l){
       l.items.forEach(function(it){
+        var sub=submerged(l,it);
         for(var k=0;k<l.len;k++){
           var cx=it.x+k;
-          if(cx>-1&&cx<COLS)emoji(l.sprite,cx,l.row);
+          if(cx<=-1||cx>=COLS)continue;
+          if(sub)emoji("🌊",cx,l.row);            /* tortuga sumergida */
+          else if(l.sprite==="🪵")emoji(l.sprite,cx,l.row);  /* tronco: sin dirección */
+          else emojiDir(l.sprite,cx,l.row,l.dir);
         }
       });
     });
