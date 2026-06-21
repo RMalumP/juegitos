@@ -5,6 +5,7 @@
 (function(){
   var DICE_MIN=1,DICE_MAX=12,FACE_MIN=2,FACE_MAX=1000;
   var faces=[6,6];                 /* caras de cada dado */
+  var coins=[false,false];         /* modo moneda (cara/cruz) por dado; off por defecto */
   var players=["Jugador 1","Jugador 2"];
   var turn=0,round=1,history=[],pendingClear=false,rolling=false,playing=false;
   var PIPS=["","⚀","⚁","⚂","⚃","⚄","⚅"];
@@ -21,14 +22,15 @@
       var inp=document.createElement("input");inp.className="diceFaceInput";inp.type="number";inp.min=FACE_MIN;inp.max=FACE_MAX;inp.value=f;
       var inc=document.createElement("button");inc.className="diceFaceBtn";inc.textContent="+";
       var tag=document.createElement("span");tag.className="diceFaceTag";tag.textContent="caras";
-      var coin=document.createElement("button");coin.className="diceCoinBtn";coin.textContent="🪙";coin.title="Moneda: cara o cruz";
-      coin.onclick=function(){set(2);};
-      function set(v){v=Math.max(FACE_MIN,Math.min(FACE_MAX,v|0));faces[i]=v;inp.value=v;coin.classList.toggle("on",v===2);tag.textContent=v===2?"moneda":"caras";}
+      var coin=document.createElement("button");coin.className="diceCoinBtn";coin.textContent="🪙";coin.title="Modo moneda (cara o cruz)";
+      function updateCoinUI(){var is2=faces[i]===2;coin.classList.toggle("show",is2);coin.classList.toggle("on",is2&&coins[i]);tag.textContent=(is2&&coins[i])?"moneda":"caras";}
+      coin.onclick=function(){if(faces[i]!==2)return;coins[i]=!coins[i];updateCoinUI();};
+      function set(v){v=Math.max(FACE_MIN,Math.min(FACE_MAX,v|0));faces[i]=v;inp.value=v;if(v!==2)coins[i]=false;updateCoinUI();}
       dec.onclick=function(){set(faces[i]-1);};
       inc.onclick=function(){set(faces[i]+1);};
       inp.onchange=function(){set(parseInt(inp.value,10)||FACE_MIN);};
       row.append(lbl,dec,inp,inc,tag,coin);
-      coin.classList.toggle("on",f===2);if(f===2)tag.textContent="moneda";
+      updateCoinUI();
       box.appendChild(row);
     });
   }
@@ -53,8 +55,8 @@
   }
   function syncDiceCount(){$("diceDiceCount").textContent=faces.length;renderFaces();}
 
-  $("diceDiceMinus").onclick=function(){if(faces.length>DICE_MIN){faces.pop();syncDiceCount();}};
-  $("diceDicePlus").onclick=function(){if(faces.length<DICE_MAX){faces.push(6);syncDiceCount();}};
+  $("diceDiceMinus").onclick=function(){if(faces.length>DICE_MIN){faces.pop();coins.pop();syncDiceCount();}};
+  $("diceDicePlus").onclick=function(){if(faces.length<DICE_MAX){faces.push(6);coins.push(false);syncDiceCount();}};
   $("diceAddPlayer").onclick=function(){players.push("Jugador "+(players.length+1));renderPlayers();};
 
   /* ---------- JUEGO ---------- */
@@ -68,6 +70,7 @@
     /* limpia nombres vacíos */
     players=players.map(function(n,i){return (n&&n.trim())?n.trim():"Jugador "+(i+1);});
     faces=faces.map(function(f){return Math.max(FACE_MIN,Math.min(FACE_MAX,f|0));});
+    coins=faces.map(function(f,i){return f===2&&!!coins[i];});  /* moneda solo si 2 caras y activada */
     playing=true;turn=0;round=1;history=[];pendingClear=false;rolling=false;
     $("diceSetup").style.display="none";
     $("diceGame").style.display="flex";
@@ -91,11 +94,11 @@
   }
   function esc(s){return String(s).replace(/[&<>]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;"}[c];});}
 
-  function dieCell(faceCount,val){
+  function dieCell(faceCount,val,isCoin){
     var d=document.createElement("div");d.className="diceDie";
     var v=document.createElement("span");v.className="diceDieVal";
     var tag=document.createElement("span");tag.className="diceDieTag";
-    if(faceCount===2){
+    if(isCoin){
       d.classList.add("coin");
       v.textContent="🪙";v.classList.add("pip");
       tag.textContent=val===1?"CARA":"CRUZ";
@@ -110,7 +113,7 @@
     var box=$("diceCurrent");box.innerHTML="";
     if(!roll){box.classList.remove("show");return;}
     box.classList.add("show");
-    roll.vals.forEach(function(v,i){box.appendChild(dieCell(faces[i],v));});
+    roll.vals.forEach(function(v,i){box.appendChild(dieCell(faces[i],v,coins[i]));});
     if(roll.sum){var sum=document.createElement("div");sum.className="diceSum";sum.textContent="Σ "+roll.sum;box.appendChild(sum);}
   }
   function renderHist(){
@@ -121,7 +124,7 @@
       var nm=document.createElement("span");nm.className="diceHistName";nm.textContent=h.name;
       var dc=document.createElement("span");dc.className="diceHistDice";
       dc.textContent=h.vals.map(function(v,i){
-        if(h.facesArr[i]===2)return "🪙"+(v===1?"Cara":"Cruz");
+        if(h.coinsArr&&h.coinsArr[i])return "🪙"+(v===1?"Cara":"Cruz");
         return (h.facesArr[i]===6&&v>=1&&v<=6)?PIPS[v]+v:v+"";
       }).join("  ");
       var sm=document.createElement("span");sm.className="diceHistSum";sm.textContent="Σ "+h.sum;
@@ -145,7 +148,7 @@
       if(++ticks>=8){
         clearInterval(iv);
         renderCurrent({vals:vals,sum:sum});
-        history.push({name:name,vals:vals,sum:sum,facesArr:faces.slice(),round:round});
+        history.push({name:name,vals:vals,sum:sum,facesArr:faces.slice(),coinsArr:coins.slice(),round:round});
         renderHist();
         rolling=false;$("diceRollBtn").disabled=false;
         vibrate(40);
