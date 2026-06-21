@@ -16,9 +16,8 @@
 .diceFaceBtn:active{background:#3a4a72}
 .diceFaceInput{color:#fff;text-align:center;background:#0e1018;border:1px solid #4a5a82;border-radius:5px;width:56px;padding:5px;font-family:Courier New,monospace;font-size:14px}
 .diceFaceTag{color:#789;font-size:11px;min-width:48px}
-.diceCoinBtn{cursor:pointer;background:#2a2410;border:1px solid #5a4a1a;border-radius:50%;width:28px;height:28px;font-size:15px;line-height:1;opacity:.45;transition:opacity .15s,box-shadow .15s,background .15s}
-.diceCoinBtn:active{background:#3a3018}
-.diceCoinBtn.on{opacity:1;background:#4a3c12;border-color:#d8b24a;box-shadow:0 0 6px #d8b24a99}
+.diceCoinBtn{cursor:default;background:#4a3c12;border:1px solid #d8b24a;border-radius:50%;width:28px;height:28px;font-size:15px;line-height:1;box-shadow:0 0 6px #d8b24a99;display:none}
+.diceCoinBtn.on{display:inline-flex;justify-content:center;align-items:center}
 #dicePlayersList{flex-direction:column;gap:5px;display:flex;margin:0 auto;width:100%;max-width:340px}
 .dicePlayerRow{align-items:center;gap:6px;display:flex}
 .diceOrder{flex-direction:column;gap:2px;display:flex}
