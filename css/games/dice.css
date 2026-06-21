@@ -1,0 +1,56 @@
+/* dice.css — parte de Juegos XP. Selector de dados por turnos con historial. */
+#diceWrap{color:#e8e8f0;user-select:none;background:#14161f;flex-direction:column;flex:1;min-height:0;padding:10px;font-family:Courier New,monospace;display:flex;position:relative;overflow:hidden}
+
+/* ---- configuración ---- */
+#diceSetup{flex-direction:column;flex:1;min-height:0;gap:10px;display:flex;overflow-y:auto}
+#diceSetup h3{color:#9ad;text-align:center;letter-spacing:2px;margin:2px 0 4px;font-size:clamp(15px,4vw,20px)}
+.diceSetRow{align-items:center;justify-content:center;gap:8px;display:flex}
+.diceSetLbl{color:#9aa;letter-spacing:1px;font-size:clamp(11px,3vw,13px)}
+.diceNBtn{color:#cfe;cursor:pointer;background:#26304a;border:1px solid #4a5a82;border-radius:5px;justify-content:center;align-items:center;width:30px;height:30px;font-size:18px;display:flex}
+.diceNBtn:active{background:#3a4a72}
+#diceDiceCount{color:#fff;min-width:26px;text-align:center;font-size:18px;font-weight:700}
+#diceFacesList{flex-direction:column;gap:6px;display:flex;margin:2px auto;width:100%;max-width:340px}
+.diceFaceRow{align-items:center;justify-content:center;gap:6px;display:flex}
+.diceFaceLbl{color:#9aa;width:64px;font-size:12px}
+.diceFaceBtn{color:#cfe;cursor:pointer;background:#26304a;border:1px solid #4a5a82;border-radius:5px;width:28px;height:28px;font-size:16px;line-height:1}
+.diceFaceBtn:active{background:#3a4a72}
+.diceFaceInput{color:#fff;text-align:center;background:#0e1018;border:1px solid #4a5a82;border-radius:5px;width:56px;padding:5px;font-family:Courier New,monospace;font-size:14px}
+.diceFaceTag{color:#789;font-size:11px}
+#dicePlayersList{flex-direction:column;gap:5px;display:flex;margin:0 auto;width:100%;max-width:340px}
+.dicePlayerRow{align-items:center;gap:6px;display:flex}
+.diceOrder{flex-direction:column;gap:2px;display:flex}
+.diceOrder button{color:#cfe;cursor:pointer;background:#26304a;border:1px solid #4a5a82;border-radius:3px;width:22px;height:16px;padding:0;font-size:9px;line-height:1}
+.diceOrder button:disabled{opacity:.3}
+.dicePlayerNum{color:#789;width:18px;font-size:12px}
+.dicePlayerInput{color:#fff;flex:1;background:#0e1018;border:1px solid #4a5a82;border-radius:5px;padding:7px;font-family:Courier New,monospace;font-size:13px}
+.diceDelBtn{color:#f88;cursor:pointer;background:#3a2230;border:1px solid #824a5a;border-radius:5px;width:30px;height:30px;font-size:13px}
+.diceDelBtn:disabled{opacity:.3}
+.diceAddRow{justify-content:center;display:flex}
+#diceAddPlayer{color:#cfe;cursor:pointer;background:#26304a;border:1px solid #4a5a82;border-radius:6px;padding:7px 16px;font-family:Courier New,monospace;font-size:12px}
+#diceAddPlayer:active{background:#3a4a72}
+#dicePlayBtn{color:#12251a;cursor:pointer;letter-spacing:2px;background:linear-gradient(#7ef0a8,#3fc97a);border:none;border-radius:8px;margin:6px auto 2px;padding:12px 40px;font-family:Courier New,monospace;font-size:clamp(14px,4vw,18px);font-weight:700}
+#dicePlayBtn:active{filter:brightness(.92)}
+
+/* ---- juego ---- */
+#diceGame{flex-direction:column;flex:1;min-height:0;gap:8px;display:none}
+#diceTurnBar{color:#fff;text-align:center;background:#1c2438;border:1px solid #3a4668;border-radius:6px;flex-shrink:0;padding:8px;font-size:clamp(12px,3vw,15px)}
+#diceTurnBar b{color:#7ef0a8}
+#diceTurnBar.done{color:#ffd86b;border-color:#a98a2a;background:#2a2410}
+#diceCurrent{flex-wrap:wrap;flex-shrink:0;justify-content:center;align-items:center;gap:8px;min-height:72px;padding:6px;display:flex}
+.diceDie{background:linear-gradient(#fbfbff,#dfe2ee);border:2px solid #aab;border-radius:10px;flex-direction:column;justify-content:center;align-items:center;min-width:52px;height:60px;padding:2px 8px;display:flex;box-shadow:0 2px 4px #0006}
+.diceDieVal{color:#1a1a2a;font-size:24px;font-weight:700;line-height:1}
+.diceDieVal.pip{font-size:34px}
+.diceDieTag{color:#778;margin-top:2px;font-size:9px}
+.diceSum{color:#7ef0a8;align-self:center;font-size:20px;font-weight:700}
+#diceRollRow{justify-content:center;flex-shrink:0;display:flex}
+#diceRollBtn{color:#12251a;cursor:pointer;letter-spacing:1px;background:linear-gradient(#ffe27a,#f0b83f);border:none;border-radius:10px;padding:12px 44px;font-family:Courier New,monospace;font-size:clamp(15px,4.5vw,20px);font-weight:700}
+#diceRollBtn:active{filter:brightness(.92)}
+#diceRollBtn:disabled{opacity:.55;cursor:default}
+#diceHistTitle{color:#9aa;letter-spacing:1px;border-bottom:1px solid #2a3450;flex-shrink:0;padding-bottom:4px;font-size:12px}
+#diceHist{flex:1;min-height:48px;background:#0e1018;border:1px solid #2a3450;border-radius:6px;padding:6px;overflow-y:auto}
+.diceHistEmpty{color:#566;text-align:center;padding:14px;font-size:12px}
+.diceHistRow{align-items:center;gap:8px;border-bottom:1px solid #1c2236;padding:5px 2px;font-size:13px;display:flex}
+.diceHistRound{color:#667;background:#1c2438;border-radius:4px;padding:1px 5px;font-size:10px}
+.diceHistName{color:#9ad;min-width:74px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.diceHistDice{color:#fff;flex:1;letter-spacing:1px}
+.diceHistSum{color:#7ef0a8;font-weight:700}

@@ -12,6 +12,7 @@
 
   var HOME=0,RIVER=[1,2,3,4],MEDIAN=5,ROAD=[6,7,8,9,10],START=11;
   var PADS=[1,4,6,8,11];
+  var MAXLVL=10,startLevel=1;
 
   /* configuración base de carriles (velocidad en celdas/seg) */
   var BASE=[
@@ -47,9 +48,35 @@
   }
   function resetFrog(){frog.col=6;frog.row=START;maxRow=START;}
   function newGame(){
-    lives=3;score=0;level=1;filled=[false,false,false,false,false];
+    lives=3;score=0;level=startLevel;filled=[false,false,false,false,false];
     buildLanes();resetFrog();over=false;paused=false;dying=false;
     updateHUD();document.getElementById("frogGameOver").classList.remove("show");
+  }
+
+  /* ---- selección de nivel (estilo Invaders) ---- */
+  function markGrid(){
+    var g=document.getElementById("frogLevelGrid");
+    if(g)g.querySelectorAll(".frogLevelCell").forEach(function(c){c.classList.toggle("selected",+c.textContent===startLevel);});
+  }
+  function buildLevelGrid(){
+    var g=document.getElementById("frogLevelGrid");
+    if(!g)return;g.innerHTML="";
+    for(var i=1;i<=MAXLVL;i++)(function(n){
+      var c=document.createElement("div");
+      c.className="frogLevelCell"+(n===startLevel?" selected":"");
+      c.textContent=n;
+      c.addEventListener("click",function(){
+        startLevel=n;markGrid();
+        if(!running){level=n;updateHUD();}
+      });
+      g.appendChild(c);
+    })(i);
+  }
+  function setLevel(n){
+    n=Math.max(1,Math.min(MAXLVL,n));
+    if(running&&!over){startLevel=n;level=n;buildLanes();resetFrog();}
+    else{startLevel=n;level=n;markGrid();}
+    updateHUD();if(!running||paused)draw();
   }
 
   function die(){
@@ -63,7 +90,8 @@
     document.getElementById("frogGameOver").classList.add("show");
   }
   function nextLevel(){
-    level++;filled=[false,false,false,false,false];buildLanes();resetFrog();
+    if(level<MAXLVL)level++;
+    filled=[false,false,false,false,false];buildLanes();resetFrog();
     score+=200;updateHUD();vibrate([0,40,60,40,60,40]);
   }
   function reachHome(col){
@@ -160,9 +188,24 @@
     document.getElementById("frogStartScreen").style.display="none";
     paused=false;last=0;if(raf)cancelAnimationFrame(raf);raf=requestAnimationFrame(loop);
   }
+  function showStartScreen(){
+    if(raf)cancelAnimationFrame(raf);raf=null;
+    running=false;paused=false;over=false;
+    newGame();
+    var ss=document.getElementById("frogStartScreen");
+    document.getElementById("frogLevelSelect").style.display="flex";
+    ss.querySelector("h1").textContent="🐸 FROGGER";
+    ss.style.display="flex";
+    document.getElementById("frogGameOver").classList.remove("show");
+    document.getElementById("frog-startBtn").textContent="▶ INICIAR JUEGO";
+    document.getElementById("frog-startBtn").onclick=startPlay;
+    markGrid();draw();
+  }
   document.getElementById("frog-startBtn").onclick=startPlay;
-  document.getElementById("frog-restartBtn").onclick=startPlay;
-  document.getElementById("frogNewGame").onclick=startPlay;
+  document.getElementById("frog-restartBtn").onclick=showStartScreen;
+  document.getElementById("frogNewGame").onclick=showStartScreen;
+  document.getElementById("frog-levelUp")?.addEventListener("click",function(e){e.stopPropagation();setLevel(level+1);});
+  document.getElementById("frog-levelDown")?.addEventListener("click",function(e){e.stopPropagation();setLevel(level-1);});
 
   /* ---- botones en pantalla (cruceta) ---- */
   function bindBtn(id,dx,dy){
@@ -187,7 +230,7 @@
   document.addEventListener("keydown",function(e){
     if(document.getElementById("frogRemapModal")?.classList.contains("active"))return;
     if(document.getElementById("winFrog").classList.contains("hidden"))return;
-    if(e.code===keys.newgame){e.preventDefault();startPlay();return;}
+    if(e.code===keys.newgame){e.preventDefault();showStartScreen();return;}
     if(e.repeat)return;
     if(e.code===keys.up||e.code==="KeyW"){e.preventDefault();moveFrog(0,-1);}
     else if(e.code===keys.down||e.code==="KeyS"){e.preventDefault();moveFrog(0,1);}
@@ -204,12 +247,13 @@
   }
   window.addEventListener("resize",fit);
 
-  window.initFrog=function(){fit();requestAnimationFrame(fit);newGame();draw();};
-  window.frogStartNew=function(){startPlay();};
+  window.initFrog=function(){fit();requestAnimationFrame(fit);buildLevelGrid();newGame();draw();};
+  window.frogStartNew=function(){showStartScreen();};
   window.pauseFrog=function(){
     if(running&&!paused&&!over){
       paused=true;if(raf)cancelAnimationFrame(raf);raf=null;
       var ss=document.getElementById("frogStartScreen");
+      document.getElementById("frogLevelSelect").style.display="none";
       ss.querySelector("h1").textContent="PAUSA";
       ss.style.display="flex";
       var b=document.getElementById("frog-startBtn");

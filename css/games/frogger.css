@@ -23,6 +23,13 @@
 #frogBtnLeft{grid-area:2/1}
 #frogBtnDown{grid-area:2/2}
 #frogBtnRight{grid-area:2/3}
+.frogLevelBtn{color:#7cf77c;cursor:pointer;touch-action:manipulation;background:#04140a;border:1px solid #1e5a2e;border-radius:3px;margin:0 2px;padding:1px 6px;font-family:Courier New,monospace;font-size:11px;line-height:1}
+.frogLevelBtn:active,.frogLevelCell:active{color:#04140a;background:#7cf77c}
+#frogLevelSelect{flex-direction:column;align-items:center;gap:6px;margin-top:4px;display:flex}
+.frogLevelLabel{color:#4a8a5a;letter-spacing:2px;font-size:clamp(9px,2.2vw,11px)}
+#frogLevelGrid{grid-template-columns:repeat(5,1fr);gap:6px;display:grid}
+.frogLevelCell{color:#7cf77c;cursor:pointer;touch-action:manipulation;background:#04140a;border:2px solid #1e5a2e;border-radius:4px;justify-content:center;align-items:center;width:clamp(28px,8vw,36px);height:clamp(28px,8vw,36px);font-family:Courier New,monospace;font-size:clamp(12px,3.5vw,15px);display:flex}
+.frogLevelCell.selected{background:#0a2a14;border-color:#7cf77c}
 .frogCtrlToggle{color:#7cf77c;background:#04140a;border-color:#1e5a2e}
 .frogCtrlToggle:active{color:#04140a;background:#7cf77c}
 #frogRemapModal{z-index:100;background:#000000f2;flex-direction:column;justify-content:center;align-items:center;gap:12px;padding:20px;font-family:Courier New,monospace;display:none;position:absolute;inset:0}
