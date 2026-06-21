@@ -21,11 +21,14 @@
       var inp=document.createElement("input");inp.className="diceFaceInput";inp.type="number";inp.min=FACE_MIN;inp.max=FACE_MAX;inp.value=f;
       var inc=document.createElement("button");inc.className="diceFaceBtn";inc.textContent="+";
       var tag=document.createElement("span");tag.className="diceFaceTag";tag.textContent="caras";
-      function set(v){v=Math.max(FACE_MIN,Math.min(FACE_MAX,v|0));faces[i]=v;inp.value=v;}
+      var coin=document.createElement("button");coin.className="diceCoinBtn";coin.textContent="🪙";coin.title="Moneda: cara o cruz";
+      coin.onclick=function(){set(2);};
+      function set(v){v=Math.max(FACE_MIN,Math.min(FACE_MAX,v|0));faces[i]=v;inp.value=v;coin.classList.toggle("on",v===2);tag.textContent=v===2?"moneda":"caras";}
       dec.onclick=function(){set(faces[i]-1);};
       inc.onclick=function(){set(faces[i]+1);};
       inp.onchange=function(){set(parseInt(inp.value,10)||FACE_MIN);};
-      row.append(lbl,dec,inp,inc,tag);
+      row.append(lbl,dec,inp,inc,tag,coin);
+      coin.classList.toggle("on",f===2);if(f===2)tag.textContent="moneda";
       box.appendChild(row);
     });
   }
@@ -91,9 +94,16 @@
   function dieCell(faceCount,val){
     var d=document.createElement("div");d.className="diceDie";
     var v=document.createElement("span");v.className="diceDieVal";
-    v.textContent=(faceCount===6&&val>=1&&val<=6)?PIPS[val]:val;
-    if(faceCount===6&&val>=1&&val<=6)v.classList.add("pip");
-    var tag=document.createElement("span");tag.className="diceDieTag";tag.textContent="d"+faceCount;
+    var tag=document.createElement("span");tag.className="diceDieTag";
+    if(faceCount===2){
+      d.classList.add("coin");
+      v.textContent="🪙";v.classList.add("pip");
+      tag.textContent=val===1?"CARA":"CRUZ";
+    }else{
+      v.textContent=(faceCount===6&&val>=1&&val<=6)?PIPS[val]:val;
+      if(faceCount===6&&val>=1&&val<=6)v.classList.add("pip");
+      tag.textContent="d"+faceCount;
+    }
     d.append(v,tag);return d;
   }
   function renderCurrent(roll){
@@ -111,6 +121,7 @@
       var nm=document.createElement("span");nm.className="diceHistName";nm.textContent=h.name;
       var dc=document.createElement("span");dc.className="diceHistDice";
       dc.textContent=h.vals.map(function(v,i){
+        if(h.facesArr[i]===2)return "🪙"+(v===1?"Cara":"Cruz");
         return (h.facesArr[i]===6&&v>=1&&v<=6)?PIPS[v]+v:v+"";
       }).join("  ");
       var sm=document.createElement("span");sm.className="diceHistSum";sm.textContent="Σ "+h.sum;
