@@ -28,7 +28,7 @@
   ];
   var lanes=[];
 
-  var frog={col:6,row:START},maxRow,lives,score,level,filled,running=false,paused=false,over=false,dying=false,deathTimer=0,raf=null,gtime=0;
+  var frog={col:6,row:START},maxRow,lives,score,level,filled=[false,false,false,false,false],running=false,paused=false,over=false,dying=false,deathTimer=0,raf=null,gtime=0;
 
   function buildLanes(){
     lanes=[];gtime=0;
