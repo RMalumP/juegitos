@@ -127,26 +127,27 @@
 
   function step(dt){
     gtime+=dt;
+    var m=mult();
     /* mover obstáculos siempre */
-    lanes.forEach(function(l){
-      var v=l.dir*l.speed*mult()*dt;
-      l.items.forEach(function(it){
-        it.x+=v;
+    for(var li=0;li<lanes.length;li++){
+      var l=lanes[li],v=l.dir*l.speed*m*dt,items=l.items;
+      for(var ii=0;ii<items.length;ii++){
+        var it=items[ii];it.x+=v;
         if(v>0&&it.x>COLS)it.x-=l.T;
         else if(v<0&&it.x<-l.len)it.x+=l.T;
-      });
-    });
+      }
+    }
     if(paused||over)return;
     if(dying){deathTimer--;if(deathTimer<=0){dying=false;if(lives>0)resetFrog();}return;}
-    var l=laneAt(frog.row),c=frog.col+0.5;
-    if(l){
-      if(l.kind==="car"){
-        for(var i=0;i<l.items.length;i++){var it=l.items[i];if(c>=it.x&&c<it.x+l.len){die();return;}}
+    var lane=laneAt(frog.row),c=frog.col+0.5;
+    if(lane){
+      if(lane.kind==="car"){
+        for(var i=0;i<lane.items.length;i++){var ci=lane.items[i];if(c>=ci.x&&c<ci.x+lane.len){die();return;}}
       }else{ /* río: hay que ir sobre un tronco/tortuga */
         var on=null;
-        for(var j=0;j<l.items.length;j++){var p=l.items[j];if(c>=p.x&&c<p.x+l.len&&!submerged(l,p)){on=p;break;}}
+        for(var j=0;j<lane.items.length;j++){var p=lane.items[j];if(c>=p.x&&c<p.x+lane.len&&!submerged(lane,p)){on=p;break;}}
         if(!on){die();return;}
-        frog.col+=l.dir*l.speed*mult()*dt;
+        frog.col+=lane.dir*lane.speed*m*dt;
         if(frog.col+0.5<0||frog.col+0.5>COLS){die();return;}
       }
     }
@@ -159,35 +160,51 @@
     if(row===MEDIAN||row===START)return "#1e7a3a";
     return "#2a2a2a";
   }
-  function emoji(s,col,row){
-    ctx.fillText(s,col*CELL+CELL/2,row*CELL+CELL/2+1);
+  /* caché de sprites: cada emoji se rasteriza una vez a un canvas pequeño y
+     luego se pinta con drawImage (mucho más barato que fillText cada frame).
+     Se guarda también la versión espejada para los emojis que miran a la
+     izquierda por defecto y avanzan hacia la derecha. */
+  var sprites={},bgCanvas=null;
+  function getSprite(em,flip){
+    var key=(flip?"!":"")+em,c=sprites[key];
+    if(c)return c;
+    c=document.createElement("canvas");c.width=CELL;c.height=CELL;
+    var x=c.getContext("2d");
+    x.font=Math.floor(CELL*0.78)+"px serif";x.textAlign="center";x.textBaseline="middle";
+    if(flip){x.translate(CELL,0);x.scale(-1,1);}
+    x.fillText(em,CELL/2,CELL/2+1);
+    sprites[key]=c;return c;
   }
-  /* los emojis (coches, tortugas, serpiente) miran a la izquierda por defecto;
-     si el carril va hacia la derecha (dir>0) se voltean para mirar a donde van */
-  function emojiDir(s,col,row,dir){
-    var x=col*CELL+CELL/2,y=row*CELL+CELL/2+1;
-    if(dir>0){ctx.save();ctx.translate(x,y);ctx.scale(-1,1);ctx.fillText(s,0,0);ctx.restore();}
-    else ctx.fillText(s,x,y);
+  function buildBg(){
+    bgCanvas=document.createElement("canvas");bgCanvas.width=W;bgCanvas.height=H;
+    var x=bgCanvas.getContext("2d");
+    for(var r=0;r<ROWS;r++){x.fillStyle=rowBg(r);x.fillRect(0,r*CELL,W,CELL);}
   }
+  function prewarm(){
+    ["🐸","🪷","🌊","💥","🪵"].forEach(function(e){getSprite(e,false);});
+    ["🚗","🚙","🚌","🚚","🏎️","🐢","🐍"].forEach(function(e){getSprite(e,false);getSprite(e,true);});
+  }
+  function emoji(s,col,row){ctx.drawImage(getSprite(s,false),col*CELL,row*CELL);}
+  function emojiDir(s,col,row,dir){ctx.drawImage(getSprite(s,dir>0),col*CELL,row*CELL);}
   function draw(){
-    for(var r=0;r<ROWS;r++){ctx.fillStyle=rowBg(r);ctx.fillRect(0,r*CELL,W,CELL);}
-    ctx.font=Math.floor(CELL*0.78)+"px serif";
-    ctx.textAlign="center";ctx.textBaseline="middle";
+    if(!bgCanvas)buildBg();
+    ctx.drawImage(bgCanvas,0,0);
     /* casas */
     for(var i=0;i<PADS.length;i++)emoji(filled[i]?"🐸":"🪷",PADS[i],HOME);
     /* carriles */
-    lanes.forEach(function(l){
-      l.items.forEach(function(it){
-        var sub=submerged(l,it);
+    for(var li=0;li<lanes.length;li++){
+      var l=lanes[li],items=l.items,isLog=l.sprite==="🪵";
+      for(var ii=0;ii<items.length;ii++){
+        var it=items[ii],sub=submerged(l,it);
         for(var k=0;k<l.len;k++){
           var cx=it.x+k;
           if(cx<=-1||cx>=COLS)continue;
           if(sub)emoji("🌊",cx,l.row);            /* tortuga sumergida */
-          else if(l.sprite==="🪵")emoji(l.sprite,cx,l.row);  /* tronco: sin dirección */
+          else if(isLog)emoji(l.sprite,cx,l.row);  /* tronco: sin dirección */
           else emojiDir(l.sprite,cx,l.row,l.dir);
         }
-      });
-    });
+      }
+    }
     /* rana */
     if(dying)emoji("💥",Math.round(frog.col),frog.row);
     else emoji("🐸",frog.col,frog.row);
@@ -272,7 +289,7 @@
   }
   window.addEventListener("resize",fit);
 
-  window.initFrog=function(){fit();requestAnimationFrame(fit);buildLevelGrid();newGame();draw();};
+  window.initFrog=function(){fit();requestAnimationFrame(fit);prewarm();buildLevelGrid();newGame();draw();};
   window.frogStartNew=function(){showStartScreen();};
   window.pauseFrog=function(){
     if(running&&!paused&&!over){

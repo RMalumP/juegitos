@@ -1,0 +1,110 @@
+<!doctype html><html lang=es><meta charset=UTF-8>
+<meta name=viewport content="width=device-width,initial-scale=1">
+<title>Frogger · prueba de rendimiento</title>
+<style>
+body{font-family:system-ui,monospace;background:#0c1018;color:#cfe;margin:0;padding:16px;line-height:1.5}
+h1{font-size:18px}button{font-size:16px;padding:10px 18px;border-radius:8px;border:1px solid #4a5a82;background:#26304a;color:#cfe;margin:4px 0}
+canvas{border:1px solid #333;image-rendering:auto;margin:8px 0;width:338px;max-width:100%}
+#out{white-space:pre-wrap;background:#0e1018;border:1px solid #2a3450;border-radius:6px;padding:10px;font-size:13px;margin-top:10px}
+.win{color:#7ef0a8;font-weight:700}
+</style>
+<h1>🐸 Frogger — prueba de rendimiento</h1>
+<p>Compara el método antiguo (<code>fillText</code> por emoji cada frame) con el nuevo
+(sprites cacheados + <code>drawImage</code>). Mide el tiempo medio por frame con la
+misma carga real del juego. Pulsa el botón con el juego cerrado y el móvil sin otras
+apps pesadas.</p>
+<button id=run>▶ Ejecutar prueba (600 frames por método)</button>
+<canvas id=cv width=338 height=312></canvas>
+<div id=out>Sin resultados todavía.</div>
+<script>
+var COLS=13,ROWS=12,CELL=26,W=COLS*CELL,H=ROWS*CELL;
+var cv=document.getElementById('cv'),ctx=cv.getContext('2d');
+var HOME=0,RIVER=[1,2,3,4],MEDIAN=5,START=11,PADS=[1,4,6,8,11];
+var BASE=[
+ {row:1,sprite:"🐢",dir:-1,speed:1.2,len:2,gap:2},
+ {row:2,sprite:"🪵",dir:1,speed:0.9,len:3,gap:3},
+ {row:3,sprite:"🪵",dir:-1,speed:1.5,len:2,gap:3},
+ {row:4,sprite:"🐢",dir:1,speed:1.1,len:2,gap:2},
+ {row:6,sprite:"🚗",dir:1,speed:1.4,len:1,gap:3},
+ {row:7,sprite:"🚙",dir:-1,speed:2.0,len:1,gap:4},
+ {row:8,sprite:"🚌",dir:1,speed:1.0,len:2,gap:4},
+ {row:9,sprite:"🏎️",dir:-1,speed:2.6,len:1,gap:5},
+ {row:10,sprite:"🚚",dir:1,speed:1.2,len:2,gap:4},
+ {row:5,sprite:"🐍",dir:-1,speed:1.4,len:1,gap:8}  /* serpiente (nivel alto) */
+];
+function buildLanes(){
+  return BASE.map(function(c){
+    var step=c.len+c.gap,count=Math.ceil((COLS+c.len+c.gap)/step)+1,items=[];
+    for(var i=0;i<count;i++)items.push({x:i*step});
+    return {row:c.row,sprite:c.sprite,dir:c.dir,speed:c.speed,len:c.len,T:count*step,items:items,isLog:c.sprite==="🪵"};
+  });
+}
+function rowBg(r){if(r===HOME)return"#06402a";if(RIVER.indexOf(r)>=0)return"#0a3a6b";if(r===MEDIAN||r===START)return"#1e7a3a";return"#2a2a2a";}
+function moveLanes(lanes,dt){
+  for(var li=0;li<lanes.length;li++){var l=lanes[li],v=l.dir*l.speed*1.8*dt,it=l.items;
+    for(var i=0;i<it.length;i++){it[i].x+=v;if(v>0&&it[i].x>COLS)it[i].x-=l.T;else if(v<0&&it[i].x<-l.len)it[i].x+=l.T;}}
+}
+function countDraws(lanes){var n=PADS.length+1;for(var li=0;li<lanes.length;li++){var l=lanes[li];for(var i=0;i<l.items.length;i++)for(var k=0;k<l.len;k++){var cx=l.items[i].x+k;if(cx>-1&&cx<COLS)n++;}}return n;}
+
+/* ----- método ANTIGUO: fillText cada frame ----- */
+function drawOld(lanes){
+  for(var r=0;r<ROWS;r++){ctx.fillStyle=rowBg(r);ctx.fillRect(0,r*CELL,W,CELL);}
+  ctx.font=Math.floor(CELL*0.78)+"px serif";ctx.textAlign="center";ctx.textBaseline="middle";
+  for(var p=0;p<PADS.length;p++)ctx.fillText("🪷",PADS[p]*CELL+CELL/2,CELL/2+1);
+  for(var li=0;li<lanes.length;li++){var l=lanes[li];
+    for(var i=0;i<l.items.length;i++)for(var k=0;k<l.len;k++){
+      var cx=l.items[i].x+k;if(cx<=-1||cx>=COLS)continue;
+      var x=cx*CELL+CELL/2,y=l.row*CELL+CELL/2+1;
+      if(l.isLog){ctx.fillText(l.sprite,x,y);}
+      else if(l.dir>0){ctx.save();ctx.translate(x,y);ctx.scale(-1,1);ctx.fillText(l.sprite,0,0);ctx.restore();}
+      else ctx.fillText(l.sprite,x,y);
+    }
+  }
+  ctx.fillText("🐸",6*CELL+CELL/2,START*CELL+CELL/2+1);
+}
+
+/* ----- método NUEVO: sprites cacheados + drawImage ----- */
+var sprites={},bg=null;
+function getSprite(em,flip){var key=(flip?"!":"")+em,c=sprites[key];if(c)return c;
+  c=document.createElement("canvas");c.width=CELL;c.height=CELL;var x=c.getContext("2d");
+  x.font=Math.floor(CELL*0.78)+"px serif";x.textAlign="center";x.textBaseline="middle";
+  if(flip){x.translate(CELL,0);x.scale(-1,1);}x.fillText(em,CELL/2,CELL/2+1);sprites[key]=c;return c;}
+function buildBg(){bg=document.createElement("canvas");bg.width=W;bg.height=H;var x=bg.getContext("2d");for(var r=0;r<ROWS;r++){x.fillStyle=rowBg(r);x.fillRect(0,r*CELL,W,CELL);}}
+function drawNew(lanes){
+  if(!bg)buildBg();ctx.drawImage(bg,0,0);
+  for(var p=0;p<PADS.length;p++)ctx.drawImage(getSprite("🪷",false),PADS[p]*CELL,0);
+  for(var li=0;li<lanes.length;li++){var l=lanes[li];
+    for(var i=0;i<l.items.length;i++)for(var k=0;k<l.len;k++){
+      var cx=l.items[i].x+k;if(cx<=-1||cx>=COLS)continue;
+      ctx.drawImage(getSprite(l.sprite,!l.isLog&&l.dir>0),cx*CELL,l.row*CELL);
+    }
+  }
+  ctx.drawImage(getSprite("🐸",false),6*CELL,START*CELL);
+}
+
+function bench(name,drawFn,frames){
+  var lanes=buildLanes();
+  /* calentar */
+  for(var w=0;w<30;w++){moveLanes(lanes,1/60);drawFn(lanes);}
+  var t0=performance.now();
+  for(var f=0;f<frames;f++){moveLanes(lanes,1/60);drawFn(lanes);}
+  var t=performance.now()-t0;
+  return {name:name,total:t,per:t/frames,fps:1000/(t/frames),draws:countDraws(lanes)};
+}
+document.getElementById('run').onclick=function(){
+  var out=document.getElementById('out');out.textContent="Ejecutando…";
+  setTimeout(function(){
+    var F=600;
+    var a=bench("ANTIGUO (fillText)",drawOld,F);
+    var b=bench("NUEVO (drawImage)",drawNew,F);
+    function line(r){return r.name.padEnd(22)+" "+r.per.toFixed(2)+" ms/frame  ≈ "+Math.round(r.fps)+" fps";}
+    var speedup=(a.per/b.per);
+    out.innerHTML=
+      "Emojis dibujados/frame: ~"+a.draws+"   ·   "+F+" frames/método\n\n"+
+      line(a)+"\n"+line(b)+"\n\n"+
+      '<span class="win">Mejora: ×'+speedup.toFixed(1)+" más rápido</span>"+
+      (b.fps>=58?"   (nuevo método fluido a 60 fps)":"");
+  },50);
+};
+</script>
+</html>
