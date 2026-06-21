@@ -1,0 +1,41 @@
+/* frogger.css — parte de Juegos XP. Mismo estilo retro que los demás juegos. */
+#frogWrap{color:#7cf77c;user-select:none;background:#04140a;flex-direction:column;flex:1;min-height:0;padding:8px;font-family:Courier New,monospace;display:flex;position:relative;overflow:hidden}
+#frogHeader{border-bottom:1px solid #1e5a2e;flex-shrink:0;justify-content:space-between;align-items:center;margin-bottom:6px;padding-bottom:5px;font-size:clamp(9px,2.5vw,13px);display:flex}
+#frogHeader .val{color:#fff;font-weight:700}
+#frogC{touch-action:none;background:#04140a;border:2px solid #1e5a2e;display:block}
+#frogCanvasWrap{flex:1;justify-content:center;align-items:center;width:100%;min-height:0;display:flex;position:relative}
+#frogTouchZone{z-index:5;touch-action:none;position:absolute;inset:0}
+#frogStartScreen{color:#7cf77c;text-align:center;z-index:10;background:#000000eb;flex-direction:column;justify-content:center;align-items:center;gap:10px;padding:14px;font-family:Courier New,monospace;display:flex;position:absolute;inset:0}
+#frogStartScreen h1{color:#fff;letter-spacing:3px;font-size:clamp(18px,6vw,28px)}
+#frogStartScreen .sub{color:#4a8a5a;font-size:clamp(10px,2.5vw,13px);line-height:1.6}
+#frog-startBtn,#frog-restartBtn{color:#7cf77c;cursor:pointer;letter-spacing:2px;background:#04140a;border:2px solid #7cf77c;border-radius:4px;margin-top:8px;padding:clamp(8px,2.5vw,12px) clamp(20px,6vw,36px);font-family:Courier New,monospace;font-size:clamp(12px,3vw,16px)}
+#frog-startBtn:active,#frog-restartBtn:active{color:#04140a;background:#7cf77c}
+#frogGameOver{color:#7cf77c;text-align:center;z-index:10;background:#000000eb;flex-direction:column;justify-content:center;align-items:center;gap:10px;padding:14px;font-family:Courier New,monospace;display:none;position:absolute;inset:0}
+#frogGameOver.show{display:flex}
+#frogGameOver h1{color:#f44;letter-spacing:3px;font-size:clamp(18px,6vw,28px)}
+#frogGameOver .sub{color:#9fd;font-size:clamp(12px,3vw,15px)}
+#frogFooter{color:#3a7a4a;text-align:center;border-top:1px solid #1e5a2e;flex-shrink:0;margin-top:6px;padding-top:5px;font-size:clamp(8px,2vw,11px)}
+#frogControls{flex-shrink:0;grid-template-rows:48px 48px;grid-template-columns:60px 60px 60px;justify-content:center;gap:6px;margin-top:8px;display:grid}
+#frogControls.ctHidden{display:none}
+.frogCtrlBtn{color:#7cf77c;cursor:pointer;touch-action:none;user-select:none;background:#04140a;border:2px solid #7cf77c;border-radius:4px;justify-content:center;align-items:center;font-size:20px;display:flex}
+.frogCtrlBtn.pressed{color:#04140a;background:#7cf77c}
+#frogBtnUp{grid-area:1/2}
+#frogBtnLeft{grid-area:2/1}
+#frogBtnDown{grid-area:2/2}
+#frogBtnRight{grid-area:2/3}
+.frogCtrlToggle{color:#7cf77c;background:#04140a;border-color:#1e5a2e}
+.frogCtrlToggle:active{color:#04140a;background:#7cf77c}
+#frogRemapModal{z-index:100;background:#000000f2;flex-direction:column;justify-content:center;align-items:center;gap:12px;padding:20px;font-family:Courier New,monospace;display:none;position:absolute;inset:0}
+#frogRemapModal.active{display:flex}
+#frogRemapTitle{color:#7cf77c;letter-spacing:3px;font-size:18px;text-shadow:0 0 6px #7cf77c66}
+#frogRemapKeys{background:#010;border:2px solid #1e5a2e;border-radius:4px;max-height:55vh;padding:12px;overflow-y:auto}
+.frogRemapRow{color:#6f6;align-items:center;gap:12px;margin-bottom:8px;font-size:12px;display:flex}
+.frogRemapLabel{width:90px}
+.frogRemapKey{color:#7cf77c;text-align:center;cursor:pointer;background:#04140a;border:1px solid #1e5a2e;border-radius:3px;min-width:80px;padding:6px 12px;transition:background .2s,border-color .2s}
+.frogRemapKey.waiting{color:#000;background:#7cf77c;animation:.5s infinite frogRemapPulse}
+@keyframes frogRemapPulse{0%,to{opacity:1}50%{opacity:.7}}
+#frogRemapButtons{gap:8px;display:flex}
+.frogRemapBtn{color:#7cf77c;cursor:pointer;background:#04140a;border:2px solid #1e5a2e;border-radius:3px;padding:8px 16px;font-family:Courier New;font-size:12px}
+.frogRemapBtn.confirm{background:#1e5a2e;border-color:#7cf77c}
+.frogRemapBtn.confirm:active{color:#000;background:#7cf77c}
+.frogRemapBtn:active{background:#1e5a2e}
