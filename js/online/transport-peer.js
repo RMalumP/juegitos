@@ -32,7 +32,7 @@ const HB_MS = 8000;         // latido del jugador
 const SILENCIO_MS = 25000;  // sin noticias de la otra parte durante este tiempo = conexión perdida
 const MAX_MENSAJE = 6000;   // tamaño máximo (caracteres) de un mensaje de jugador al anfitrión
 const SNAP_MAX_MS = 12 * 3600 * 1000;
-const PERMITIDOS = ['solicitud', 'cantar', 'chat', 'listo']; // tipos de mensaje que un jugador puede mandar al anfitrión
+const PERMITIDOS = ['solicitud', 'cantar', 'chat', 'listo', 'jugada', 'accion']; // tipos de mensaje que un jugador puede mandar al anfitrión
 const LS = 'juegitos.peer.';
 
 let sala = null;
@@ -78,7 +78,8 @@ function validarDatos(nombre, password, jugador) {
 function errMotivo(d) {
   const m = d && d.motivo;
   if (m === 'partida-en-curso') return errApp(m, 'La partida ya ha empezado. Espera a que termine la ronda para entrar.');
-  if (m === 'sala-llena') return errApp(m, 'La sala está llena (máximo ' + MAX_JUGADORES + ' jugadores).');
+  if (m === 'sala-llena') return errApp(m, 'La sala está llena.');
+  if (m === 'otro-juego') return errApp(m, 'Esa sala es de otro juego. Entra desde el botón Conectar del juego correcto.');
   if (m === 'nombre-repetido') return errApp(m, 'Ya hay un jugador con ese nombre en la sala. Elige otro.');
   if (m === 'datos') return errApp(m, 'El anfitrión ha rechazado los datos de entrada.');
   return errApp('sala-no-encontrada', 'Sala no encontrada o contraseña incorrecta.');
@@ -181,7 +182,7 @@ const CLAVE_SNAP = LS + 'sala.';
 function guardarSnap() {
   const s = sala; if (!s || !s.esHost) return;
   lsSet(CLAVE_SNAP + s.roomId, JSON.stringify({
-    t: Date.now(), session: s.session, hostUid: s.hostUid, prueba: s.prueba, seq: s.seq, estado: s.estado, roles: s.roles, extra: s.extra,
+    t: Date.now(), juego: s.juego, max: s.max, session: s.session, hostUid: s.hostUid, prueba: s.prueba, seq: s.seq, estado: s.estado, roles: s.roles, extra: s.extra,
     jugadores: [...s.jugadores.values()].map(j => ({ id: j.id, nombre: j.nombre, token: j.token, orden: j.orden }))
   }));
 }
@@ -275,7 +276,8 @@ function alHola(conn, d) {
     if (!nombre || nombre.length > 24) { rechazar(conn, 'datos'); return; }
     if (d.pw !== s.prueba) { rechazar(conn, 'contrasena'); return; } // el anfitrión valida la contraseña
     if (s.estado.phase !== 'lobby') { rechazar(conn, 'partida-en-curso'); return; }
-    if (s.jugadores.size >= MAX_JUGADORES) { rechazar(conn, 'sala-llena'); return; }
+    if (s.juego && d.juego && d.juego !== s.juego) { rechazar(conn, 'otro-juego'); return; }
+    if (s.jugadores.size >= (s.max || MAX_JUGADORES)) { rechazar(conn, 'sala-llena'); return; }
     if ([...s.jugadores.values()].some(x => norm(x.nombre) === norm(nombre))) { rechazar(conn, 'nombre-repetido'); return; }
     j = { id, nombre, token, orden: ++s.seq, conectado: true, ultimo: Date.now() };
     s.jugadores.set(id, j);
@@ -298,8 +300,8 @@ function vigilar() {
   }
   if (s.peer && s.peer.disconnected && !s.peer.destroyed) { try { s.peer.reconnect(); } catch (e) { /* se reintenta */ } }
 }
-async function abrirComoAnfitrion(roomId, prueba, nombreJugador, snap, ice) {
-  const yo = identidad();
+async function abrirComoAnfitrion(roomId, prueba, nombreJugador, snap, ice, opts) {
+  const yo = identidad(); opts = opts || {};
   let peer = null;
   const limite = Date.now() + (snap ? 20000 : 0); // si recargué mi propia pestaña, PeerJS puede tardar en liberar el ID
   for (;;) {
@@ -310,7 +312,8 @@ async function abrirComoAnfitrion(roomId, prueba, nombreJugador, snap, ice) {
     }
   }
   const s = { esHost: true, roomId, session: (snap && snap.session) || hex(12), hostUid: yo.id, prueba, peer, ice, jugadores: new Map(), conns: new Map(),
-    estado: (snap && snap.estado) || { phase: 'lobby', round: 0 }, roles: (snap && snap.roles) || {}, extra: (snap && snap.extra) || null, seq: (snap && snap.seq) || 0, timers: [] };
+    juego: (snap && snap.juego) || opts.juego || null, max: (snap && snap.max) || opts.max || MAX_JUGADORES,
+    estado: (snap && snap.estado) || Object.assign({ phase: 'lobby', round: 0 }, opts.juego ? { juego: opts.juego } : {}), roles: (snap && snap.roles) || {}, extra: (snap && snap.extra) || null, seq: (snap && snap.seq) || 0, timers: [] };
   if (snap) snap.jugadores.forEach(j => s.jugadores.set(j.id, { ...j, conectado: false, ultimo: 0 }));
   const previo = s.jugadores.get(yo.id);
   s.jugadores.set(yo.id, { id: yo.id, nombre: (nombreJugador || (previo && previo.nombre) || 'Anfitrión').trim(), token: yo.token, orden: previo ? previo.orden : ++s.seq, conectado: true, ultimo: Date.now() });
@@ -325,14 +328,14 @@ async function abrirComoAnfitrion(roomId, prueba, nombreJugador, snap, ice) {
   setTimeout(() => { if (sala === s) { difundirJug(); difundirEstado(); enviarRol(s.hostUid); } }, 0);
   return { transporte: 'peer', roomId, uid: yo.id, esAnfitrion: true, reanudada: !!snap, avisos: ice.avisos.slice() };
 }
-async function crearSala(nombre, password, nombreJugador) {
+async function crearSala(nombre, password, nombreJugador, opts) {
   validarDatos(nombre, password, nombreJugador);
   try {
     await cargarPeerJS();
     const roomId = await hashSala(nombre, password);
     const prueba = await pruebaClave(nombre, password);
     const ice = await obtenerIce();
-    return await abrirComoAnfitrion(roomId, prueba, nombreJugador, leerSnap(roomId), ice);
+    return await abrirComoAnfitrion(roomId, prueba, nombreJugador, leerSnap(roomId), ice, opts);
   } catch (e) { throw e && e.esAppError ? e : traducirPeerError(e); }
 }
 
@@ -343,6 +346,7 @@ function holaDe(s, reanudar) {
   const yo = identidad();
   const h = { t: 'hola', id: yo.id, token: yo.token, nombre: s.nombre };
   if (!reanudar && s.prueba) h.pw = s.prueba;
+  if (!reanudar && s.juegoPedido) h.juego = s.juegoPedido;   // sala de un juego concreto: el anfitrión rechaza si es de otro
   return h;
 }
 function conectarAlHost(s, peer, hola) {
@@ -435,7 +439,7 @@ function cierreRemoto(s) {
   sala = null; limpiar(s);
   emitir({ tipo: 'sala-cerrada' });
 }
-async function unirse(nombre, password, nombreJugador) {
+async function unirse(nombre, password, nombreJugador, opts) {
   validarDatos(nombre, password, nombreJugador);
   let peer = null;
   try {
@@ -445,7 +449,7 @@ async function unirse(nombre, password, nombreJugador) {
     const ice = await obtenerIce();
     peer = await nuevoPeer(null, ice.iceServers);
     const yo = identidad();
-    const s = { esHost: false, roomId, id: yo.id, nombre: nombreJugador.trim(), prueba, peer, ice, conn: null, recon: false, cerrado: false, ultimoRx: Date.now() };
+    const s = { esHost: false, juegoPedido: opts && opts.juego, roomId, id: yo.id, nombre: nombreJugador.trim(), prueba, peer, ice, conn: null, recon: false, cerrado: false, ultimoRx: Date.now() };
     sala = s;
     const r = await conectarAlHost(s, peer, holaDe(s, false));
     aceptarConexion(s, r);

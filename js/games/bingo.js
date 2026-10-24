@@ -436,7 +436,9 @@
     var nodos;
     if (online()) {
       var est = window.Sala.estado;
-      if (esHost()) {
+      if (est.juego && est.juego !== 'bingo') {
+        nodos = [mk('div', 'bgVacio', 'Esta sala es de otro juego.'), boton('Ir al juego de la sala', 'grande', function () { window.Sala.irAlJuego(); })];
+      } else if (esHost()) {
         hostIniciar();
         nodos = est.phase === 'fin' ? vistaHostFin() : (est.phase === 'jugando' && B.p ? vistaBolero() : vistaHostLobby());
         if (est.phase === 'jugando') nodos.unshift(anuncioEl());

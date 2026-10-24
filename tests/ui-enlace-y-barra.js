@@ -20,7 +20,7 @@ const { entorno, wait, ok, fin } = require('./helpers');
   // --- crear sala y elegir bingo
   await H.pg.click('#btnSala');
   await H.pg.fill('#salaNombre', 'Bolero'); await H.pg.fill('#salaSala', 'sala enlace'); await H.pg.fill('#salaPass', 'clave1'); await H.pg.click('#salaCrear');
-  await H.pg.waitForSelector('#salaDentro', { state: 'visible' }); await H.pg.click('#salaJuegoBingo'); await H.pg.waitForSelector('.bgSala');
+  await H.pg.waitForSelector('.bgSala', { timeout: 25000 });
 
   // --- símbolo de la barra: se pliega y se despliega con la barra
   ok(await H.pg.locator('#trayNet').isVisible(), 'con la barra desplegada se ve el símbolo');

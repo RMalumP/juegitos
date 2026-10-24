@@ -7,7 +7,7 @@ const { entorno, wait, ok, fin } = require('./helpers');
   let H = await abre(ctxH, 'bolero'), A = await abre(ctxA, 'ana'), B = await abre(ctxB, 'beto');
   await H.evaluate(() => window.openGame('sala'));
   await H.fill('#salaNombre', 'Bolero'); await H.fill('#salaSala', 'recon sala'); await H.fill('#salaPass', 'clave1'); await H.click('#salaCrear');
-  await H.waitForSelector('#salaDentro', { state: 'visible' }); await H.click('#salaJuegoBingo'); await H.waitForSelector('.bgSala');
+  await H.waitForSelector('.bgSala', { timeout: 25000 });
   for (const [J, n] of [[A, 'Ana'], [B, 'Beto']]) {
     await J.evaluate(() => window.openGame('sala'));
     await J.fill('#salaNombre', n); await J.fill('#salaSala', 'recon sala'); await J.fill('#salaPass', 'clave1'); await J.click('#salaUnir');

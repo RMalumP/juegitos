@@ -13,8 +13,18 @@
 (function () {
   const $ = id => document.getElementById(id);
   const LS_SES = 'juegitos.sala.sesion', LS_NOM = 'juegitos.sala.nombre', LS_SAL = 'juegitos.sala.sala';
-  const S = { T: null, activo: false, host: false, uid: null, nombre: '', sala: '', pass: '', jug: [], estado: {}, rol: null, net: null, conectado: true, red: 'off', juego: null, ocupado: false };
+  const S = { T: null, activo: false, host: false, uid: null, nombre: '', sala: '', pass: '', jug: [], estado: {}, rol: null, net: null, conectado: true, red: 'off', juego: null, ocupado: false, objetivo: null };
   const L = {}, pendientes = [];
+  // Juegos con modo online. `max` = jugadores por sala (anfitrión incluido), `win` = ventana del juego en el escritorio, `tab` = pestaña de la Mesa de Juegos.
+  const JUEGOS = {
+    bingo:    { nombre: 'Bingo',    icono: '🎱', min: 2, max: 25, win: 'bingo', winId: 'winBingo' },
+    ajedrez:  { nombre: 'Ajedrez',  icono: '♟️', min: 2, max: 2,  win: 'chess', winId: 'winChess', tab: 0 },
+    damas:    { nombre: 'Damas',    icono: '⛀',  min: 2, max: 2,  win: 'chess', winId: 'winChess', tab: 2 },
+    parchis:  { nombre: 'Parchís',  icono: '🔵', min: 2, max: 4,  win: 'parchis', winId: 'winParchis' },
+    ruleta:   { nombre: 'Ruleta',   icono: '🎯', min: 2, max: 6,  win: 'roul', winId: 'winRoul' },
+    blackjack:{ nombre: 'Blackjack',icono: '🎰', min: 2, max: 4,  win: 'bj', winId: 'winBJ' },
+    poker:    { nombre: 'Póquer',   icono: '♠️', min: 2, max: 6,  win: 'poker', winId: 'winPoker' }
+  };
   const emit = (ev, ...a) => (L[ev] || []).slice().forEach(f => { try { f(...a); } catch (e) { console.error(e); } });
   const lsGet = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
   const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch (e) { /* sin almacenamiento */ } };
@@ -46,9 +56,9 @@
     switch (m.tipo) {
       case 'estado': {
         const { tipo, ...r } = m; S.estado = r;
-        if (r.juego && r.juego !== S.juego) { // el anfitrión ha elegido juego: los jugadores pasan a él si están mirando la ventana de la sala
+        if (r.juego && r.juego !== S.juego) { // la sala es de un juego: se pasa a él si se estaba mirando la ventana de la sala (o se acaba de entrar/recuperar)
           S.juego = r.juego; pintar();
-          const w = $('winSala'); if (!S.host && ((w && !w.classList.contains('hidden')) || S.irAlEntrar)) irAlJuego();
+          const w = $('winSala'); if ((!S.host && w && !w.classList.contains('hidden')) || S.irAlEntrar) irAlJuego();
           S.irAlEntrar = false;
         }
         emit('estado', S.estado); break;
@@ -84,7 +94,7 @@
     if (r.avisos && r.avisos.length) setTimeout(() => toast(r.avisos[0]), 500);
   }
   function limpiar(motivo) {
-    Object.assign(S, { activo: false, host: false, jug: [], estado: {}, rol: null, net: null, conectado: true, juego: null });
+    Object.assign(S, { activo: false, host: false, jug: [], estado: {}, rol: null, net: null, conectado: true, juego: null, objetivo: null });
     lsDel(LS_SES); setRed('off'); pantalla(false); pintar();
     emit('cierre', motivo || 'salir');
   }
@@ -95,9 +105,13 @@
     try {
       const T = await cargarTransporte();
       S.pass = pass;
-      const r = await (modo === 'crear' ? T.crearSala(sala, pass, nombre) : T.unirse(sala, pass, nombre));
+      const juego = S.objetivo || ($('salaJuegoSel') ? $('salaJuegoSel').value : 'bingo');
+      const r = await (modo === 'crear' ? T.crearSala(sala, pass, nombre, { juego, max: JUEGOS[juego].max }) : T.unirse(sala, pass, nombre, S.objetivo ? { juego: S.objetivo } : undefined));
       lsSet(LS_NOM, nombre); lsSet(LS_SAL, sala);
       entrar(r, { nombre, sala, pass });
+      if (modo === 'crear') S.juego = juego; else if (S.objetivo) S.juego = S.objetivo;
+      S.objetivo = null; pintar();
+      if (S.juego) irAlJuego();
     } catch (e) { setRed('off'); aviso((e && e.message) || 'No se pudo conectar.'); }
     S.ocupado = false; pintar();
   }
@@ -108,7 +122,8 @@
     try {
       const T = await cargarTransporte();
       entrar(await T.reanudar({ roomId: s.roomId }), { nombre: s.nombre, sala: s.sala, pass: s.pass || '' });
-      if (S.host) { const ex = T.leerExtra(); if (ex && ex.juego) { S.juego = ex.juego; irAlJuego(); } } // el anfitrión recupera su partida
+      S.irAlEntrar = true; // al llegar el estado de la sala se vuelve a su juego (el anfitrión recupera su partida)
+      if (S.host) { const ex = T.leerExtra(); if (ex && ex.juego) { S.juego = ex.juego; irAlJuego(); } }
       return true;
     } catch (e) { lsDel(LS_SES); setRed('off'); return false; }
   }
@@ -131,14 +146,16 @@
     $('salaConectar').style.display = S.activo ? 'none' : '';
     $('salaDentro').style.display = S.activo ? '' : 'none';
     ['salaCrear', 'salaUnir'].forEach(id => { $(id).disabled = S.ocupado; });
+    $('salaJuegoFila').style.display = S.objetivo ? 'none' : '';
+    $('salaConectarT').textContent = S.objetivo && JUEGOS[S.objetivo] ? JUEGOS[S.objetivo].icono + ' Sala de ' + JUEGOS[S.objetivo].nombre : '📡 Multijugador';
     if (!S.activo) return;
     $('salaTitulo').textContent = S.sala || 'Sala';
     $('salaRol').textContent = (S.host ? '👑 Anfitrión' : '🎟️ Jugador') + (S.net && !S.host ? ' · ' + netTxt(S.net) : '');
     $('salaEstadoTxt').textContent = S.conectado ? 'Conectado' : 'Reconectando…';
     $('salaEstadoTxt').className = S.conectado ? 'ok' : 'warn';
     $('salaIrJuego').style.display = S.juego ? '' : 'none';
-    $('salaJuegos').style.display = S.host && !S.juego ? '' : 'none';
-    $('salaIrJuego').textContent = S.juego === 'bingo' ? '🎱 Ir al Bingo' : 'Ir al juego';
+
+    $('salaIrJuego').textContent = S.juego && JUEGOS[S.juego] ? JUEGOS[S.juego].icono + ' Ir a ' + JUEGOS[S.juego].nombre : 'Ir al juego';
     $('salaCerrar').textContent = S.host ? 'Cerrar sala' : 'Salir de la sala';
     const lista = $('salaJugadores');
     lista.innerHTML = '';
@@ -226,7 +243,29 @@
 
   /* ---------- apertura de la ventana ---------- */
   function abrir() { if (typeof window.openGame === 'function') window.openGame('sala'); }
-  function irAlJuego() { if (S.juego && typeof window.openGame === 'function') window.openGame(S.juego); }
+  function cargarLobby() {
+    if (window.JuegosOnline) return Promise.resolve(window.JuegosOnline);
+    return new Promise((ok, ko) => {
+      const sc = document.createElement('script'); sc.src = new URL('js/online/lobby.js', document.baseURI).href;
+      sc.onload = () => ok(window.JuegosOnline); sc.onerror = () => ko(new Error('No se pudo cargar el lobby.'));
+      document.head.appendChild(sc);
+    });
+  }
+  // Abre la ventana del juego de la sala (y, si no es el bingo, su lobby encima).
+  function irAlJuego() {
+    const j = S.juego, d = JUEGOS[j]; if (!d || typeof window.openGame !== 'function') return;
+    if (j === 'ajedrez' || j === 'damas') window.openChessTab(d.tab); else window.openGame(d.win);
+    if (j !== 'bingo') cargarLobby().then(L => L.mostrar(j)).catch(e => toast(e.message));
+  }
+  // Botón «🌐 Conectar» de cada juego: lleva al lobby de ese juego, o a conectar si aún no hay sala.
+  function lobby(juego) {
+    const d = JUEGOS[juego]; if (!d) return;
+    if (S.activo) {
+      if (S.juego === juego) { irAlJuego(); return; }
+      toast('Estás en una sala de ' + (JUEGOS[S.juego] ? JUEGOS[S.juego].nombre : 'otro juego') + '. Sal de ella para conectar aquí.'); abrir(); return;
+    }
+    S.objetivo = juego; pintar(); abrir();
+  }
 
   function iniciar() {
     if (!$('winSala')) return;
@@ -237,9 +276,13 @@
     $('salaCompartir').onclick = compartir;
     $('salaQRbtn').onclick = qr;
     $('salaIrJuego').onclick = irAlJuego;
-    $('salaJuegoBingo').onclick = () => { S.juego = 'bingo'; irAlJuego(); };
     $('trayNet').onclick = abrir;
-    if ($('btnSala')) $('btnSala').onclick = abrir;
+    if ($('btnSala')) $('btnSala').onclick = () => { S.objetivo = null; pintar(); abrir(); };
+    document.querySelectorAll('[data-conectar]').forEach(b => { b.onclick = () => {
+      let j = b.dataset.conectar;
+      if (j === 'chess') { const f = $('chessFrame'); let t = 0; try { t = f.contentWindow.getActiveTab(); } catch (e) { /* aún no cargado */ } j = t === 2 ? 'damas' : 'ajedrez'; }
+      lobby(j);
+    }; });
     if ($('iconBingo')) $('iconBingo').addEventListener('click', function () { if (typeof window.openGame === 'function') window.openGame('bingo'); }); // el icono del bingo abre con un solo toque (los demás, con doble toque)
     if (location.protocol === 'file:') aviso('El modo online solo funciona desde una página https. Abriendo el archivo con doble clic puedes usar el bingo en local.');
     pintar();
@@ -252,8 +295,8 @@
     get estado() { return S.estado; }, get rol() { return S.rol; }, get red() { return S.red; }, get nombre() { return S.nombre; },
     get sala() { return S.sala; }, get conectado() { return S.conectado; },
     on(ev, f) { (L[ev] = L[ev] || []).push(f); if (ev === 'msg') pendientes.splice(0).forEach(m => { try { f(m); } catch (e) { console.error(e); } }); }, off(ev, f) { L[ev] = (L[ev] || []).filter(x => x !== f); },
-    enviar, salir, abrir, irAlJuego, toast, compartir, qr,
-    usarEn(juego) { S.juego = juego; pintar(); },
+    enviar, salir, abrir, irAlJuego, toast, compartir, qr, lobby, JUEGOS, get juego() { return S.juego; }, get max() { return S.juego && JUEGOS[S.juego] ? JUEGOS[S.juego].max : 25; },
+    usarEn(juego) { if (!S.juego) { S.juego = juego; pintar(); } },
     expulsar: id => S.T.expulsar(id),
     guardarExtra: o => S.T && S.T.guardarExtra(o), leerExtra: () => (S.T ? S.T.leerExtra() : null),
     ahora: () => (S.T ? S.T.ahora() : Date.now())
