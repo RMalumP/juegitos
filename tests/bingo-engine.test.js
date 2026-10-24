@@ -49,9 +49,10 @@ test('el bombo es una permutación de 1..90 y sacar la agota', () => {
 });
 
 test('ningún cartón se repite entre jugadores y los cartones por jugador se limitan', () => {
-  const p = E.nuevaPartida({ jugadores: [{ id: 'a', nombre: 'A', cartones: 99 }, { id: 'b', nombre: 'B', cartones: 0 }], semilla: 3 });
+  const p = E.nuevaPartida({ jugadores: [{ id: 'a', nombre: 'A', cartones: 99 }, { id: 'b', nombre: 'B', cartones: 0 }, { id: 'c', nombre: 'C' }], semilla: 3 });
+  assert.equal(p.cartones.c.length, 1); // sin indicar = 1
   assert.equal(p.cartones.a.length, E.MAX_CARTONES);
-  assert.equal(p.cartones.b.length, 1);
+  assert.equal(p.cartones.b.length, 0); // 0 = no juega
   const claves = Object.values(p.cartones).flat().map(c => JSON.stringify(c));
   assert.equal(new Set(claves).size, claves.length);
 });
@@ -125,4 +126,29 @@ test('sin premio de línea solo hay bingo', () => {
   const p = E.nuevaPartida({ jugadores: [{ id: 'a', nombre: 'A', cartones: 1 }], premios: ['bingo'], semilla: 4 });
   assert.deepEqual(p.premios, ['bingo']);
   assert.equal(E.cantar(p, 'a', 'linea', 0).ok, false);
+});
+
+test('cada cartón tiene un número único y correlativo en toda la partida', () => {
+  const p = E.nuevaPartida({ jugadores: [{ id: 'host', nombre: 'Bolero', cartones: 2 }, { id: 'a', nombre: 'A', cartones: 3 }, { id: 'b', nombre: 'B', cartones: 0 }, { id: 'c', nombre: 'C', cartones: 1 }], semilla: 8 });
+  const todos = Object.values(p.nums).flat();
+  assert.deepEqual(todos, [1, 2, 3, 4, 5, 6]);
+  assert.deepEqual(p.nums.host, [1, 2]); assert.deepEqual(p.nums.b, []);
+  const l = E.listarCartones(p);
+  assert.equal(l.length, 6);
+  assert.deepEqual(l.map(x => x.num), [1, 2, 3, 4, 5, 6]);
+  assert.equal(l[2].nombre, 'A'); assert.equal(l[2].idx, 0); assert.deepEqual(l[2].faltan, { linea: 5, bingo: 15 });
+});
+
+test('el anfitrión puede jugar sus propios cartones y cantar con ellos', () => {
+  const p = E.nuevaPartida({ jugadores: [{ id: 'host', nombre: 'Bolero', cartones: 1 }, { id: 'a', nombre: 'A', cartones: 1 }], semilla: 30 });
+  const c = p.cartones.host[0], fila = c[1].filter(n => n > 0);
+  p.bombo = [...fila, ...p.bombo.filter(n => !fila.includes(n))];
+  fila.forEach(() => E.sacar(p));
+  const r = E.cantar(p, 'host', 'linea', 0);
+  assert.equal(r.ok, true); assert.equal(r.ganadores[0].nombre, 'Bolero');
+});
+
+test('marcasFalsas devuelve las marcas que no han salido', () => {
+  assert.deepEqual(E.marcasFalsas([5, 9, 22, 40], [9, 40, 77]), [5, 22]);
+  assert.deepEqual(E.marcasFalsas(undefined, [1]), []);
 });

@@ -41,3 +41,14 @@
 .bgC.marc{background:radial-gradient(circle,#e8403a 0,#e8403a 58%,#fff 60%);color:#fff}
 .bgBtn.cantar{font-size:14px;padding:9px}.bgBtn.cantar.lista{background:linear-gradient(#ffd24d,#e8a400);animation:bgLate .9s infinite}
 @keyframes bgLate{50%{transform:scale(1.04)}}
+/* comprobar cartones, notas */
+.bgNota{font-size:11px;color:#7a4b00;background:#fff4d6;border:1px solid #e0b040;padding:4px 7px}
+.bgOverlay{position:absolute;inset:0;z-index:20;background:#000b;display:flex;align-items:center;justify-content:center;padding:8px}
+.bgOvBox{background:#d4d0c8;border:3px solid;border-color:#fff gray gray #fff;width:100%;max-height:100%;display:flex;flex-direction:column;box-shadow:4px 4px 16px #000a}
+.bgOvCab{display:flex;justify-content:space-between;align-items:center;color:#fff;background:linear-gradient(#0a246a,#3a6ea5);padding:5px 8px;font-size:13px}
+.bgOvX{cursor:pointer;border:1px solid #fff6;background:linear-gradient(#c8c8c8,#888);border-radius:3px;width:22px;height:22px;font-weight:700}
+.bgOvCuerpo{overflow-y:auto;padding:8px;display:flex;flex-direction:column;gap:6px}
+.bgCk{display:grid;grid-template-columns:auto 1fr;grid-template-rows:auto auto;column-gap:8px;text-align:left;cursor:pointer;background:#fff;border:2px solid;border-color:#fff gray gray #fff;padding:6px 8px;font-size:13px;color:#000}
+.bgCk b{color:#0a246a;grid-row:1/3;align-self:center;font-size:16px}.bgCk small{color:#555;font-size:11px}
+.bgCk.linea{background:#fff8d6}.bgCk.bingo{background:#d9f5d0}
+.bgCkCab{font-size:13px}.bgVeredicto{padding:6px 8px;font-weight:700;font-size:13px;border:1px solid gray;background:#fff}.bgVeredicto.si{background:#d9f5d0;color:#14500c}.bgVeredicto.no{color:#7a1a1a}

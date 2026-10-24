@@ -1,7 +1,9 @@
 /* bingo.js — Juegos XP: Bingo de 90 bolas.
-   · Local: «Bolero» (bombo animado, tablero 1–90, voz, comprobar cartón) y «Mis cartones» (cartones 3×9 que se marcan a toque, con aviso de línea y bingo).
-   · Online (App «Sala online», js/online/sala.js): el anfitrión es el Bolero, cada jugador tiene sus cartones en su móvil. El anfitrión reparte los cartones,
-     saca las bolas y comprueba cada «¡Línea!» / «¡Bingo!» contra los cartones que él mismo ha repartido (nadie puede cantar en falso).
+   · Un único modo para cantar las bolas («Bolero»): bombo animado, tablero 1–90, voz, modo automático y «Comprobar cartones». El Bolero puede añadirse
+     cartones propios (0–6) que salen debajo y juega con ellos a la vez; con 0 sirve para partidas con cartones físicos.
+   · Online (App «Multijugador», js/online/sala.js): el anfitrión es el Bolero y cada jugador tiene sus cartones en su móvil. El anfitrión reparte los cartones,
+     saca las bolas y comprueba cada «¡Línea!» / «¡Bingo!» contra los cartones que él mismo ha repartido (nadie puede cantar en falso, tampoco él).
+   · Cada cartón tiene un número único en toda la partida («Cartón Nº 7»). Un canto falso borra de ese cartón las casillas marcadas que no han salido.
    Reglas y comprobación de premios: js/bingo/engine.js (sin DOM, con tests). */
 (function () {
   'use strict';
@@ -16,16 +18,19 @@
   function parse(s, fb) { try { var v = JSON.parse(s); return v === undefined || v === null ? fb : v; } catch (e) { return fb; } }
 
   var B = {
-    vista: 'menu',                 // sin sala: 'menu' | 'bolero' | 'cartones'
+    vista: 'menu',                 // sin sala: 'menu' | 'juego'
     voz: lsGet('voz') !== '0', vozJ: lsGet('vozj') === '1', autoMarca: lsGet('automarca') === '1',
     seg: +lsGet('seg') || 6, auto: false, autoT: null,
-    p: null,                       // partida del Bolero (engine): bombo secreto, bolas, cartones repartidos, premios
-    cfg: { linea: true }, ronda: 0, anuncio: null,
-    loc: null,                     // cartones locales {cartones:[], marcas:[[n,…]], nombre}
-    nCart: +lsGet('ncart') || 1, vistoN: 0, hostListo: false, quiere: 1
+    p: null,                       // partida del Bolero (engine): bombo secreto, bolas, cartones repartidos (también los suyos), premios
+    cfg: { linea: true, host: +lsGet('carthost') || 0 }, ronda: 0, anuncio: null,
+    nCart: +lsGet('ncart') || 0,   // cartones propios del Bolero en local
+    vistoN: 0, hostListo: false, quiere: 1
   };
   var online = function () { return !!(window.Sala && window.Sala.activo); };
   var esHost = function () { return online() && window.Sala.host; };
+  var esJugadorOnline = function () { return online() && !window.Sala.host; };
+  var uid = function () { return online() ? window.Sala.uid : 'yo'; };
+  var miNombre = function () { return online() ? (window.Sala.nombre || 'Bolero') : 'Yo'; };
 
   /* ---------- voz y avisos ---------- */
   function decir(n) {
@@ -43,7 +48,7 @@
   function vibrar(ms) { try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) { /* nada */ } }
 
   /* ---------- piezas de interfaz ---------- */
-  function bola(n, cls) { var b = mk('div', 'bgBola ' + (cls || '') + ' c' + E.columnaDe(n), '<span>' + n + '</span>'); return b; }
+  function bola(n, cls) { return mk('div', 'bgBola ' + (cls || '') + ' c' + E.columnaDe(n), '<span>' + n + '</span>'); }
   function tablero(salidas, ultima) {
     var t = mk('div', 'bgTablero');
     for (var n = 1; n <= 90; n++) t.appendChild(mk('div', 'bgT' + (salidas.has(n) ? ' sal' : '') + (n === ultima ? ' ult' : ''), String(n)));
@@ -64,39 +69,130 @@
   }
   function boton(txt, cls, fn) { var b = mk('button', 'bgBtn ' + (cls || ''), txt); if (fn) b.onclick = fn; return b; }
   function interruptor(txt, activo, fn) { var b = mk('button', 'bgSw' + (activo ? ' on' : ''), txt); b.onclick = fn; return b; }
-  function cartonEl(c, marc, o) {
-    o = o || {};
+  function stepper(valor, min, max, etiqueta, cambiar) {
+    var pas = mk('div', 'bgStep');
+    var menos = boton('−', '', function () { if (valor > min) cambiar(valor - 1); }), mas = boton('+', '', function () { if (valor < max) cambiar(valor + 1); });
+    menos.disabled = valor <= min; mas.disabled = valor >= max;
+    pas.appendChild(menos); pas.appendChild(mk('div', 'bgStepN', '<b>' + valor + '</b><small>' + etiqueta + '</small>')); pas.appendChild(mas);
+    return pas;
+  }
+  function cartonEl(c, marc) {
     var caja = mk('div', 'bgCarton'), grid = mk('div', 'bgCartonG');
     for (var f = 0; f < 3; f++) for (var k = 0; k < 9; k++) {
-      var n = c[f][k], cel = mk('div', 'bgC' + (n ? '' : ' vacio') + (n && marc.has(n) ? ' marc' : '') + (n && o.salidas && o.salidas.has(n) ? ' sal' : ''), n ? String(n) : '');
-      if (n && o.tap) (function (nn, el) { el.onclick = function () { o.tap(nn, el); }; })(n, cel);
-      grid.appendChild(cel);
+      var n = c[f][k];
+      grid.appendChild(mk('div', 'bgC' + (n ? '' : ' vacio') + (n && marc.has(n) ? ' marc' : ''), n ? String(n) : ''));
     }
     caja.appendChild(grid);
     return caja;
   }
+  function faltaTxt(f) {
+    if (f.bingo === 0) return '¡cartón lleno!';
+    return (f.linea === 0 ? 'línea completa' : f.linea === 1 ? 'falta 1 para línea' : 'faltan ' + f.linea + ' para línea') + ' · ' + f.bingo + ' para bingo';
+  }
   function wrap() { return $('bingoWrap'); }
-  function pintar(nodos) { var w = wrap(); if (!w) return; w.innerHTML = ''; nodos.forEach(function (n) { if (n) w.appendChild(n); }); w.scrollTop = w.scrollTop; }
+  function pintar(nodos) { var w = wrap(); if (!w) return; var y = w.scrollTop; w.innerHTML = ''; nodos.forEach(function (n) { if (n) w.appendChild(n); }); w.scrollTop = y; }
+  function overlay(titulo, nodos) {
+    var w = $('winBingo'), viejo = w.querySelector('.bgOverlay'); if (viejo) viejo.remove();
+    var o = mk('div', 'bgOverlay'), caja = mk('div', 'bgOvBox'), cab = mk('div', 'bgOvCab', '<b>' + esc(titulo) + '</b>');
+    var x = mk('button', 'bgOvX', '✕'); x.onclick = function () { o.remove(); }; cab.appendChild(x);
+    var cuerpo = mk('div', 'bgOvCuerpo'); nodos.forEach(function (n) { cuerpo.appendChild(n); });
+    caja.appendChild(cab); caja.appendChild(cuerpo); o.appendChild(caja); w.appendChild(o);
+    return o;
+  }
+
+  /* ---------- datos de la partida (jugador online o Bolero/local) ---------- */
+  function ganadosPub(p) {
+    var g = {};
+    Object.keys(p.ganados).forEach(function (k) { g[k] = { nombres: p.ganados[k].ganadores.map(function (x) { return x.nombre; }), bola: p.ganados[k].bola, total: p.ganados[k].total }; });
+    return g;
+  }
+  function bolasActuales() { return esJugadorOnline() ? (window.Sala.estado.bolas || []) : (B.p ? B.p.bolas : []); }
+  function premiosActuales() { return esJugadorOnline() ? (window.Sala.estado.premios || ['linea', 'bingo']) : (B.p ? B.p.premios : ['linea', 'bingo']); }
+  function ganadosActuales() { return esJugadorOnline() ? (window.Sala.estado.ganados || {}) : (B.p ? ganadosPub(B.p) : {}); }
+  function misCartones() {
+    if (esJugadorOnline()) { var r = window.Sala.rol; return r && r.cartones && r.cartones.length ? { cartones: r.cartones, nums: r.nums || [] } : null; }
+    var p = B.p, c = p && p.cartones[uid()];
+    return c && c.length ? { cartones: c, nums: p.nums[uid()] } : null;
+  }
+  /* marcas a mano: se guardan por partida, así sobreviven a recargar la página */
+  function claveMarcas() {
+    if (esJugadorOnline()) return 'marcas.' + window.Sala.sala + '.' + (window.Sala.estado.ronda || 0) + '.' + window.Sala.uid;
+    return 'marcas.' + (online() ? window.Sala.sala : 'local') + '.' + (B.p ? B.p.semilla : 0) + '.' + uid();
+  }
+  function marcasObj() { return parse(lsGet(claveMarcas()), {}); }
+  function guardarMarcas(m) { lsSet(claveMarcas(), JSON.stringify(m)); }
+  // Tras un canto falso: se quitan del cartón las casillas marcadas que NO han salido (las correctas se quedan).
+  function quitarFalsas(idx, motivo) {
+    var m = marcasObj(), lista = m[idx] || [], falsas = E.marcasFalsas(lista, bolasActuales()), txt = motivo || '';
+    if (falsas.length) {
+      m[idx] = lista.filter(function (n) { return falsas.indexOf(n) < 0; }); guardarMarcas(m);
+      txt += ' Se ' + (falsas.length === 1 ? 'ha quitado 1 casilla mal marcada' : 'han quitado ' + falsas.length + ' casillas mal marcadas') + '.';
+    }
+    if (txt) toast(txt.trim());
+    vibrar(200); render();
+  }
+
+  /* ---------- cartones propios (jugador online, Bolero online o local) ---------- */
+  function bloquesCartones() {
+    var mis = misCartones(); if (!mis) return [];
+    var bolas = bolasActuales(), sal = new Set(bolas), premios = premiosActuales(), ganados = ganadosActuales(), marcas = marcasObj(), fin = esJugadorOnline() ? window.Sala.estado.phase === 'fin' : !!(B.p && B.p.fin);
+    var n = [];
+    mis.cartones.forEach(function (c, i) {
+      var man = new Set(marcas[i] || []);
+      var efect = B.autoMarca ? new Set(Array.from(man).concat(E.numerosDe(c).filter(function (x) { return sal.has(x); }))) : man;
+      var bloque = mk('div', 'bgBloque');
+      bloque.appendChild(mk('div', 'bgBCab', '<b>Cartón Nº ' + (mis.nums[i] || i + 1) + '</b><span>' + (bolas.length ? faltaTxt(E.faltan(c, sal)) : '') + '</span>'));
+      var caja = cartonEl(c, efect);
+      Array.prototype.forEach.call(caja.querySelectorAll('.bgC:not(.vacio)'), function (el) {
+        var num = +el.textContent;
+        el.onclick = function () { var m = marcasObj(), s = new Set(m[i] || []); if (s.has(num)) s.delete(num); else s.add(num); m[i] = Array.from(s); guardarMarcas(m); render(); };
+      });
+      bloque.appendChild(caja);
+      var acc = mk('div', 'bgFila');
+      var lineaLista = E.filasCompletas(c, efect).length > 0, bingoListo = E.esBingo(c, efect);
+      if (premios.indexOf('linea') >= 0) { var bl = boton('¡LÍNEA!', 'cantar' + (lineaLista && !ganados.linea ? ' lista' : ''), function () { cantarMio('linea', i); }); bl.disabled = !!ganados.linea || fin; acc.appendChild(bl); }
+      var bb = boton('¡BINGO!', 'cantar' + (bingoListo && !ganados.bingo ? ' lista' : ''), function () { cantarMio('bingo', i); }); bb.disabled = !!ganados.bingo || fin; acc.appendChild(bb);
+      bloque.appendChild(acc); n.push(bloque);
+    });
+    return n;
+  }
+  function cantarMio(premio, idx) {
+    if (esJugadorOnline()) window.Sala.enviar('host', { tipo: 'cantar', premio: premio, c: idx }).catch(function (e) { toast(e.message); });
+    else resolverCanto(uid(), premio, idx);
+  }
+  function ajustesCartones() {
+    var f = mk('div', 'bgFila');
+    f.appendChild(interruptor('Marcado automático', B.autoMarca, function () { B.autoMarca = !B.autoMarca; lsSet('automarca', B.autoMarca ? '1' : '0'); render(); }));
+    return f;
+  }
+  function seccionMisCartones() {
+    var b = bloquesCartones(); if (!b.length) return [];
+    return [mk('div', 'bgSub', '🎟️ Mis cartones'), ajustesCartones()].concat(b);
+  }
 
   /* =====================================================================
-                              BOLERO (local y anfitrión)
+                         BOLERO (local y anfitrión)
      ===================================================================== */
   function guardarBolero() {
     if (online()) { if (esHost()) window.Sala.guardarExtra({ juego: 'bingo', p: B.p, cfg: B.cfg, ronda: B.ronda }); return; }
     if (B.p) lsSet('bolero', JSON.stringify(B.p)); else lsDel('bolero');
   }
   function publicarEstado(extra) {
-    var p = B.p;
-    var pub = { juego: 'bingo', bolas: p ? p.bolas.slice() : null };
-    if (p) { pub.premios = p.premios; pub.ganados = {}; Object.keys(p.ganados).forEach(function (k) { pub.ganados[k] = { nombres: p.ganados[k].ganadores.map(function (g) { return g.nombre; }), bola: p.ganados[k].bola, total: p.ganados[k].total }; }); }
+    var p = B.p, pub = { juego: 'bingo', bolas: p ? p.bolas.slice() : null };
+    if (p) { pub.premios = p.premios; pub.ganados = ganadosPub(p); }
     Object.assign(pub, extra || {});
     return window.Sala.enviar('todos', Object.assign({ tipo: 'estado' }, pub));
   }
-  function nuevoBombo() { B.p = E.nuevaPartida({ jugadores: [], premios: ['bingo'] }); B.vistoN = 0; guardarBolero(); }
+  function premiosCfg() { return B.cfg.linea ? ['linea', 'bingo'] : ['bingo']; }
+  function nuevaLocal() {
+    pararAuto();
+    B.p = E.nuevaPartida({ jugadores: [{ id: 'yo', nombre: 'Yo', cartones: B.nCart }], premios: premiosCfg() });
+    B.vista = 'juego'; B.vistoN = 0; guardarBolero(); render();
+  }
   function sacar() {
-    if (!B.p) nuevoBombo();
+    if (!B.p) return;
     var b = E.sacar(B.p);
-    if (b === null) { pararAuto(); toast('Ya han salido las 90 bolas'); render(); return; }
+    if (b === null) { pararAuto(); toast(B.p.fin ? 'La partida ha terminado' : 'Ya han salido las 90 bolas'); render(); return; }
     B.vistoN = B.p.bolas.length;
     if (B.voz) decir(b);
     vibrar(25);
@@ -111,18 +207,30 @@
     B.autoT = setInterval(function () { if (!B.p || B.p.fin || B.p.bolas.length >= 90) { pararAuto(); render(); return; } sacar(); }, B.seg * 1000);
     render();
   }
-  function nuevaLocal() {
-    if (B.p && B.p.bolas.length && !confirm('¿Empezar un bombo nuevo? Se pierden las bolas que han salido.')) return;
-    pararAuto(); nuevoBombo(); render();
+  function salirLocal() {
+    if (!confirm('¿Terminar la partida? Se pierden las bolas que han salido.')) return;
+    pararAuto(); B.p = null; B.vista = 'menu'; guardarBolero(); render();
   }
-  function comprobar() {
-    var t = prompt('Escribe los números del cartón (la línea de 5, o el cartón entero de 15), separados por espacios o comas:');
-    if (!t) return;
-    var nums = t.split(/[^0-9]+/).filter(Boolean).map(Number).filter(function (n) { return n >= 1 && n <= 90; });
-    if (!nums.length) { toast('No he entendido ningún número'); return; }
-    var sal = new Set(B.p ? B.p.bolas : []);
-    var faltan = nums.filter(function (n) { return !sal.has(n); });
-    alert(faltan.length ? 'Faltan por salir: ' + faltan.join(', ') + '. De ' + nums.length + ' números, han salido ' + (nums.length - faltan.length) + '.' : '✅ Correcto: han salido los ' + nums.length + ' números.');
+  // Un canto (de otro jugador, o propio del Bolero) se valida con los cartones que el propio Bolero ha repartido.
+  function resolverCanto(id, premio, idx) {
+    if (!B.p) return;
+    var r = E.cantar(B.p, id, premio, idx | 0);
+    if (!r.ok) {
+      if (id === uid()) quitarFalsas(idx, r.motivo);
+      else window.Sala.enviar(id, { tipo: 'evento', k: 'falso', texto: r.motivo, c: idx | 0 }).catch(function () {});
+      return;
+    }
+    pararAuto(); guardarBolero();
+    var nombres = r.ganadores.map(function (g) { return g.nombre; });
+    B.anuncio = { premio: r.premio, nombres: nombres };
+    if (B.voz) decirTexto((r.premio === 'linea' ? 'Línea de ' : 'Bingo de ') + nombres.join(' y '));
+    vibrar([60, 40, 60]);
+    if (esHost()) {
+      publicarEstado(B.p.fin ? { phase: 'fin' } : {}).then(function () {
+        return window.Sala.enviar('todos', { tipo: 'evento', k: 'premio', premio: r.premio, nombres: nombres });
+      }).catch(function () {});
+    }
+    render();
   }
   function ajustes() {
     var f = mk('div', 'bgFila');
@@ -133,92 +241,117 @@
     f.appendChild(sel);
     return f;
   }
-  function vistaBolero() {
-    var bolas = B.p ? B.p.bolas : [], sal = new Set(bolas), n = [];
-    var lobbyOnline = esHost() && window.Sala.estado.phase === 'lobby';
-    n.push(cabeceraBola(bolas));
-    if (esHost()) n.push(bannerPremios());
-    var fin = (B.p && B.p.fin) || bolas.length >= 90;
-    var acc = mk('div', 'bgFila');
-    acc.appendChild(boton(fin ? 'Fin de la partida' : '🎱 Sacar bola', 'grande', fin ? null : sacar));
-    if (fin) acc.firstChild.disabled = true;
-    acc.appendChild(boton(B.auto ? '⏸ Pausar' : '▶ Automático', B.auto ? 'on' : '', alternarAuto));
-    n.push(acc);
-    n.push(ajustes());
-    n.push(tablero(sal, bolas.length ? bolas[bolas.length - 1] : 0));
-    var pie = mk('div', 'bgFila');
-    pie.appendChild(boton('🔍 Comprobar cartón', '', comprobar));
-    if (esHost()) pie.appendChild(boton('⏹ Terminar', '', terminarPartida)); else pie.appendChild(boton('↺ Bombo nuevo', '', nuevaLocal));
-    n.push(pie);
-    return lobbyOnline ? null : n;
-  }
   function bannerPremios() {
-    var e = window.Sala.estado, g = e.ganados || {}, b = mk('div', 'bgPremios');
-    (e.premios || ['linea', 'bingo']).forEach(function (k) {
+    var p = B.p, g = ganadosActuales(), b = mk('div', 'bgPremios');
+    (p ? p.premios : ['linea', 'bingo']).forEach(function (k) {
       var x = g[k];
       b.appendChild(mk('div', 'bgPrem' + (x ? ' hecho' : ''), '<b>' + (k === 'linea' ? 'Línea' : 'Bingo') + '</b><span>' + (x ? '🏆 ' + esc(x.nombres.join(', ')) + ' · bola ' + x.bola : 'sin cantar') + '</span>'));
     });
     return b;
   }
+  function vistaBolero() {
+    var bolas = B.p ? B.p.bolas : [], sal = new Set(bolas), n = [];
+    n.push(cabeceraBola(bolas));
+    n.push(bannerPremios());
+    var fin = B.p.fin || bolas.length >= 90;
+    if (B.p.fin) n.push(mk('div', 'bgFin', '🏆 ¡Bingo de ' + esc(((ganadosActuales().bingo || { nombres: [] }).nombres).join(' y ')) + '!'));
+    var acc = mk('div', 'bgFila');
+    var sb = boton(fin ? 'Fin de la partida' : '🎱 Sacar bola', 'grande', fin ? null : sacar); sb.disabled = fin; acc.appendChild(sb);
+    acc.appendChild(boton(B.auto ? '⏸ Pausar' : '▶ Automático', B.auto ? 'on' : '', alternarAuto));
+    n.push(acc); n.push(ajustes());
+    n.push(tablero(sal, bolas.length ? bolas[bolas.length - 1] : 0));
+    var pie = mk('div', 'bgFila');
+    pie.appendChild(boton('🔍 Comprobar cartones', '', comprobar));
+    pie.appendChild(boton(esHost() ? '⏹ Terminar' : '⏹ Terminar', '', esHost() ? terminarPartida : salirLocal));
+    n.push(pie);
+    return n.concat(seccionMisCartones());
+  }
+
+  /* ---------- comprobar cartones (el Bolero mira los cartones por su número) ---------- */
+  function comprobar() {
+    var lista = B.p ? E.listarCartones(B.p) : [], nodos = [];
+    if (lista.length) {
+      nodos.push(mk('div', 'bgSub', 'Toca un cartón para verlo con las bolas que han salido.'));
+      lista.forEach(function (it) {
+        var fila = mk('button', 'bgCk' + (it.faltan.bingo === 0 ? ' bingo' : it.faltan.linea === 0 ? ' linea' : ''), '<b>Nº ' + it.num + '</b><span>' + esc(it.nombre) + '</span><small>' + faltaTxt(it.faltan) + '</small>');
+        fila.onclick = function () { detalleCarton(it); };
+        nodos.push(fila);
+      });
+    } else nodos.push(mk('div', 'bgVacio', 'Nadie tiene cartones en esta partida.'));
+    nodos.push(boton('✍️ Cartón físico (escribir sus números)', '', cartonFisico));
+    overlay('Comprobar cartones', nodos);
+  }
+  function detalleCarton(it) {
+    var sal = new Set(B.p.bolas), lineas = E.filasCompletas(it.carton, sal), bingo = E.esBingo(it.carton, sal);
+    var nodos = [mk('div', 'bgCkCab', 'Cartón <b>Nº ' + it.num + '</b> · ' + esc(it.nombre)), cartonEl(it.carton, sal)];
+    nodos.push(mk('div', 'bgVeredicto ' + (lineas.length ? 'si' : 'no'), (lineas.length ? '✅ Línea completa (fila ' + lineas.map(function (f) { return f + 1; }).join(', ') + ')' : '❌ Sin línea todavía')));
+    nodos.push(mk('div', 'bgVeredicto ' + (bingo ? 'si' : 'no'), bingo ? '✅ Cartón lleno: ¡BINGO!' : '❌ Sin bingo (' + faltaTxt(it.faltan).split(' · ')[1] + ')'));
+    nodos.push(boton('← Volver a la lista', '', comprobar));
+    overlay('Cartón Nº ' + it.num, nodos);
+  }
+  function cartonFisico() {
+    var t = prompt('Escribe los números del cartón (la línea de 5, o el cartón entero de 15), separados por espacios o comas:');
+    if (!t) return;
+    var nums = t.split(/[^0-9]+/).filter(Boolean).map(Number).filter(function (n) { return n >= 1 && n <= 90; });
+    if (!nums.length) { toast('No he entendido ningún número'); return; }
+    var sal = new Set(B.p ? B.p.bolas : []), faltan = nums.filter(function (n) { return !sal.has(n); });
+    alert(faltan.length ? 'Faltan por salir: ' + faltan.join(', ') + '. De ' + nums.length + ' números, han salido ' + (nums.length - faltan.length) + '.' : '✅ Correcto: han salido los ' + nums.length + ' números.');
+  }
 
   /* ---------- anfitrión: lobby, reparto, cantos ---------- */
   function hostIniciar() {
     if (B.hostListo) return; B.hostListo = true;
+    B.cfg.host = +lsGet('carthost') || 0;
     var ex = window.Sala.leerExtra();
     if (ex && ex.juego === 'bingo' && ex.p) { // el anfitrión recargó la página a mitad de partida
-      B.p = ex.p; B.cfg = ex.cfg || B.cfg; B.ronda = ex.ronda || 0; B.vistoN = B.p.bolas.length;
+      B.p = ex.p; B.cfg = Object.assign(B.cfg, ex.cfg || {}); B.ronda = ex.ronda || 0; B.vistoN = B.p.bolas.length;
       toast('Partida recuperada');
       return;
     }
-    if (ex && ex.juego === 'bingo') B.cfg = ex.cfg || B.cfg;
+    B.p = null;
+    if (ex && ex.juego === 'bingo') B.cfg = Object.assign(B.cfg, ex.cfg || {});
     B.ronda = (ex && ex.ronda) || (window.Sala.estado.ronda || 0);
     window.Sala.enviar('todos', { tipo: 'estado', juego: 'bingo', phase: 'lobby', ronda: B.ronda, cartones: {} }).catch(function () {});
   }
   function solicitudDe(id) { var c = window.Sala.estado.cartones; return Math.max(1, Math.min(E.MAX_CARTONES, (c && c[id]) | 0 || 1)); }
   function empezar() {
-    var js = window.Sala.jug.filter(function (j) { return !j.esAnfitrion; }).map(function (j) { return { id: j.id, nombre: j.nombre, cartones: solicitudDe(j.id) }; });
-    if (!js.length) { toast('Aún no se ha unido nadie'); return; }
-    B.p = E.nuevaPartida({ jugadores: js, premios: B.cfg.linea ? ['linea', 'bingo'] : ['bingo'] });
+    var invitados = window.Sala.jug.filter(function (j) { return !j.esAnfitrion; });
+    if (!invitados.length) { toast('Aún no se ha unido nadie'); return; }
+    var js = invitados.map(function (j) { return { id: j.id, nombre: j.nombre, cartones: solicitudDe(j.id) }; });
+    js.unshift({ id: window.Sala.uid, nombre: miNombre(), cartones: B.cfg.host });  // el Bolero juega con sus cartones propios (0 = ninguno)
+    B.p = E.nuevaPartida({ jugadores: js, premios: premiosCfg() });
     B.ronda++; B.vistoN = 0;
-    var envios = js.map(function (j) { return window.Sala.enviar(j.id, { tipo: 'rol', ronda: B.ronda, cartones: B.p.cartones[j.id] }); });
+    var envios = invitados.map(function (j) { return window.Sala.enviar(j.id, { tipo: 'rol', ronda: B.ronda, cartones: B.p.cartones[j.id], nums: B.p.nums[j.id] }); });
     Promise.all(envios).then(function () {
       guardarBolero();
       return publicarEstado({ phase: 'jugando', ronda: B.ronda, cartones: null, bolas: [] });
     }).catch(function (e) { toast(e.message); });
   }
-  function terminarPartida() {
-    if (!confirm('¿Terminar la partida y volver a la sala de espera?')) return;
+  function reiniciarSala() {
     pararAuto();
     var js = window.Sala.jug.filter(function (j) { return !j.esAnfitrion; });
-    Promise.all(js.map(function (j) { return window.Sala.enviar(j.id, { tipo: 'rol', ronda: B.ronda, cartones: [] }); })).then(function () {
+    Promise.all(js.map(function (j) { return window.Sala.enviar(j.id, { tipo: 'rol', ronda: B.ronda, cartones: [], nums: [] }); })).then(function () {
       B.p = null; B.vistoN = 0; guardarBolero();
       return window.Sala.enviar('todos', { tipo: 'estado', juego: 'bingo', phase: 'lobby', ronda: B.ronda, bolas: null, premios: null, ganados: null, cartones: {} });
     }).catch(function (e) { toast(e.message); });
   }
+  function terminarPartida() { if (confirm('¿Terminar la partida y volver a la sala de espera?')) reiniciarSala(); }
   function alMensaje(m) {
     if (!esHost()) return;
     var est = window.Sala.estado;
     if (m.tipo === 'solicitud' && est.phase === 'lobby') {
       var n = Math.max(1, Math.min(E.MAX_CARTONES, m.cartones | 0 || 1)), c = Object.assign({}, est.cartones || {}); c[m.de] = n;
       window.Sala.enviar('todos', { tipo: 'estado', cartones: c }).catch(function () {});
-    } else if (m.tipo === 'cantar' && est.phase === 'jugando' && B.p) {
-      var r = E.cantar(B.p, m.de, m.premio, m.c | 0);
-      if (!r.ok) { window.Sala.enviar(m.de, { tipo: 'evento', k: 'falso', texto: r.motivo }).catch(function () {}); return; }
-      pararAuto(); guardarBolero();
-      var nombres = r.ganadores.map(function (g) { return g.nombre; });
-      B.anuncio = { premio: r.premio, nombres: nombres };
-      if (B.voz) decirTexto((r.premio === 'linea' ? 'Línea de ' : 'Bingo de ') + nombres.join(' y '));
-      vibrar([60, 40, 60]);
-      publicarEstado(B.p.fin ? { phase: 'fin' } : {}).then(function () {
-        return window.Sala.enviar('todos', { tipo: 'evento', k: 'premio', premio: r.premio, nombres: nombres });
-      }).catch(function () {});
-      render();
-    }
+    } else if (m.tipo === 'cantar' && est.phase === 'jugando' && B.p) resolverCanto(m.de, m.premio, m.c);
   }
   function vistaHostLobby() {
-    var est = window.Sala.estado, n = [];
-    var cab = mk('div', 'bgSala', '<div class="bgSalaT">🎱 Sala «' + esc(window.Sala.sala) + '»</div><div class="bgSalaS">Eres el <b>Bolero</b>. Los jugadores se unen desde el icono 📡 Multijugador con el nombre y la contraseña de la sala.</div>');
-    n.push(cab);
+    var n = [];
+    n.push(mk('div', 'bgSala', '<div class="bgSalaT">🎱 Sala «' + esc(window.Sala.sala) + '»</div><div class="bgSalaS">Eres el <b>Bolero</b>. Comparte la sala: quien abra el enlace o el QR solo tiene que poner su nombre.</div>'));
+    var comp = mk('div', 'bgFila');
+    comp.appendChild(boton('🔗 Compartir', '', function () { window.Sala.compartir(); }));
+    comp.appendChild(boton('▦ QR', '', function () { window.Sala.qr(); }));
+    n.push(comp);
+    n.push(mk('div', 'bgNota', '⚠️ El enlace y el QR incluyen la contraseña de la sala.'));
     var lista = mk('div', 'bgLista'), hay = 0;
     window.Sala.jug.forEach(function (j) {
       if (j.esAnfitrion) return; hay++;
@@ -226,127 +359,72 @@
     });
     if (!hay) lista.appendChild(mk('div', 'bgVacio', 'Esperando jugadores…'));
     n.push(lista);
+    n.push(mk('div', 'bgSub', 'Mis cartones (yo también juego)'));
+    n.push(stepper(B.cfg.host, 0, E.MAX_CARTONES, B.cfg.host === 1 ? 'cartón' : 'cartones', function (v) { B.cfg.host = v; lsSet('carthost', v); render(); }));
     var op = mk('div', 'bgFila');
-    op.appendChild(interruptor('Premio de línea', B.cfg.linea, function () { B.cfg.linea = !B.cfg.linea; guardarBolero(); render(); }));
+    op.appendChild(interruptor('Premio de línea', B.cfg.linea, function () { B.cfg.linea = !B.cfg.linea; render(); }));
     op.appendChild(interruptor('🔊 Voz', B.voz, function () { B.voz = !B.voz; lsSet('voz', B.voz ? '1' : '0'); render(); }));
     n.push(op);
     var go = boton('▶ Empezar partida', 'grande', empezar); go.disabled = !hay; n.push(go);
-    n.push(boton('📡 Abrir la sala (QR / enlace)', '', window.Sala.abrir));
     return n;
   }
   function vistaHostFin() {
-    var n = [bannerPremios()];
-    n.push(mk('div', 'bgFin', '🏆 ¡Bingo de ' + esc(((window.Sala.estado.ganados || {}).bingo || { nombres: [] }).nombres.join(' y ')) + '!<br><small>' + (window.Sala.estado.bolas || []).length + ' bolas</small>'));
-    n.push(cabeceraBola(window.Sala.estado.bolas || []));
-    n.push(boton('↺ Nueva partida', 'grande', terminarPartidaSinPreguntar));
-    return n;
+    var est = window.Sala.estado, n = [bannerPremios()];
+    n.push(mk('div', 'bgFin', '🏆 ¡Bingo de ' + esc((((est.ganados || {}).bingo || { nombres: [] }).nombres).join(' y ')) + '!<br><small>' + (est.bolas || []).length + ' bolas</small>'));
+    n.push(cabeceraBola(est.bolas || []));
+    n.push(boton('🔍 Comprobar cartones', '', comprobar));
+    n.push(boton('↺ Nueva partida', 'grande', reiniciarSala));
+    return n.concat(seccionMisCartones());
   }
-  function terminarPartidaSinPreguntar() { var c = window.confirm; window.confirm = function () { return true; }; try { terminarPartida(); } finally { window.confirm = c; } }
 
   /* =====================================================================
                               JUGADOR (online)
      ===================================================================== */
-  function claveMarcas() { return 'marcas.' + window.Sala.sala + '.' + (window.Sala.estado.ronda || 0) + '.' + window.Sala.uid; }
-  function marcasDe() { return parse(lsGet(claveMarcas()), {}); }
-  function guardarMarcas(m) { lsSet(claveMarcas(), JSON.stringify(m)); }
-  function cantar(premio, idx) { window.Sala.enviar('host', { tipo: 'cantar', premio: premio, c: idx }).catch(function (e) { toast(e.message); }); }
-  function faltaTxt(f) {
-    if (f.bingo === 0) return '¡cartón lleno!';
-    return (f.linea === 0 ? 'línea completa' : f.linea === 1 ? 'falta 1 para línea' : 'faltan ' + f.linea + ' para línea') + ' · ' + f.bingo + ' para bingo';
-  }
-  function cartonesJugador(cartones, salidasArr, estPremios, ganados, marcasObj, guardar, ctxClave) {
-    var n = [], sal = new Set(salidasArr);
-    cartones.forEach(function (c, i) {
-      var man = new Set(marcasObj[i] || []);
-      var efect = B.autoMarca ? new Set(Array.from(man).concat(salidasArr.filter(function (x) { return E.numerosDe(c).indexOf(x) >= 0; }))) : man;
-      var faltan = E.faltan(c, sal);
-      var bloque = mk('div', 'bgBloque');
-      var cab = mk('div', 'bgBCab', '<b>Cartón ' + (i + 1) + '</b><span>' + (salidasArr.length ? faltaTxt(faltan) : '') + '</span>');
-      bloque.appendChild(cab);
-      bloque.appendChild(cartonEl(c, efect, { salidas: null, tap: function (num, el) {
-        var m = new Set(marcasObj[i] || []); if (m.has(num)) m.delete(num); else m.add(num);
-        marcasObj[i] = Array.from(m); guardar(marcasObj); render();
-      } }));
-      var acc = mk('div', 'bgFila');
-      var lineaLista = E.filasCompletas(c, efect).length > 0, bingoListo = E.esBingo(c, efect);
-      if (estPremios.indexOf('linea') >= 0) {
-        var bl = boton('¡LÍNEA!', 'cantar' + (lineaLista && !ganados.linea ? ' lista' : ''), function () { ctxClave('linea', i); });
-        bl.disabled = !!ganados.linea; acc.appendChild(bl);
-      }
-      var bb = boton('¡BINGO!', 'cantar' + (bingoListo && !ganados.bingo ? ' lista' : ''), function () { ctxClave('bingo', i); });
-      bb.disabled = !!ganados.bingo; acc.appendChild(bb);
-      bloque.appendChild(acc);
-      n.push(bloque);
-    });
-    return n;
-  }
   function vistaJugador() {
-    var est = window.Sala.estado, rol = window.Sala.rol, n = [];
+    var est = window.Sala.estado, n = [];
     if (est.juego && est.juego !== 'bingo') return [mk('div', 'bgVacio', 'La sala está jugando a otro juego.')];
     if (!est.phase || est.phase === 'lobby') {
       n.push(mk('div', 'bgSala', '<div class="bgSalaT">🎟️ Sala «' + esc(window.Sala.sala) + '»</div><div class="bgSalaS">Esperando a que el Bolero empiece la partida.</div>'));
       var quiere = est.cartones && est.cartones[window.Sala.uid] ? est.cartones[window.Sala.uid] : B.quiere;
-      var pas = mk('div', 'bgStep');
-      var menos = boton('−', '', function () { pedir(quiere - 1); }), mas = boton('+', '', function () { pedir(quiere + 1); });
-      pas.appendChild(menos); pas.appendChild(mk('div', 'bgStepN', '<b>' + quiere + '</b><small>cartón' + (quiere > 1 ? 'es' : '') + '</small>')); pas.appendChild(mas);
-      n.push(mk('div', 'bgSub', '¿Cuántos cartones quieres?')); n.push(pas);
+      n.push(mk('div', 'bgSub', '¿Cuántos cartones quieres?'));
+      n.push(stepper(quiere, 1, E.MAX_CARTONES, quiere === 1 ? 'cartón' : 'cartones', pedir));
       var lista = mk('div', 'bgLista');
       window.Sala.jug.forEach(function (j) { lista.appendChild(mk('div', 'bgJ' + (j.conectado ? '' : ' off'), '<span>' + esc(j.nombre) + (j.esAnfitrion ? ' 👑' : '') + '</span>')); });
       n.push(lista);
       return n;
     }
     var bolas = est.bolas || [], ganados = est.ganados || {};
-    n.push(cabeceraBola(bolas));
-    n.push(bannerPremios());
+    n.push(cabeceraBola(bolas)); n.push(bannerPremios());
     var f = mk('div', 'bgFila');
-    f.appendChild(interruptor('Marcado automático', B.autoMarca, function () { B.autoMarca = !B.autoMarca; lsSet('automarca', B.autoMarca ? '1' : '0'); render(); }));
     f.appendChild(interruptor('🔊 Voz', B.vozJ, function () { B.vozJ = !B.vozJ; lsSet('vozj', B.vozJ ? '1' : '0'); render(); }));
     n.push(f);
     if (est.phase === 'fin') n.push(mk('div', 'bgFin', '🏆 ¡Bingo de ' + esc(((ganados.bingo || {}).nombres || []).join(' y ')) + '!<br><small>Espera a que el Bolero empiece otra partida.</small>'));
-    var cartones = rol && rol.cartones && rol.cartones.length ? rol.cartones : null;
-    if (!cartones) { n.push(mk('div', 'bgVacio', 'No tienes cartones en esta partida.')); return n; }
-    cartonesJugador(cartones, bolas, est.premios || ['linea', 'bingo'], ganados, marcasDe(), guardarMarcas, est.phase === 'fin' ? function () {} : cantar).forEach(function (x) { n.push(x); });
+    var b = seccionMisCartones();
+    if (!b.length) n.push(mk('div', 'bgVacio', 'No tienes cartones en esta partida.')); else b.forEach(function (x) { n.push(x); });
     return n;
   }
   function pedir(n) {
-    n = Math.max(1, Math.min(E.MAX_CARTONES, n)); B.quiere = n; lsSet('ncart', n);
+    n = Math.max(1, Math.min(E.MAX_CARTONES, n)); B.quiere = n; lsSet('ncart-online', n);
     window.Sala.enviar('host', { tipo: 'solicitud', cartones: n }).catch(function (e) { toast(e.message); });
     render();
   }
 
   /* =====================================================================
-                              LOCAL: menú y «Mis cartones»
+                              menú local
      ===================================================================== */
   function vistaMenu() {
     var n = [mk('div', 'bgTitulo', '🎱 BINGO<br><small>90 bolas · 3×9</small>')];
-    n.push(boton('🎱 Soy el Bolero<small>Saca las bolas con el bombo</small>', 'menu', function () { B.vista = 'bolero'; if (!B.p) { var g = parse(lsGet('bolero'), null); B.p = g && g.bombo ? g : null; } if (!B.p) nuevoBombo(); render(); }));
-    n.push(boton('🎟️ Mis cartones<small>Marca tus cartones mientras otro canta</small>', 'menu', function () { B.vista = 'cartones'; cargarLocal(); render(); }));
-    n.push(boton('📡 Jugar online con amigos<small>Cada uno con su móvil · misma wifi</small>', 'menu', window.Sala ? window.Sala.abrir : null));
-    return n;
-  }
-  function cargarLocal() { if (!B.loc) { B.loc = parse(lsGet('local'), null); if (!B.loc || !B.loc.cartones) generarLocal(B.nCart); } }
-  function generarLocal(n) {
-    B.nCart = Math.max(1, Math.min(E.MAX_CARTONES, n)); lsSet('ncart', B.nCart);
-    B.loc = { cartones: E.generarCartones(B.nCart, Math.random), marcas: [] }; lsSet('local', JSON.stringify(B.loc));
-  }
-  function vistaLocal() {
-    cargarLocal();
-    var n = [], ctl = mk('div', 'bgStep');
-    ctl.appendChild(boton('−', '', function () { if (B.nCart > 1) { generarLocal(B.nCart - 1); render(); } }));
-    ctl.appendChild(mk('div', 'bgStepN', '<b>' + B.nCart + '</b><small>cartón' + (B.nCart > 1 ? 'es' : '') + '</small>'));
-    ctl.appendChild(boton('+', '', function () { if (B.nCart < E.MAX_CARTONES) { generarLocal(B.nCart + 1); render(); } }));
-    n.push(ctl);
-    var fila = mk('div', 'bgFila');
-    fila.appendChild(boton('🔄 Cartones nuevos', '', function () { if (confirm('¿Cambiar tus cartones? Se borran las marcas.')) { generarLocal(B.nCart); render(); } }));
-    fila.appendChild(boton('🧹 Quitar marcas', '', function () { B.loc.marcas = []; lsSet('local', JSON.stringify(B.loc)); render(); }));
-    n.push(fila);
-    n.push(mk('div', 'bgSub', 'Toca los números según los vaya cantando el Bolero.'));
-    var vacio = { linea: false, bingo: false };
-    cartonesJugador(B.loc.cartones, [], ['linea', 'bingo'], vacio, B.loc.marcas, function (m) { B.loc.marcas = m; lsSet('local', JSON.stringify(B.loc)); }, function (premio, i) {
-      var m = new Set(B.loc.marcas[i] || []), c = B.loc.cartones[i];
-      var ok = premio === 'linea' ? E.filasCompletas(c, m).length > 0 : E.esBingo(c, m);
-      alert(ok ? '✅ ' + (premio === 'linea' ? '¡Línea!' : '¡BINGO!') + ' Dilo en voz alta, el Bolero lo comprobará.' : 'Todavía no tienes ' + (premio === 'linea' ? 'ninguna fila completa' : 'el cartón lleno') + ' en ese cartón.');
-    }).forEach(function (x) { n.push(x); });
+    var g = parse(lsGet('bolero'), null);
+    if (g && g.bombo && !g.fin && g.bolas.length < 90 && g.bolas.length) {
+      n.push(boton('▶ Continuar partida<small>' + g.bolas.length + ' bolas · ' + ((g.cartones.yo || []).length ? (g.cartones.yo.length + ' cartón' + (g.cartones.yo.length > 1 ? 'es' : '') + ' tuyos') : 'sin cartones propios') + '</small>', 'menu', function () { B.p = g; B.vista = 'juego'; B.vistoN = g.bolas.length; render(); }));
+    }
+    n.push(mk('div', 'bgSub', 'Mis cartones (para jugar yo también mientras canto las bolas)'));
+    n.push(stepper(B.nCart, 0, E.MAX_CARTONES, B.nCart === 0 ? 'solo canto bolas' : (B.nCart === 1 ? 'cartón' : 'cartones'), function (v) { B.nCart = v; lsSet('ncart', v); render(); }));
+    var op = mk('div', 'bgFila');
+    op.appendChild(interruptor('Premio de línea', B.cfg.linea, function () { B.cfg.linea = !B.cfg.linea; render(); }));
+    n.push(op);
+    n.push(boton('🎱 Empezar partida<small>' + (B.nCart ? 'Cantas las bolas y juegas con tus cartones' : 'Solo cantas las bolas (cartones físicos)') + '</small>', 'menu', nuevaLocal));
+    n.push(boton('📡 Multijugador<small>Cada uno con su móvil · misma wifi</small>', 'menu', function () { window.Sala.abrir(); }));
     return n;
   }
 
@@ -360,10 +438,13 @@
       var est = window.Sala.estado;
       if (esHost()) {
         hostIniciar();
-        nodos = est.phase === 'fin' ? vistaHostFin() : (est.phase === 'jugando' ? vistaBolero() : vistaHostLobby());
+        nodos = est.phase === 'fin' ? vistaHostFin() : (est.phase === 'jugando' && B.p ? vistaBolero() : vistaHostLobby());
         if (est.phase === 'jugando') nodos.unshift(anuncioEl());
       } else { nodos = vistaJugador(); nodos.unshift(anuncioEl()); }
-    } else nodos = B.vista === 'bolero' ? vistaBolero() : B.vista === 'cartones' ? vistaLocal() : vistaMenu();
+    } else {
+      nodos = B.vista === 'juego' && B.p ? vistaBolero() : vistaMenu();
+      if (B.vista === 'juego') nodos.unshift(anuncioEl());
+    }
     $('bingoMenuSala').classList.toggle('on', online());
     pintar((nodos || []).filter(Boolean));
   }
@@ -387,7 +468,7 @@
       B.anuncio = { premio: m.premio, nombres: m.nombres || [] };
       if (B.vozJ) decirTexto((m.premio === 'linea' ? 'Línea de ' : 'Bingo de ') + (m.nombres || []).join(' y '));
       vibrar([60, 40, 60]); render();
-    } else if (m.k === 'falso') { toast(m.texto || 'No es válido'); vibrar(200); }
+    } else if (m.k === 'falso') quitarFalsas(m.c | 0, m.texto || 'No es válido.');
   }
 
   function init() {
@@ -395,6 +476,7 @@
     $('bingoMenuInicio').onclick = function () { if (online()) { toast('Estás en una sala: sal de ella para volver al inicio'); return; } pararAuto(); B.vista = 'menu'; render(); };
     $('bingoMenuSala').onclick = function () { window.Sala.abrir(); };
     $('bingoMenuVoz').onclick = function () { B.voz = !B.voz; B.vozJ = B.voz; lsSet('voz', B.voz ? '1' : '0'); lsSet('vozj', B.voz ? '1' : '0'); toast(B.voz ? '🔊 Voz activada' : '🔇 Voz desactivada'); render(); };
+    B.quiere = +lsGet('ncart-online') || 1;
     if (window.Sala) {
       window.Sala.usarEn('bingo');
       window.Sala.on('estado', alEstado); window.Sala.on('rol', function () { render(); });

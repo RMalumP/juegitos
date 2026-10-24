@@ -112,23 +112,26 @@
     const l = PREMIOS.filter(x => (p || PREMIOS).includes(x));
     return l.includes('bingo') ? l : [...l, 'bingo']; // el bingo siempre cierra la partida
   }
-  // jugadores: [{ id, nombre, cartones }]. Devuelve el estado completo del cantor de bolas (el bombo es secreto).
+  // jugadores: [{ id, nombre, cartones }] (cartones 0 = no juega, solo canta bolas; sin indicar = 1). El anfitrión puede ir en la lista con sus propios cartones.
+  // Cada cartón recibe un número único en toda la partida (p.nums[id][k]) para poder nombrarlo («el cartón 7»).
+  // Devuelve el estado completo del cantor de bolas (el bombo es secreto).
   function nuevaPartida({ jugadores, premios, semilla }) {
     const sem = semilla === undefined ? semillaAleatoria() : semilla;
     const rng = rngDe(sem);
-    const cartones = {};
+    const cartones = {}, nums = {};
     const usados = new Set();
+    let serie = 0;
     for (const j of jugadores) {
-      const n = Math.max(1, Math.min(MAX_CARTONES, j.cartones | 0 || 1));
-      cartones[j.id] = [];
+      const n = Math.max(0, Math.min(MAX_CARTONES, j.cartones === undefined ? 1 : j.cartones | 0));
+      cartones[j.id] = []; nums[j.id] = [];
       while (cartones[j.id].length < n) { // ningún cartón repetido en toda la sala
         const c = generarCarton(rng), k = clave(c);
-        if (!usados.has(k)) { usados.add(k); cartones[j.id].push(c); }
+        if (!usados.has(k)) { usados.add(k); cartones[j.id].push(c); nums[j.id].push(++serie); }
       }
     }
     return {
       semilla: sem, bombo: barajar(Array.from({ length: MAX_BOLA }, (_, i) => i + 1), rng), bolas: [],
-      premios: limpiarPremios(premios), ganados: {}, cartones,
+      premios: limpiarPremios(premios), ganados: {}, cartones, nums,
       nombres: Object.fromEntries(jugadores.map(j => [j.id, j.nombre])), fin: false
     };
   }
@@ -161,11 +164,20 @@
     return { ok: true, premio, ganadores };
   }
 
+  // Todos los cartones de la partida, con su número, su dueño y lo que les falta: para que el cantor los compruebe.
+  function listarCartones(p) {
+    const res = [];
+    for (const id of Object.keys(p.cartones)) p.cartones[id].forEach((carton, idx) => res.push({ num: p.nums[id][idx], id, nombre: p.nombres[id], idx, carton, faltan: faltan(carton, p.bolas) }));
+    return res.sort((a, b) => a.num - b.num);
+  }
+  // Marcas que no corresponden a ninguna bola salida (para borrarlas tras un canto falso).
+  function marcasFalsas(marcas, bolas) { const s = comoConjunto(bolas); return (marcas || []).filter(n => !s.has(n)); }
+
   return {
     MAX_BOLA, FILAS, COLS, POR_FILA, MAX_CARTONES, PREMIOS,
     semillaAleatoria, rngDe, barajar, columnaDe, rangoColumna,
     generarCarton, generarCartones, cartonValido, numerosDe,
     filasCompletas, esBingo, faltan, indiceCompletado,
-    nuevaPartida, sacar, cantar, premioPendiente
+    nuevaPartida, sacar, cantar, premioPendiente, listarCartones, marcasFalsas
   };
 });

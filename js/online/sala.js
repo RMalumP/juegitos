@@ -48,7 +48,8 @@
         const { tipo, ...r } = m; S.estado = r;
         if (r.juego && r.juego !== S.juego) { // el anfitrión ha elegido juego: los jugadores pasan a él si están mirando la ventana de la sala
           S.juego = r.juego; pintar();
-          const w = $('winSala'); if (!S.host && w && !w.classList.contains('hidden')) irAlJuego();
+          const w = $('winSala'); if (!S.host && ((w && !w.classList.contains('hidden')) || S.irAlEntrar)) irAlJuego();
+          S.irAlEntrar = false;
         }
         emit('estado', S.estado); break;
       }
@@ -78,7 +79,7 @@
 
   function entrar(r, d) {
     Object.assign(S, { activo: true, host: r.esAnfitrion, uid: r.uid, nombre: d.nombre, sala: d.sala, pass: d.pass || S.pass, jug: [], estado: {}, rol: null, net: null, conectado: true });
-    lsSet(LS_SES, JSON.stringify({ roomId: r.roomId, host: r.esAnfitrion, nombre: d.nombre, sala: d.sala, t: Date.now() }));
+    lsSet(LS_SES, JSON.stringify({ roomId: r.roomId, host: r.esAnfitrion, nombre: d.nombre, sala: d.sala, pass: r.esAnfitrion ? S.pass : '', t: Date.now() }));
     setRed('ok'); pantalla(true); pintar();
     if (r.avisos && r.avisos.length) setTimeout(() => toast(r.avisos[0]), 500);
   }
@@ -106,7 +107,7 @@
     setRed('conectando');
     try {
       const T = await cargarTransporte();
-      entrar(await T.reanudar({ roomId: s.roomId }), { nombre: s.nombre, sala: s.sala, pass: '' });
+      entrar(await T.reanudar({ roomId: s.roomId }), { nombre: s.nombre, sala: s.sala, pass: s.pass || '' });
       if (S.host) { const ex = T.leerExtra(); if (ex && ex.juego) { S.juego = ex.juego; irAlJuego(); } } // el anfitrión recupera su partida
       return true;
     } catch (e) { lsDel(LS_SES); setRed('off'); return false; }
@@ -120,8 +121,8 @@
 
   /* ---------- interfaz: ventana ---------- */
   function aviso(msg) {
-    const w = $('salaAviso'); if (!w) return;
-    w.textContent = msg || ''; w.style.display = msg ? 'block' : 'none';
+    const w = $('salaAviso'); if (w) { w.textContent = msg || ''; w.style.display = msg ? 'block' : 'none'; }
+    const m = $('salaEntrarAviso'); if (m) { m.textContent = msg || ''; m.style.display = msg ? 'block' : 'none'; }
   }
   const netTxt = n => (n === 'local' ? '📶 red local' : n === 'internet' ? '🌐 internet' : n === 'relay' ? '🔁 relé' : '');
   function pintar() {
@@ -162,17 +163,15 @@
   }
 
   /* ---------- compartir ---------- */
-  function enlace(conClave) {
-    const base = location.href.split('#')[0];
-    return conClave ? base + '#s=' + encodeURIComponent(S.sala + '\n' + S.pass) : base + '#s=' + encodeURIComponent(S.sala);
-  }
-  function conClave() {
-    if (!S.pass) return false;
-    return confirm('¿Incluir la contraseña en el enlace? Quien lo reciba entrará directamente.');
+  // El enlace (y el QR) llevan sala y contraseña: quien lo abre solo tiene que poner su nombre.
+  function enlace() {
+    const base = location.href.split('#')[0].split('?')[0];
+    return base + '#s=' + encodeURIComponent(S.sala + (S.pass ? '\n' + S.pass : ''));
   }
   function compartir() {
-    const url = enlace(conClave()), texto = 'Bingo en Juegos XP: sala «' + S.sala + '»';
-    if (navigator.share) navigator.share({ title: 'Juegos XP', text: texto, url }).catch(() => {});
+    if (!S.activo) return;
+    const url = enlace(), texto = 'Bingo en Juegos XP: sala «' + S.sala + '». Abre el enlace y pon tu nombre.';
+    if (navigator.share) navigator.share({ title: 'Juegos XP · Bingo', text: texto, url }).catch(() => {});
     else if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(texto + '\n' + url).then(() => toast('Enlace copiado'), () => prompt('Copia este enlace:', url));
     else prompt('Copia este enlace:', url);
   }
@@ -185,7 +184,8 @@
     });
   }
   function qr() {
-    const url = enlace(conClave());
+    if (!S.activo) return;
+    const url = enlace();
     cargarQR().then(() => {
       const q = window.qrcode(0, 'M'); q.addData(url); q.make();
       const ov = document.createElement('div'); ov.id = 'salaQR';
@@ -194,13 +194,34 @@
       ov.onclick = () => ov.remove(); document.body.appendChild(ov);
     }).catch(e => toast(e.message));
   }
-  function aplicarEnlace() { // #s=sala (o #s=sala\nclave): abre la ventana con los datos puestos
+  function aplicarEnlace() { // #s=sala\nclave: entra directamente en la sala y solo pregunta el nombre
     const m = /^#s=(.+)$/.exec(location.hash || ''); if (!m) return false;
     try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { /* nada */ }
     let p; try { p = decodeURIComponent(m[1]).split('\n'); } catch (e) { return false; }
     if (!p[0]) return false;
-    $('salaSala').value = p[0].slice(0, 30); if (p[1]) $('salaPass').value = p[1].slice(0, 30);
-    abrir(); return true;
+    const sala = p[0].slice(0, 30), pass = (p[1] || '').slice(0, 30);
+    if (S.activo) { abrir(); return true; }
+    $('salaSala').value = sala; $('salaPass').value = pass;
+    if (!pass) { abrir(); return true; }       // enlace sin contraseña: se rellena la ventana y se pide
+    pedirNombre(sala, pass); return true;
+  }
+  function pedirNombre(sala, pass) {
+    const viejo = $('salaEntrar'); if (viejo) viejo.remove();
+    const o = document.createElement('div'); o.id = 'salaEntrar';
+    o.innerHTML = '<div class="salaQRcaja salaEntrarCaja"><div class="salaQRt">🎱 Entrar en la sala</div><div class="salaEntrarSala">' + esc(sala) + '</div>' +
+      '<label>Tu nombre<input id="salaEntrarNombre" maxlength="24" autocomplete="off"></label><div id="salaEntrarAviso"></div>' +
+      '<div class="salaBtns"><button id="salaEntrarOk" type="button">Entrar</button><button id="salaEntrarNo" type="button">Cancelar</button></div></div>';
+    document.body.appendChild(o);
+    const inp = $('salaEntrarNombre'); inp.value = lsGet(LS_NOM) || ''; inp.focus();
+    const ir = async () => {
+      const nombre = inp.value.trim(); if (!nombre) { aviso('Escribe tu nombre.'); return; }
+      $('salaNombre').value = nombre; $('salaSala').value = sala; $('salaPass').value = pass;
+      $('salaEntrarOk').disabled = true; S.irAlEntrar = true;
+      await conectar('unir');
+      if (S.activo) { o.remove(); aviso(''); irAlJuego(); } else { S.irAlEntrar = false; $('salaEntrarOk').disabled = false; }
+    };
+    $('salaEntrarOk').onclick = ir; inp.onkeydown = e => { if (e.key === 'Enter') ir(); };
+    $('salaEntrarNo').onclick = () => { o.remove(); aviso(''); };
   }
 
   /* ---------- apertura de la ventana ---------- */
@@ -231,7 +252,7 @@
     get estado() { return S.estado; }, get rol() { return S.rol; }, get red() { return S.red; }, get nombre() { return S.nombre; },
     get sala() { return S.sala; }, get conectado() { return S.conectado; },
     on(ev, f) { (L[ev] = L[ev] || []).push(f); if (ev === 'msg') pendientes.splice(0).forEach(m => { try { f(m); } catch (e) { console.error(e); } }); }, off(ev, f) { L[ev] = (L[ev] || []).filter(x => x !== f); },
-    enviar, salir, abrir, irAlJuego, toast,
+    enviar, salir, abrir, irAlJuego, toast, compartir, qr,
     usarEn(juego) { S.juego = juego; pintar(); },
     expulsar: id => S.T.expulsar(id),
     guardarExtra: o => S.T && S.T.guardarExtra(o), leerExtra: () => (S.T ? S.T.leerExtra() : null),
