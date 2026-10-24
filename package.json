@@ -7,7 +7,9 @@
     "test:ui": "node tests/ui-bingo-local.js",
     "test:online": "node tests/ui-bingo-online.js",
     "test:pwa": "node tests/pwa.js",
-    "test:all": "npm test && npm run test:ui && npm run test:online && npm run test:pwa"
+    "test:regresion": "node tests/ui-regresion.js",
+    "test:reconexion": "node tests/ui-bingo-reconexion.js",
+    "test:all": "npm test && npm run test:ui && npm run test:online && npm run test:regresion && npm run test:pwa && npm run test:reconexion"
   },
   "devDependencies": {
     "peer": "1.0.2",
