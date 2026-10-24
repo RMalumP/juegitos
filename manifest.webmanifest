@@ -12,13 +12,13 @@
   "theme_color": "#245edb",
   "categories": ["games", "entertainment"],
   "icons": [
-    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
-    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+    { "src": "icons/xp-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/xp-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/xp-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/xp.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
   ],
   "shortcuts": [
-    { "name": "Bingo", "short_name": "Bingo", "url": "./?abrir=bingo", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] },
-    { "name": "Sala online", "short_name": "Sala", "url": "./?abrir=sala", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] }
+    { "name": "Bingo", "short_name": "Bingo", "url": "./?abrir=bingo", "icons": [{ "src": "icons/xp-192.png", "sizes": "192x192" }] },
+    { "name": "Sala online", "short_name": "Sala", "url": "./?abrir=sala", "icons": [{ "src": "icons/xp-192.png", "sizes": "192x192" }] }
   ]
 }

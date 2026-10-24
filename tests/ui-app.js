@@ -72,6 +72,6 @@ const { entorno, wait, ok, fin } = require('./helpers');
   ok(Math.abs(geo.tb - geo.v) <= 1 && Math.abs(geo.d - geo.v) <= 1, 'la barra de tareas termina justo en el borde inferior: no se corta');
   const htmlTxt = fs.readFileSync(path.join(env.root, 'index.html'), 'utf8'), mf = JSON.parse(fs.readFileSync(path.join(env.root, 'manifest.webmanifest'), 'utf8'));
   ok(!/viewport-fit/.test(htmlTxt) && mf.display === 'standalone' && !mf.display_override && !fs.existsSync(path.join(env.root, 'js/pantalla.js')), 'sin pantalla completa forzada: la app instalada se ve como siempre (con su barra de notificaciones)');
-  ok(/<link rel="icon" type="image\/svg\+xml" href="icons\/icon\.svg">/.test(htmlTxt), 'la pestaña usa el icono de la app (mando dentro de una ventana)');
+  ok(/<link rel="icon" type="image\/svg\+xml" href="icons\/xp\.svg">/.test(htmlTxt), 'la pestaña usa el icono de la app (mando dentro de una ventana)');
   await env.cerrar(); fin();
 })().catch(e => { console.error(e); process.exit(1); });

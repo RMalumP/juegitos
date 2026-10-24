@@ -13,6 +13,7 @@ Escritorio estilo Windows XP con juegos clásicos (Buscaminas, Tetris, Ajedrez, 
 ## Instalación
 
 - Hasta que la app esté instalada, bajo «Cargar» hay un botón **📲 Instalar app**: lanza el diálogo de instalación del navegador o, si este no lo ofrece, explica los pasos (Safari en iPhone: Compartir → «Añadir a pantalla de inicio»). Instalada, el botón desaparece.
+- **Icono de la app instalada:** Android lo guarda al instalar y solo lo renueva cuando Chrome detecta que el manifest cambió (la comprobación se hace sola, normalmente en uno o tres días; no se puede forzar desde la web). Por eso los archivos del icono llevan un nombre propio (`icons/xp-*.png`, `xp.svg`): si algún día cambias el dibujo, **cámbiale también el nombre** (p. ej. `xp2-…`) y actualiza `manifest.webmanifest`, `index.html` y `sw.js`. Para verlo ya, desinstala la app y vuelve a instalarla. En iPhone el icono se guarda al «Añadir a pantalla de inicio»: hay que borrarla y añadirla otra vez.
 - Los créditos (©) muestran la versión.
 - «🌐 Conectar» de cada juego abre la conexión con un botón **← Volver** al juego; y si ocultas la barra superior de un juego (□) se oculta también «Conectar».
 
