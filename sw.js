@@ -47,6 +47,7 @@ const ARCHIVOS = [
   'js/games/tetris.js',
   'js/iframe-games.js',
   'js/lazy-loader.js',
+  'js/online/j-parchis.js',
   'js/online/j-tablero.js',
   'js/online/lobby.js',
   'js/online/qrcode.js',
