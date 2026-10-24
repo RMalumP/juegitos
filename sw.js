@@ -1,11 +1,11 @@
 /* sw.js — Service worker de Juegos XP (PWA).
    · Al instalar guarda toda la aplicación: el escritorio y todos los juegos funcionan sin conexión (también el bingo en local).
-   · Estrategia «stale-while-revalidate»: se sirve lo guardado al instante y se actualiza en segundo plano; la versión nueva se ve al volver a abrir
-     (la página avisa con «Hay una versión nueva»).
+   · Archivos propios: «red primero» (máx. 4 s) con la caché de reserva: con conexión siempre se ve la última versión y sin conexión (o con red mala) se
+     usa lo guardado. Imágenes y fuentes de otros dominios: se sirve lo guardado y se actualiza en segundo plano.
    · El online no se toca: la señalización de PeerJS (WebSocket/API) va siempre a la red. Solo se guarda el script de PeerJS (versión fijada) para que
      no haga falta descargarlo cada vez.
    Al cambiar archivos de la aplicación SUBE `VERSION` (y añade a `ARCHIVOS` cualquier archivo nuevo: tests/pwa.js lo comprueba). */
-const VERSION = 'v2';
+const VERSION = 'v3';
 const SHELL = 'juegitos-shell-' + VERSION;
 const EXTRA = 'juegitos-extra-' + VERSION;
 const ARCHIVOS = [
@@ -71,10 +71,23 @@ async function conActualizacion(req, nombre, ignorarQuery) {
   return guardado || (await red) || (req.mode === 'navigate' ? cache.match('index.html', { ignoreSearch: true }) : Response.error());
 }
 
+function redPrimero(req, nombre, ms) {
+  return caches.open(nombre).then(cache => new Promise(resolver => {
+    let hecho = false;
+    const usarCache = () => cache.match(req, { ignoreSearch: true }).then(r => r || (req.mode === 'navigate' ? cache.match('index.html', { ignoreSearch: true }) : null));
+    const t = setTimeout(() => usarCache().then(r => { if (r && !hecho) { hecho = true; resolver(r); } }), ms);
+    fetch(req).then(r => {
+      clearTimeout(t);
+      if (r && r.ok) cache.put(req, r.clone());
+      if (!hecho) { hecho = true; resolver(r); }
+    }).catch(() => { clearTimeout(t); if (!hecho) usarCache().then(r => { hecho = true; resolver(r || Response.error()); }); });
+  }));
+}
+
 self.addEventListener('fetch', e => {
   const req = e.request, url = new URL(req.url);
   if (req.method !== 'GET') return;
-  if (url.origin === location.origin) { e.respondWith(conActualizacion(req, SHELL, true)); return; }
+  if (url.origin === location.origin) { e.respondWith(redPrimero(req, SHELL, 4000)); return; }
   if (/peerjs@[\d.]+\/dist\/peerjs\.min\.js$/.test(url.pathname)) { e.respondWith(conActualizacion(req, EXTRA)); return; } // librería de PeerJS (versión fijada)
   if (/peerjs/i.test(url.hostname)) return;                                                                                   // señalización: siempre red
   if (/\.(png|jpe?g|webp|gif|svg)(\?|$)/i.test(url.pathname) || /fonts\.(googleapis|gstatic)\.com$/.test(url.hostname)) e.respondWith(conActualizacion(req, EXTRA));

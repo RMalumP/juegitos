@@ -5,14 +5,14 @@ const { entorno, wait, ok, fin } = require('./helpers');
   const nuevo = async n => { const ctx = await env.contexto(); const pg = await env.pagina(ctx, n); await pg.locator('#startScreen').evaluate(e => { e.style.display = 'none'; }); return { ctx, pg }; };
   const H = await nuevo('bolero');
 
-  // --- iconos de la franja superior
+  // --- Guardar · Multijugador · Cargar: columna vertical, sin solapar con los iconos de juegos
   const caja = async (pg, sel) => pg.evaluate(s => { const r = document.querySelector(s).getBoundingClientRect(); return { l: r.left, r: r.right, t: r.top, b: r.bottom }; }, sel);
   for (const w of [360, 400, 440]) {
     await H.pg.setViewportSize({ width: w, height: 700 });
     const [g, m, c] = [await caja(H.pg, '#btnSaveData'), await caja(H.pg, '#btnSala'), await caja(H.pg, '#btnLoadData')];
-    ok(g.r <= m.l + 0.5 && m.r <= c.l + 0.5, 'a ' + w + ' px Guardar, Multijugador y Cargar no se solapan entre sí');
-    const iconos = await H.pg.evaluate(() => Array.from(document.querySelectorAll('#icons .deskIcon')).map(e => { const r = e.getBoundingClientRect(); return r.top; }));
-    ok(Math.min(...iconos) >= Math.max(g.b, m.b, c.b) - 0.5, 'a ' + w + ' px los iconos de juegos empiezan debajo de la franja de herramientas');
+    ok(Math.abs(g.l - m.l) < 1 && Math.abs(m.l - c.l) < 1 && g.b <= m.t + 0.5 && m.b <= c.t + 0.5, 'a ' + w + ' px Guardar, Multijugador y Cargar están en vertical y no se solapan');
+    const iconos = await H.pg.evaluate(() => Array.from(document.querySelectorAll('#icons .deskIcon')).map(e => e.getBoundingClientRect()).filter(r => r.width && r.right > 0).map(r => r.right));
+    ok(Math.max(...iconos) <= g.l + 0.5, 'a ' + w + ' px los iconos de juegos quedan a la izquierda de las herramientas');
     ok(await H.pg.evaluate(() => { const l = document.querySelector('#btnSala .dtLbl'); return l.scrollWidth <= l.parentElement.clientWidth; }), 'a ' + w + ' px la etiqueta «Multijugador» cabe entera');
   }
   await H.pg.setViewportSize({ width: 400, height: 760 });
@@ -22,15 +22,15 @@ const { entorno, wait, ok, fin } = require('./helpers');
   await H.pg.fill('#salaNombre', 'Bolero'); await H.pg.fill('#salaSala', 'sala enlace'); await H.pg.fill('#salaPass', 'clave1'); await H.pg.click('#salaCrear');
   await H.pg.waitForSelector('#salaDentro', { state: 'visible' }); await H.pg.click('#salaJuegoBingo'); await H.pg.waitForSelector('.bgSala');
 
-  // --- símbolo de la barra con la barra plegada
+  // --- símbolo de la barra: se pliega y se despliega con la barra
   ok(await H.pg.locator('#trayNet').isVisible(), 'con la barra desplegada se ve el símbolo');
+  ok(await H.pg.evaluate(() => document.getElementById('winBingo').getBoundingClientRect().bottom <= document.getElementById('taskbar').getBoundingClientRect().top + 0.5), 'la barra se ve en el bingo (la ventana no la tapa)');
   await H.pg.click('#tbHideBtn'); await wait(400);
   ok(await H.pg.locator('#taskbar.tbHidden').count() === 1, 'la barra queda plegada');
-  const r = await caja(H.pg, '#trayNet');
-  ok(await H.pg.locator('#trayNet').isVisible() && r.b <= 760 && r.t >= 700, 'con la barra plegada el símbolo sigue visible, flotando junto al botón ▲');
-  ok(await H.pg.locator('#trayNet.tray-ok').count() === 1, 'y sigue mostrando que hay conexión');
-  await H.pg.click('#trayNet'); await H.pg.waitForSelector('#winSala:not(.hidden)'); ok(true, 'pulsarlo con la barra plegada abre la Sala');
-  await H.pg.click('#tbReopen'); await wait(300);
+  ok(await H.pg.evaluate(() => document.getElementById('trayNet').getBoundingClientRect().top >= window.innerHeight - 1), 'con la barra plegada el símbolo de conexión también se oculta');
+  await H.pg.click('#tbReopen'); await wait(400);
+  ok(await H.pg.locator('#trayNet').isVisible() && await H.pg.locator('#trayNet.tray-ok').count() === 1, 'al desplegar la barra el símbolo vuelve, con su estado');
+  await H.pg.click('#trayNet'); await H.pg.waitForSelector('#winSala:not(.hidden)'); ok(true, 'pulsar el símbolo abre la Sala');
   await H.pg.click('#salaIrJuego'); await H.pg.waitForSelector('.bgSala');
 
   // --- compartir: el enlace generado entra directo y solo pide el nombre
