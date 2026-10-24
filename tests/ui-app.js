@@ -63,21 +63,24 @@ const { entorno, wait, ok, fin } = require('./helpers');
   ok(!(await pi.locator('#btnInstalar').isVisible()), 'con la app ya instalada el botón «Instalar app» no aparece');
   await ctx.close();
 
-  // ---------------- pantalla completa ----------------
+  // ---------------- pantalla completa por defecto (sin botón) ----------------
   ctx = await env.contexto({ hasTouch: true });
   await ctx.addInitScript(() => { window.__fs = 0; Element.prototype.requestFullscreen = function () { window.__fs++; Object.defineProperty(document, 'fullscreenElement', { value: this, configurable: true }); document.dispatchEvent(new Event('fullscreenchange')); return Promise.resolve(); };
-    document.exitFullscreen = function () { Object.defineProperty(document, 'fullscreenElement', { value: null, configurable: true }); document.dispatchEvent(new Event('fullscreenchange')); return Promise.resolve(); };
     Object.defineProperty(document, 'fullscreenElement', { value: null, configurable: true }); });
   const pf = await env.pagina(ctx, 'fs'); await pf.locator('#startScreen').evaluate(e => { e.style.display = 'none'; });
-  ok(await pf.locator('#fsToggle').isVisible(), 'hay un botón ⛶ de pantalla completa en la barra');
+  ok(await pf.locator('#fsToggle').count() === 0, 'ya no hay botón de pantalla completa');
   await pf.evaluate(() => document.body.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }))); await wait(300);
-  ok(await pf.evaluate(() => window.__fs) >= 1, 'con el primer toque la app pide la pantalla completa (oculta la barra de notificaciones)');
-  await pf.locator('#fsToggle').click(); await wait(300);
-  ok(!(await pf.evaluate(() => !!document.fullscreenElement)) && await pf.evaluate(() => localStorage.getItem('juegitos.pantallaCompleta')) === '0', 'el botón ⛶ sale de la pantalla completa y recuerda que no la quieres');
-  const antes = await pf.evaluate(() => window.__fs); await pf.evaluate(() => document.body.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }))); await wait(300);
-  ok(await pf.evaluate(() => window.__fs) === antes, 'mientras la tengas desactivada no la vuelve a pedir');
-  await pf.locator('#fsToggle').click(); await wait(300);
-  ok(await pf.evaluate(() => !!document.fullscreenElement), 'pulsar ⛶ otra vez la reactiva');
+  ok(await pf.evaluate(() => window.__fs) === 1, 'con el primer toque la app ocupa toda la pantalla por defecto (también la barra de notificaciones)');
+  await pf.evaluate(() => { Object.defineProperty(document, 'fullscreenElement', { value: null, configurable: true }); document.dispatchEvent(new Event('fullscreenchange')); });
+  await pf.evaluate(() => document.body.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }))); await wait(300);
+  ok(await pf.evaluate(() => window.__fs) === 1, 'si sales a propósito con el gesto del sistema, no insiste hasta que recargues');
+  // la app se estira por toda la pantalla (zona de la cámara y de la barra incluidas)
+  const css = fs.readFileSync(path.join(env.root, 'css/sala.css'), 'utf8'), html = fs.readFileSync(path.join(env.root, 'index.html'), 'utf8');
+  ok(/viewport-fit=cover/.test(html), 'el viewport usa viewport-fit=cover: el contenido llega hasta los bordes y no deja franja negra en la zona de la cámara');
+  ok(/#desktop\{height:100dvh;padding:env\(safe-area-inset-top\)/.test(css) && /#taskbar\{height:calc\(36px \+ env\(safe-area-inset-bottom\)\)/.test(css), 'el escritorio ocupa 100dvh y deja márgenes seguros arriba y abajo para que nada quede tapado');
+  const alto = await pf.evaluate(() => ({ h: document.getElementById('desktop').getBoundingClientRect().height, v: window.innerHeight, fondo: getComputedStyle(document.body).backgroundColor }));
+  ok(Math.abs(alto.h - alto.v) <= 1 && alto.fondo === 'rgb(0, 128, 128)', 'el escritorio mide exactamente lo que la pantalla y el fondo no es negro');
+  ok(/icon\.svg/.test(html.match(/<link rel="icon"[^>]*>/)[0]), 'la pestaña usa el icono de la app (mando dentro de una ventana)');
   ok(JSON.parse(fs.readFileSync(path.join(env.root, 'manifest.webmanifest'), 'utf8')).display === 'fullscreen', 'instalada, el manifest pide display «fullscreen»');
   await env.cerrar(); fin();
 })().catch(e => { console.error(e); process.exit(1); });
