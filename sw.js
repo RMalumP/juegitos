@@ -5,7 +5,7 @@
    · El online no se toca: la señalización de PeerJS (WebSocket/API) va siempre a la red. Solo se guarda el script de PeerJS (versión fijada) para que
      no haga falta descargarlo cada vez.
    Al cambiar archivos de la aplicación SUBE `VERSION` (y añade a `ARCHIVOS` cualquier archivo nuevo: tests/pwa.js lo comprueba). */
-const VERSION = 'v5';
+const VERSION = 'v6';
 const SHELL = 'juegitos-shell-' + VERSION;
 const EXTRA = 'juegitos-extra-' + VERSION;
 const ARCHIVOS = [
@@ -47,6 +47,8 @@ const ARCHIVOS = [
   'js/games/tetris.js',
   'js/iframe-games.js',
   'js/lazy-loader.js',
+  'js/online/casino-engine.js',
+  'js/online/j-casino.js',
   'js/online/j-parchis.js',
   'js/online/j-tablero.js',
   'js/online/lobby.js',

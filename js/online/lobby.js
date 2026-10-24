@@ -88,11 +88,14 @@
   var ARCH = { ajedrez: 'tablero', damas: 'tablero', parchis: 'parchis', ruleta: 'casino', blackjack: 'casino', poker: 'casino' }, cargados = {};
   function cargarAdaptador(j) {
     var a = ARCH[j]; if (!a) return Promise.resolve();
-    if (!cargados[a]) cargados[a] = new Promise(function (ok, ko) {
-      var sc = document.createElement('script'); sc.src = new URL('js/online/j-' + a + '.js', document.baseURI).href;
-      sc.onload = ok; sc.onerror = function () { delete cargados[a]; ko(new Error('No se pudo cargar el modo online de este juego.')); };
-      document.head.appendChild(sc);
-    });
+    function cargar(archivo) {
+      return new Promise(function (ok, ko) {
+        var sc = document.createElement('script'); sc.src = new URL('js/online/' + archivo, document.baseURI).href;
+        sc.onload = ok; sc.onerror = function () { ko(new Error('No se pudo cargar el modo online de este juego.')); };
+        document.head.appendChild(sc);
+      });
+    }
+    if (!cargados[a]) cargados[a] = (a === 'casino' ? cargar('casino-engine.js') : Promise.resolve()).then(function () { return cargar('j-' + a + '.js'); }).catch(function (e) { delete cargados[a]; throw e; });
     return cargados[a];
   }
   function mostrar(j) { return cargarAdaptador(j).then(function () { render(j); }); }
