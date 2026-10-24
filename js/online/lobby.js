@@ -85,7 +85,7 @@
     todos();
   }
   // Cada grupo de juegos tiene su adaptador (js/online/j-<grupo>.js), que se carga al entrar en la sala de ese juego.
-  var ARCH = { ajedrez: 'tablero', damas: 'tablero', parchis: 'parchis', ruleta: 'ruleta', blackjack: 'casino', poker: 'casino' }, cargados = {};
+  var ARCH = { ajedrez: 'tablero', damas: 'tablero', parchis: 'parchis', ruleta: 'ruleta', blackjack: 'blackjack', poker: 'casino' }, cargados = {};
   function cargarAdaptador(j) {
     var a = ARCH[j]; if (!a) return Promise.resolve();
     function cargar(archivo) {

@@ -1,4 +1,5 @@
-// Mesas online de Ruleta, Blackjack y Póquer con 2 navegadores: apuestas, turnos, cartas privadas, pagos y recarga del anfitrión.
+// Mesa online de Póquer con 2 navegadores: turnos, cartas privadas, enfrentamiento, fichas conservadas y recarga del anfitrión.
+// (Ruleta y Blackjack online usan los juegos originales: tests/ui-ruleta.js y tests/ui-blackjack.js.)
 const { entorno, wait, ok, fin } = require('./helpers');
 (async () => {
   const env = await entorno(9482, 9481);
@@ -16,58 +17,6 @@ const { entorno, wait, ok, fin } = require('./helpers');
     await H.locator('.olLobby[data-j=' + juego + '] .olGrande').click();
   };
   const M = j => '.olMesa[data-j=' + j + ']';
-
-  // ================= RULETA =================
-  let H = await nuevo('h1'), G = await nuevo('g1');
-  await entrar(H, 'roul', 'ruleta', 'crear', 'Ana', 'casino ruleta'); await entrar(G, 'roul', 'ruleta', 'unir', 'Beto', 'casino ruleta');
-  await H.locator('.olLobby[data-j=ruleta] .olOp .olBtn', { hasText: /^500$/ }).click(); await wait(500);
-  await empezar(H, 'ruleta');
-  await H.waitForSelector(M('ruleta') + ' .olRul', { timeout: 10000 }); await G.waitForSelector(M('ruleta') + ' .olRul', { timeout: 10000 });
-  ok(/500/.test(await G.locator(M('ruleta') + ' .olMCab').innerText()), 'ruleta: cada jugador empieza con las fichas elegidas (500)');
-  await H.locator(M('ruleta') + ' .olC.rojo').first().click();            // apuesta 5 a un número rojo
-  await G.locator(M('ruleta') + ' .olC.ext', { hasText: /^Par$/ }).click();
-  await H.locator(M('ruleta') + ' .olB', { hasText: 'Listo' }).click();
-  ok(/Pleno/.test(await H.locator(M('ruleta') + ' .olMis').innerText()), 'ruleta: se ven las apuestas propias');
-  await G.locator(M('ruleta') + ' .olB', { hasText: 'Listo' }).click();
-  await H.waitForFunction(() => window.Sala.estado.mesa && window.Sala.estado.mesa.fase === 'resultado', null, { timeout: 15000 });
-  await G.waitForFunction(() => window.Sala.estado.mesa && window.Sala.estado.mesa.fase === 'resultado', null, { timeout: 15000 });
-  const rh = await H.evaluate(() => window.Sala.estado.mesa.resultado.n), rg = await G.evaluate(() => window.Sala.estado.mesa.resultado.n);
-  ok(rh === rg && rh >= 0 && rh <= 36, 'ruleta: ambos ven el mismo número (' + rh + ') cuando todos están listos');
-  ok(await H.evaluate(() => { const m = window.Sala.estado.mesa; return Object.keys(m.jug).every(id => m.jug[id].coins === 500 + m.resultado.pagos[id]); }), 'ruleta: cada saldo es lo que tenía más lo que paga la ruleta');
-  const apuestasAntes = await G.evaluate(() => window.Sala.estado.mesa.jug[window.Sala.uid].coins);
-  await H.locator(M('ruleta') + ' .olB', { hasText: 'Siguiente ronda' }).click();
-  await G.waitForSelector(M('ruleta') + ' .olRul', { timeout: 10000 });
-  ok(await G.evaluate(() => window.Sala.estado.mesa.fase) === 'apuestas' && await G.evaluate(() => window.Sala.estado.mesa.jug[window.Sala.uid].coins) === apuestasAntes, 'ruleta: la ronda siguiente empieza sin apuestas y con los saldos conservados');
-  // apuesta imposible
-  await G.evaluate(() => window.Sala.enviar('host', { tipo: 'accion', a: 'apostar', t: 'pleno', v: 5, m: 999999 }));
-  await wait(700); ok(await G.evaluate(() => window.Sala.estado.mesa.jug[window.Sala.uid].apuestas.length) === 0, 'ruleta: apostar más de lo que se tiene se rechaza');
-
-  // ================= BLACKJACK =================
-  const H2 = await nuevo('h2'), G2 = await nuevo('g2');
-  await entrar(H2, 'bj', 'blackjack', 'crear', 'Ana', 'casino bj'); await entrar(G2, 'bj', 'blackjack', 'unir', 'Beto', 'casino bj');
-  await empezar(H2, 'blackjack');
-  await H2.waitForSelector(M('blackjack') + ' .olBanca', { timeout: 10000 }); await G2.waitForSelector(M('blackjack') + ' .olBanca', { timeout: 10000 });
-  await H2.locator(M('blackjack') + ' .olB', { hasText: '+25' }).click(); await G2.locator(M('blackjack') + ' .olB', { hasText: '+5' }).click();
-  await H2.waitForFunction(() => window.Sala.estado.mesa.fase !== 'apuestas', null, { timeout: 10000 });
-  await G2.waitForFunction(() => window.Sala.estado.mesa.fase !== 'apuestas', null, { timeout: 10000 });
-  ok(true, 'blackjack: al apostar todos se reparte solo');
-  const ver = await G2.evaluate(() => { const m = window.Sala.estado.mesa; return { fase: m.fase, banca: m.banca, mazo: m.mazo }; });
-  ok(ver.mazo === undefined && (ver.fase !== 'turnos' || ver.banca[1] === null), 'blackjack: el invitado nunca recibe el mazo ni la carta oculta de la banca');
-  // se juega hasta el final plantándose en cada turno
-  for (let i = 0; i < 6; i++) {
-    const f = await H2.evaluate(() => window.Sala.estado.mesa.fase); if (f === 'resultado') break;
-    const t = await H2.evaluate(() => window.Sala.estado.mesa.turno), pg = (await H2.evaluate(() => window.Sala.uid)) === t ? H2 : G2;
-    await pg.locator(M('blackjack') + ' .olB', { hasText: 'Plantarme' }).click(); await wait(500);
-  }
-  await H2.waitForFunction(() => window.Sala.estado.mesa.fase === 'resultado', null, { timeout: 10000 });
-  await G2.waitForFunction(() => window.Sala.estado.mesa.fase === 'resultado', null, { timeout: 10000 });
-  ok(await G2.evaluate(() => window.Sala.estado.mesa.banca.every(c => c !== null)), 'blackjack: al terminar se ve la mano completa de la banca');
-  ok(/Apuesta/.test(await G2.locator(M('blackjack')).innerText()) && await G2.evaluate(() => Object.keys(window.Sala.estado.mesa.resultado.pagos).length) === 2, 'blackjack: se pagan las dos apuestas');
-  await H2.locator(M('blackjack') + ' .olB', { hasText: 'Siguiente ronda' }).click();
-  await G2.waitForFunction(() => window.Sala.estado.mesa.fase === 'apuestas', null, { timeout: 10000 }); ok(true, 'blackjack: el anfitrión inicia la ronda siguiente');
-  // acción fuera de turno
-  await G2.evaluate(() => window.Sala.enviar('host', { tipo: 'accion', a: 'pedir' })); await wait(500);
-  ok(await G2.evaluate(() => window.Sala.estado.mesa.jug[window.Sala.uid].mano.length) === 0, 'blackjack: pedir carta fuera de turno se ignora');
 
   // ================= PÓQUER =================
   const H3 = await nuevo('h3'), G3 = await nuevo('g3');

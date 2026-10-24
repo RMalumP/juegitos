@@ -20,11 +20,15 @@ Cada juego con online tiene un botón **🌐 Conectar** en su barra de menú que
 | Ajedrez | 2 (anfitrión + 1 invitado) | cada jugada se envía y se aplica con el motor del juego; el anfitrión valida turno y legalidad; color al azar (o elegido en el lobby), rendición, recarga |
 | Damas | 2 | igual, con capturas múltiples |
 | Parchís | 2–4 (+ bots opcionales) | el anfitrión ejecuta el motor y publica una «foto»; los invitados mandan «tirar» y «mover ficha N» |
-| Ruleta | 2–6 | apuestas de cada jugador, giro común; pleno, color, par/impar, mitades, docenas y columnas |
-| Blackjack | 2–4 | el anfitrión reparte y hace de banca; pedir, plantarse y doblar; la carta oculta de la banca nunca llega a los invitados |
+| Ruleta | 2–6 | **el juego original**: tapete completo (números, split, calle, trío, esquina, seisena, docenas, columnas, dobles, cero y 00), rueda, historial, deshacer, repetir; europea o americana. El anfitrión ejecuta el juego, los invitados lo reflejan y mandan sus apuestas |
+| Blackjack | 2–6 | **el juego original**: 6 barajas, dividir (hasta 4 manos), doblar, blackjack 3:2, la banca pide hasta 17; la carta oculta de la banca nunca llega a los invitados |
 | Póquer | 2–6 | Texas Hold'em con ciegas, subidas, all-in y botes secundarios; las cartas privadas llegan solo a su dueño |
 
-Los motores de reglas de bingo y casino están en `js/bingo/engine.js` y `js/online/casino-engine.js` (sin DOM, con tests). Ajedrez, Damas y Parchís reutilizan los motores originales de sus iframes. Las fichas del casino son virtuales. El reloj de Ajedrez no se sincroniza entre móviles.
+Las reglas del bingo y del póquer están en `js/bingo/engine.js` y `js/online/casino-engine.js` (sin DOM, con tests). Ajedrez, Damas, Parchís, **Ruleta y Blackjack reutilizan los motores originales** (sin modificar `core.js`: se enganchan por sus nombres globales). Las fichas del casino son virtuales.
+
+**Relojes de ajedrez:** los dos móviles empiezan con el reloj del anfitrión; cada uno corre el suyo y se sincronizan los eventos con los tiempos exactos (iniciar, pausar, reanudar, reiniciar, cambio de modo o de tiempo, turno con cada jugada). El reloj grande de la pestaña «⏱ Reloj» se sincroniza igual. Si se agota el tiempo de alguien, pierde en los dos.
+
+**Invitaciones:** el enlace o QR de una sala de un juego entra directamente en ese juego (sin el menú de todos los juegos). Las salas creadas desde el botón Multijugador son *generales*: el invitado ve el menú de juegos y, cuando el anfitrión abre uno, todos pasan a él.
 
 ## Sala online (la conexión es una app)
 
@@ -53,7 +57,9 @@ js/online/lobby.js            lobby de cada juego (asientos, límite de jugadore
 js/online/j-tablero.js        Ajedrez y Damas online
 js/online/j-parchis.js        Parchís online
 js/online/j-casino.js         Ruleta, Blackjack y Póquer online
-js/online/casino-engine.js    reglas de ruleta, blackjack y póquer (sin DOM)
+js/online/casino-engine.js    reglas del póquer (sin DOM)
+js/online/j-ruleta.js         Ruleta original online
+js/online/j-blackjack.js      Blackjack original online
 js/online/qrcode.js           generador de QR (MIT)
 js/pwa.js                     instalación, actualizaciones y accesos directos (?abrir=bingo | ?abrir=sala)
 sw.js, manifest.webmanifest, icons/   PWA
@@ -68,7 +74,7 @@ Si cambias archivos de la aplicación: sube `VERSION` en `sw.js` y añade a `ARC
 
 | Comando | Qué cubre |
 |---|---|
-| `npm test` | motores: bingo (cartones, bombo, premios) y casino (ruleta, blackjack, póquer con 400 manos aleatorias y conservación de fichas) |
+| `npm test` | motores: bingo (cartones, bombo, premios) y póquer (400 manos aleatorias, botes secundarios, conservación de fichas) |
 | `npm run test:ui` | bingo local: Bolero con y sin cartones propios, recarga, marcas falsas, comprobar cartones |
 | `npm run test:online` | Bolero (con cartón propio) + 3 jugadores en navegadores distintos usando el icono Multijugador: cartones numerados, comprobar, cantos y dos partidas completas |
 | `npm run test:enlace` | entrar por enlace solo con el nombre, símbolo con la barra plegada y que los iconos del escritorio no se solapen |
@@ -77,7 +83,11 @@ Si cambias archivos de la aplicación: sube `VERSION` en `sw.js` y añade a `ARC
 | `npm run test:salas` | las 6 salas por juego: botón Conectar, límite de jugadores, «sala llena», «es de otro juego» y empezar |
 | `npm run test:tablero` | Ajedrez y Damas online: jugadas, turnos, jugadas ilegales, colores, rendición, recarga |
 | `npm run test:parchis` | Parchís online: turnos, mismo tablero en ambos móviles, bots, recarga |
-| `npm run test:casino` | Ruleta, Blackjack y Póquer online con 2 navegadores |
+| `npm run test:casino` | Póquer online con 2 navegadores |
+| `npm run test:ruleta` | Ruleta original online: todas las casillas, apuestas de cada móvil, giro y pagos iguales, «listo», repetir, vuelta a local |
+| `npm run test:blackjack` | Blackjack original online: apuestas, carta oculta, dividir, pagos, siguiente ronda, vuelta a local |
+| `npm run test:reloj` | relojes de ajedrez: iniciar, pausar, reanudar, turno, reinicio, reloj grande y tiempo agotado |
+| `npm run test:invitacion` | enlace/QR a cada juego entra directo (sin menú); sala general con menú |
 | `npm run test:turn` | credenciales TURN del Worker y respaldo solo con STUN si falla |
 | `npm run test:pwa` | manifest, iconos, caché, sin conexión, botón de instalar y accesos directos |
 

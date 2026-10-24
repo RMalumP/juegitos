@@ -22,7 +22,7 @@
     damas:    { nombre: 'Damas',    icono: '⛀',  min: 2, max: 2,  win: 'chess', winId: 'winChess', tab: 2 },
     parchis:  { nombre: 'Parchís',  icono: '🔵', min: 2, max: 4,  win: 'parchis', winId: 'winParchis' },
     ruleta:   { nombre: 'Ruleta',   icono: '🎯', min: 2, max: 6,  win: 'roul', winId: 'winRoul' },
-    blackjack:{ nombre: 'Blackjack',icono: '🎰', min: 2, max: 4,  win: 'bj', winId: 'winBJ' },
+    blackjack:{ nombre: 'Blackjack',icono: '🎰', min: 2, max: 6,  win: 'bj', winId: 'winBJ' },
     poker:    { nombre: 'Póquer',   icono: '♠️', min: 2, max: 6,  win: 'poker', winId: 'winPoker' }
   };
   const emit = (ev, ...a) => (L[ev] || []).slice().forEach(f => { try { f(...a); } catch (e) { console.error(e); } });
