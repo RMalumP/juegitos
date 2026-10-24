@@ -47,7 +47,7 @@ function dimPng(f) { const b = fs.readFileSync(path.join(root, f)); return [b.re
   await pg.waitForSelector('#iconBingo');
   ok(true, 'sin conexión el escritorio sigue abriendo');
   await pg.locator('#startScreen').evaluate(e => { e.style.display = 'none'; });
-  await pg.locator('#iconBingo').click(); await pg.locator('#iconBingo').click();
+  await pg.locator('#iconBingo').click();
   await pg.waitForSelector('.bgTitulo', { timeout: 10000 });
   await pg.getByText('Soy el Bolero').click();
   await pg.locator('#bingoWrap >> text=Sacar bola').click();

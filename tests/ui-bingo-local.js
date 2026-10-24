@@ -8,7 +8,7 @@ const { entorno, wait, ok, fin } = require('./helpers');
   ok(await pg.locator('#trayNet').count() === 1, 'el símbolo de conexión está en la barra inferior');
   // abrir con doble clic
   await pg.locator('#startScreen').evaluate(e => { e.style.display = 'none'; });
-  await pg.locator('#iconBingo').click(); await pg.locator('#iconBingo').click();
+  await pg.locator('#iconBingo').click(); // un solo toque basta
   await pg.waitForSelector('#winBingo:not(.hidden)');
   await pg.waitForSelector('.bgTitulo');
   ok(true, 'el bingo se abre y carga bajo demanda');
@@ -19,7 +19,7 @@ const { entorno, wait, ok, fin } = require('./helpers');
   ok(await pg.locator('.bgT.sal').count() === 5, 'sacar 5 bolas marca 5 números en el tablero');
   ok(/Bola\s*5\s*de 90/.test(await pg.locator('.bgCuenta').innerText()), 'el contador marca 5 de 90');
   const antes = await pg.evaluate(() => window.BingoUI.estado.p.bolas.slice());
-  await pg.reload(); await pg.locator('#startScreen').evaluate(e => { e.style.display = 'none'; }); await pg.locator('#iconBingo').click(); await pg.locator('#iconBingo').click();
+  await pg.reload(); await pg.locator('#startScreen').evaluate(e => { e.style.display = 'none'; }); await pg.locator('#iconBingo').click();
   await pg.waitForSelector('.bgTitulo'); await pg.getByText('Soy el Bolero').click();
   const despues = await pg.evaluate(() => window.BingoUI.estado.p.bolas.slice());
   ok(JSON.stringify(antes) === JSON.stringify(despues), 'el bombo sobrevive a recargar la página');
