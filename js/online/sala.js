@@ -256,6 +256,7 @@
     const j = S.juego, d = JUEGOS[j]; if (!d || typeof window.openGame !== 'function') return;
     if (j === 'ajedrez' || j === 'damas') window.openChessTab(d.tab); else window.openGame(d.win);
     if (j !== 'bingo') cargarLobby().then(L => L.mostrar(j)).catch(e => toast(e.message));
+    if (j === 'bingo') return;
   }
   // Botón «🌐 Conectar» de cada juego: lleva al lobby de ese juego, o a conectar si aún no hay sala.
   function lobby(juego) {

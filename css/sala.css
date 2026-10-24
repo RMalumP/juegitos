@@ -69,3 +69,6 @@
 .olN{width:20px;height:20px;border-radius:50%;background:#0a246a;color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}.olJ.libre .olN{background:#999}
 .olNom{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.olX{cursor:pointer;border:1px solid gray;background:#d4d0c8;padding:0 7px;font-size:11px}
 .olOp{display:flex;gap:6px;flex-wrap:wrap;align-items:center}.olOp .olBtn{flex:1;min-width:80px}.olOp .olBtn.on{background:linear-gradient(#cfeec4,#9ad78a);border-color:gray #fff #fff gray}
+.olBarra{display:none;flex-shrink:0;align-items:center;gap:6px;flex-wrap:wrap;background:#0a246a;color:#fff;padding:4px 8px;font-size:12px}
+.olBarra.on{display:flex}.olBarra .olBT{flex:1;min-width:0}.olBarra b{color:#ffd24d}
+.olBarra button{cursor:pointer;background:linear-gradient(#fff,#d4d0c8);border:1px solid gray;border-radius:3px;padding:3px 8px;font-size:11px;font-weight:700;color:#000}

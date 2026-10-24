@@ -84,11 +84,29 @@
     if (j) ultimaFase[j] = est.phase;
     todos();
   }
-  function mostrar(j) { render(j); }
+  // Cada grupo de juegos tiene su adaptador (js/online/j-<grupo>.js), que se carga al entrar en la sala de ese juego.
+  var ARCH = { ajedrez: 'tablero', damas: 'tablero', parchis: 'parchis', ruleta: 'casino', blackjack: 'casino', poker: 'casino' }, cargados = {};
+  function cargarAdaptador(j) {
+    var a = ARCH[j]; if (!a) return Promise.resolve();
+    if (!cargados[a]) cargados[a] = new Promise(function (ok, ko) {
+      var sc = document.createElement('script'); sc.src = new URL('js/online/j-' + a + '.js', document.baseURI).href;
+      sc.onload = ok; sc.onerror = function () { delete cargados[a]; ko(new Error('No se pudo cargar el modo online de este juego.')); };
+      document.head.appendChild(sc);
+    });
+    return cargados[a];
+  }
+  function mostrar(j) { return cargarAdaptador(j).then(function () { render(j); }); }
+  // Barra de estado online bajo el título de la ventana del juego (sala, turno, botones propios del juego).
+  function barra(winId) {
+    var win = $(winId); if (!win) return null;
+    var b = win.querySelector('.olBarra');
+    if (!b) { b = mk('div', 'olBarra'); var ref = win.querySelector('.menuBar') || win.querySelector('.winReopen'); ref.parentNode.insertBefore(b, ref.nextSibling); }
+    return b;
+  }
   function registrar(j, reg) { REG[j] = reg; if (S().activo && S().juego === j) alEstado(S().estado); else todos(); }
 
   S().on('estado', alEstado); S().on('jug', todos); S().on('con', todos);
   S().on('cierre', function () { ultimaFase = {}; Object.keys(REG).forEach(function (j) { if (REG[j].alCerrar) { try { REG[j].alCerrar(); } catch (e) { console.error(e); } } }); todos(); });
-  window.JuegosOnline = { mostrar: mostrar, registrar: registrar, render: todos, volverAlLobby: volverAlLobby, empezar: empezar, mk: mk, esc: esc, boton: boton };
+  window.JuegosOnline = { barra: barra, cargarAdaptador: cargarAdaptador, mostrar: mostrar, registrar: registrar, render: todos, volverAlLobby: volverAlLobby, empezar: empezar, mk: mk, esc: esc, boton: boton };
   todos();
 })();
