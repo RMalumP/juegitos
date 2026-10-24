@@ -221,12 +221,14 @@
       return;
     }
     var js = est.jugadas || [];
-    if (!st.activa || st.ronda !== est.ronda || js.length < st.aplicadas) {      // partida nueva, o recarga: se reconstruye repitiendo las jugadas
+    var reconstruye = !st.activa || st.ronda !== est.ronda || js.length < st.aplicadas, antes = st.aplicadas;
+    if (reconstruye) {      // partida nueva, o recarga: se reconstruye repitiendo las jugadas
       st.activa = true; st.ronda = est.ronda; st.aplicadas = 0; st.rn = {}; reiniciar(w); orientar(w, miColor());
       if (S.host && S.juego === 'ajedrez') setTimeout(function () { enviarReloj(w, 'aj'); }, 50);       // el reloj de la partida es el del anfitrión: los dos empiezan igual
     }
     if (S.host) st.jugadas = js.slice();
     while (st.aplicadas < js.length) { aplicar(w, js[st.aplicadas]); st.aplicadas++; }
+    if (!reconstruye && st.aplicadas > antes && window.Vibra) window.Vibra.pulso([40, 30, 40]);       // el rival ha movido
     if (S.juego === 'ajedrez' && est.reloj) {
       ['aj', 'big'].forEach(function (k) {
         var sn = est.reloj[k]; if (!sn || !relojValido(sn) || st.rn[k] === sn.n) return;

@@ -31,7 +31,9 @@
   }
   function aplicarFoto(f) {
     if (!f || !Array.isArray(f.st) || f.st.length !== RO.ids.length) return;
+    var eraUt = ut;
     st = f.st; pt = Array.isArray(f.pt) ? f.pt.slice() : []; rt = !!f.rt; ut = !!f.ut; RO.listos = f.listos || {};
+    if (ut && !eraUt && window.Vibra) window.Vibra.pulso(40);                                       // ha salido el número
     if (typeof f.mt === 'number' && f.mt !== mt) {                                  // la rueda gira con la misma animación del juego
       mt = f.mt;
       ['roulWheelInner', 'roulWheelInnerBig'].forEach(function (id) {

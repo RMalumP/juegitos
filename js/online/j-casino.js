@@ -103,6 +103,8 @@
     o.appendChild(mesa);
     if (s.resultado) o.appendChild(mk('div', 'olFin', s.resultado.botes.map(function (b) { return '🏆 ' + b.ganadores.map(function (id) { var j = s.jug.filter(function (x) { return x.id === id; })[0]; return esc(j ? j.nombre : '?'); }).join(' y ') + ' gana ' + b.cantidad; }).join('<br>')));
     if (s.fase === 'fin') o.appendChild(mk('div', 'olFin', '🏁 Fin de la partida' + (s.ganador ? ': gana ' + esc((s.jug.filter(function (x) { return x.id === s.ganador; })[0] || {}).nombre || '') : '')));
+    if (turnoMio && !st.eraMio && window.Vibra) window.Vibra.pulso([30, 40, 30]);                   // te toca
+    st.eraMio = turnoMio;
     if (turnoMio) {
       var op = S.host ? CE.Poker.opciones(st.s, S.uid) : opcionesDe(s, i);
       if (op) {

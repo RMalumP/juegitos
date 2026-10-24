@@ -45,7 +45,7 @@
     if (!('speechSynthesis' in window)) return;
     try { var u = new SpeechSynthesisUtterance(t); u.lang = 'es-ES'; window.speechSynthesis.speak(u); } catch (e) { /* sin voz */ }
   }
-  function vibrar(ms) { try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) { /* nada */ } }
+  function vibrar(ms) { if (window.Vibra) window.Vibra.pulso(ms); }
 
   /* ---------- piezas de interfaz ---------- */
   function bola(n, cls) { return mk('div', 'bgBola ' + (cls || '') + ' c' + E.columnaDe(n), '<span>' + n + '</span>'); }

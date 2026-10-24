@@ -53,6 +53,9 @@
   }
   function botones() {
     var d = $('bjDealBtn2'); if (!d) return;
+    var mio = je === 'play' && we === RB.yo;
+    if (mio && !RB.eraMio && window.Vibra) window.Vibra.pulso([30, 40, 30]);                        // te toca
+    RB.eraMio = mio;
     var listo = !!RB.listos[RB.yo];
     d.textContent = esHost() ? '🂠 Repartir ya' : (listo ? '⏳ Esperando…' : '✔ Listo');
     pintarBarra();

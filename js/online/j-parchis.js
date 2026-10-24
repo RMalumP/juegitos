@@ -57,6 +57,8 @@
   function retocar(w) {
     var d = w.document, g = G(w); if (!g) return;
     var mio = miAsiento() === g.turn;
+    if (mio && !st.eraMio && !g.finished && window.Vibra) window.Vibra.pulso([30, 40, 30]);        // te toca
+    st.eraMio = mio;
     if (!mio) d.querySelectorAll('#tokens .ring,#tokens .hit').forEach(function (e) { e.remove(); });
     if (!mio) d.querySelectorAll('#tokens .movable').forEach(function (e) { e.classList.remove('movable'); e.removeAttribute('onclick'); });
     d.getElementById('rollBtn').disabled = !(mio && g.phase === 'roll' && !g.busy && !g.finished);

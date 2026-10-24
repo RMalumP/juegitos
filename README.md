@@ -10,6 +10,14 @@ Escritorio estilo Windows XP con juegos clásicos (Buscaminas, Tetris, Ajedrez, 
 - **Online**: un móvil es el **Bolero** (anfitrión, que también puede tener cartones propios) y los demás son **jugadores** (de 1 a 6 cartones cada uno). El anfitrión reparte los cartones, saca las bolas y comprueba cada «¡LÍNEA!» y «¡BINGO!» contra los cartones que él mismo ha repartido: nadie puede cantar en falso, tampoco él. Voz opcional y recuperación si alguien recarga la página (incluido el Bolero).
 - **Compartir**: desde el bingo, **🔗 Compartir** y **▦ QR**. El enlace lleva sala y contraseña: quien lo abre solo escribe su nombre y entra directamente en el bingo.
 
+## Vibración
+
+El interruptor 📳 de la barra activa o desactiva **toda** la vibración de la app (se recuerda al recargar). Vibra al tocar botones, iconos, fichas, casillas, cartones y números, y en los avisos online (bola nueva, tu turno, el rival ha movido, ha salido el número). Todo pasa por `js/vibracion.js` (`window.Vibra.pulso(ms | patrón)`).
+
+- **Android** (Chrome, Edge, Firefox, Samsung Internet): API de vibración del navegador.
+- **iPhone/iPad:** Safari no tiene esa API; se usa el toque háptico del sistema (iOS 17.4+, Safari) cuando tocas la pantalla. Los avisos que llegan solos desde la red (una bola nueva) no pueden vibrar ahí. Con otros navegadores de iPhone la vibración no es posible.
+- Algunos móviles no vibran con el modo ahorro de batería o con el «feedback háptico» del sistema desactivado.
+
 ## Multijugador en más juegos
 
 Cada juego con online tiene un botón **🌐 Conectar** en su barra de menú que lleva al **lobby de ese juego** (la ventana Multijugador sirve para entrar por código o enlace). Una sala es de un único juego: quien entra desde el botón de otro juego recibe «es de otro juego».
@@ -88,6 +96,7 @@ Si cambias archivos de la aplicación: sube `VERSION` en `sw.js` y añade a `ARC
 | `npm run test:blackjack` | Blackjack original online: apuestas, carta oculta, dividir, pagos, siguiente ronda, vuelta a local |
 | `npm run test:reloj` | relojes de ajedrez: iniciar, pausar, reanudar, turno, reinicio, reloj grande y tiempo agotado |
 | `npm run test:invitacion` | enlace/QR a cada juego entra directo (sin menú); sala general con menú |
+| `npm run test:vibracion` | interruptor 📳, vibración en casillas y cartones, avisos online, recordar el ajuste y respaldo háptico de iPhone |
 | `npm run test:turn` | credenciales TURN del Worker y respaldo solo con STUN si falla |
 | `npm run test:pwa` | manifest, iconos, caché, sin conexión, botón de instalar y accesos directos |
 
