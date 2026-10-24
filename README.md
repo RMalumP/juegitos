@@ -10,7 +10,7 @@ Escritorio estilo Windows XP con juegos clásicos (Buscaminas, Tetris, Ajedrez, 
 
 ## Sala online (la conexión es una app)
 
-El icono **📡 Sala online** del escritorio abre una ventana donde se crea o se entra en una sala con nombre + contraseña (también por **QR** o enlace). El símbolo **📶** de la barra inferior muestra el estado (gris sin sala, ámbar conectando, verde conectado) y abre la misma ventana. Los juegos no tienen pantalla de conexión propia: usan `window.Sala`.
+El icono **📡 Multijugador** del escritorio (junto a Guardar y Cargar, no en el menú de inicio) abre una ventana donde se crea o se entra en una sala con nombre + contraseña (también por **QR** o enlace). El símbolo **📶** de la barra inferior muestra el estado (gris sin sala, ámbar conectando, verde conectado) y abre la misma ventana. Los juegos no tienen pantalla de conexión propia: usan `window.Sala`.
 
 Cómo funciona (adaptado de «La aldea se duerme» y «El Impostor»):
 

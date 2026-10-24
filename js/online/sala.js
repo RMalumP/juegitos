@@ -218,6 +218,7 @@
     $('salaIrJuego').onclick = irAlJuego;
     $('salaJuegoBingo').onclick = () => { S.juego = 'bingo'; irAlJuego(); };
     $('trayNet').onclick = abrir;
+    if ($('btnSala')) $('btnSala').onclick = abrir;
     if (location.protocol === 'file:') aviso('El modo online solo funciona desde una página https. Abriendo el archivo con doble clic puedes usar el bingo en local.');
     pintar();
     if (!aplicarEnlace()) recuperar();

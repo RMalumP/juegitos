@@ -4,7 +4,7 @@ const { entorno, wait, ok, fin } = require('./helpers');
   const env = await entorno(9312, 9311);
   const ctx = await env.contexto();
   const pg = await env.pagina(ctx, 'local');
-  ok(await pg.locator('#iconBingo').count() === 1 && await pg.locator('#iconSala').count() === 1, 'los iconos Bingo y Sala online están en el escritorio');
+  ok(await pg.locator('#iconBingo').count() === 1 && await pg.locator('#iconSala').count() === 0 && await pg.locator('#deskTools #btnSala').count() === 1, 'el icono Bingo está en el escritorio y Multijugador junto a Guardar y Cargar');
   ok(await pg.locator('#trayNet').count() === 1, 'el símbolo de conexión está en la barra inferior');
   // abrir con doble clic
   await pg.locator('#startScreen').evaluate(e => { e.style.display = 'none'; });

@@ -6,7 +6,7 @@ const { entorno, wait, ok, fin } = require('./helpers');
   const H = await nuevo('bolero'), A = await nuevo('ana'), Bt = await nuevo('beto'), C = await nuevo('carla');
 
   // --- el anfitrión abre la app «Sala online» desde su icono y crea la sala
-  await H.pg.locator('#iconSala').click(); await H.pg.locator('#iconSala').click();
+  await H.pg.locator('#btnSala').click();
   await H.pg.waitForSelector('#winSala:not(.hidden)');
   ok(await H.pg.locator('#trayNet.tray-off').count() === 1, 'símbolo de la barra apagado antes de conectar');
   await H.pg.fill('#salaNombre', 'Bolero'); await H.pg.fill('#salaSala', 'sala bingo'); await H.pg.fill('#salaPass', 'clave1');
@@ -22,7 +22,7 @@ const { entorno, wait, ok, fin } = require('./helpers');
 
   // --- los jugadores se unen por el icono de la Sala
   async function unir(J, nombre, pass) {
-    await J.pg.locator('#iconSala').click(); await J.pg.locator('#iconSala').click();
+    await J.pg.locator('#btnSala').click();
     await J.pg.waitForSelector('#winSala:not(.hidden)');
     await J.pg.fill('#salaNombre', nombre); await J.pg.fill('#salaSala', 'Sala Bingo'); await J.pg.fill('#salaPass', pass);
     await J.pg.click('#salaUnir');

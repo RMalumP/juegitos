@@ -217,7 +217,7 @@
   }
   function vistaHostLobby() {
     var est = window.Sala.estado, n = [];
-    var cab = mk('div', 'bgSala', '<div class="bgSalaT">🎱 Sala «' + esc(window.Sala.sala) + '»</div><div class="bgSalaS">Eres el <b>Bolero</b>. Los jugadores se unen desde el icono 📡 Sala online con el nombre y la contraseña de la sala.</div>');
+    var cab = mk('div', 'bgSala', '<div class="bgSalaT">🎱 Sala «' + esc(window.Sala.sala) + '»</div><div class="bgSalaS">Eres el <b>Bolero</b>. Los jugadores se unen desde el icono 📡 Multijugador con el nombre y la contraseña de la sala.</div>');
     n.push(cab);
     var lista = mk('div', 'bgLista'), hay = 0;
     window.Sala.jug.forEach(function (j) {
