@@ -8,6 +8,7 @@
     "test:online": "node tests/ui-bingo-online.js",
     "test:pwa": "node tests/pwa.js",
     "test:turn": "node tests/turn.js",
+    "test:app": "node tests/ui-app.js",
     "test:vibracion": "node tests/ui-vibracion.js",
     "test:blackjack": "node tests/ui-blackjack.js",
     "test:ruleta": "node tests/ui-ruleta.js",
@@ -20,7 +21,7 @@
     "test:enlace": "node tests/ui-enlace-y-barra.js",
     "test:regresion": "node tests/ui-regresion.js",
     "test:reconexion": "node tests/ui-bingo-reconexion.js",
-    "test:all": "npm test && npm run test:ui && npm run test:online && npm run test:regresion && npm run test:turn && npm run test:vibracion && npm run test:blackjack && npm run test:ruleta && npm run test:reloj && npm run test:invitacion && npm run test:casino && npm run test:parchis && npm run test:tablero && npm run test:salas && npm run test:enlace && npm run test:pwa && npm run test:reconexion"
+    "test:all": "npm test && npm run test:ui && npm run test:online && npm run test:regresion && npm run test:turn && npm run test:app && npm run test:vibracion && npm run test:blackjack && npm run test:ruleta && npm run test:reloj && npm run test:invitacion && npm run test:casino && npm run test:parchis && npm run test:tablero && npm run test:salas && npm run test:enlace && npm run test:pwa && npm run test:reconexion"
   },
   "devDependencies": {
     "peer": "1.0.2",

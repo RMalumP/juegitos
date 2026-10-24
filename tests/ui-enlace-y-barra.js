@@ -9,8 +9,8 @@ const { entorno, wait, ok, fin } = require('./helpers');
   const caja = async (pg, sel) => pg.evaluate(s => { const r = document.querySelector(s).getBoundingClientRect(); return { l: r.left, r: r.right, t: r.top, b: r.bottom }; }, sel);
   for (const w of [360, 400, 440]) {
     await H.pg.setViewportSize({ width: w, height: 700 });
-    const [g, m, c] = [await caja(H.pg, '#btnSaveData'), await caja(H.pg, '#btnSala'), await caja(H.pg, '#btnLoadData')];
-    ok(Math.abs(g.l - m.l) < 1 && Math.abs(m.l - c.l) < 1 && g.b <= m.t + 0.5 && m.b <= c.t + 0.5, 'a ' + w + ' px Guardar, Multijugador y Cargar están en vertical y no se solapan');
+    const [g, m, c, ins] = [await caja(H.pg, '#btnSaveData'), await caja(H.pg, '#btnSala'), await caja(H.pg, '#btnLoadData'), await caja(H.pg, '#btnInstalar')];
+    ok(Math.abs(g.l - m.l) < 1 && Math.abs(m.l - c.l) < 1 && g.b <= m.t + 0.5 && m.b <= c.t + 0.5 && c.b <= ins.t + 0.5 && Math.abs(c.l - ins.l) < 1, 'a ' + w + ' px Guardar, Multijugador, Cargar e Instalar app están en vertical y no se solapan');
     const iconos = await H.pg.evaluate(() => Array.from(document.querySelectorAll('#icons .deskIcon')).map(e => e.getBoundingClientRect()).filter(r => r.width && r.right > 0).map(r => r.right));
     ok(Math.max(...iconos) <= g.l + 0.5, 'a ' + w + ' px los iconos de juegos quedan a la izquierda de las herramientas');
     ok(await H.pg.evaluate(() => { const l = document.querySelector('#btnSala .dtLbl'); return l.scrollWidth <= l.parentElement.clientWidth; }), 'a ' + w + ' px la etiqueta «Multijugador» cabe entera');

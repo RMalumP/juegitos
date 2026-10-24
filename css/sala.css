@@ -96,3 +96,15 @@
 /* ----- Ruleta y Blackjack ORIGINALES en online: se ocultan los ajustes de partida local (jugadores, monedas, modo y «Nueva partida») ----- */
 .rulOnline #roulSetup,.rulOnline #roulNewGame{display:none!important}
 .bjOnline #bjNumPlayers,.bjOnline #bjNewGame,.bjOnline #bjPlayerTabs{display:none!important}
+
+/* ----- ocultar la barra superior de un juego también oculta su botón «🌐 Conectar» ----- */
+.win.barHidden [data-conectar]{display:none}
+.win.barHidden .menuBar.soloConectar{display:none}
+/* ----- botón de pantalla completa ----- */
+#fsToggle{color:#fff;cursor:pointer;border-radius:3px;padding:2px 5px;font-size:15px;line-height:1;user-select:none}
+#fsToggle.off{opacity:.55}
+#salaVolver{align-self:flex-start;cursor:pointer;background:linear-gradient(#fff 0,#d4d0c8);border:2px solid gray;border-color:#fff gray gray #fff;border-radius:3px;padding:6px 12px;font-size:13px;font-weight:700;color:#000}
+/* ----- ayuda para instalar la app ----- */
+#pwaAyuda{position:fixed;inset:0;z-index:600;background:#000000d9;display:flex;align-items:center;justify-content:center;padding:20px}
+#pwaAyuda .salaQRcaja{text-align:left;display:flex;flex-direction:column;gap:10px;font-size:14px;line-height:1.45}
+#pwaAyuda button{cursor:pointer;background:linear-gradient(#fff 0,#d4d0c8);border:2px solid gray;border-color:#fff gray gray #fff;border-radius:3px;padding:9px 10px;font-size:14px;font-weight:700;color:#000}

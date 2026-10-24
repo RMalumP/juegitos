@@ -4,8 +4,9 @@
      usa lo guardado. Imágenes y fuentes de otros dominios: se sirve lo guardado y se actualiza en segundo plano.
    · El online no se toca: la señalización de PeerJS (WebSocket/API) va siempre a la red. Solo se guarda el script de PeerJS (versión fijada) para que
      no haga falta descargarlo cada vez.
-   Al cambiar archivos de la aplicación SUBE `VERSION` (y añade a `ARCHIVOS` cualquier archivo nuevo: tests/pwa.js lo comprueba). */
-const VERSION = 'v9';
+   Al cambiar archivos de la aplicación SUBE `APP_VERSION` en js/version.js (y añade a `ARCHIVOS` cualquier archivo nuevo: tests/pwa.js lo comprueba). */
+importScripts('js/version.js');                              // define self.APP_VERSION: única fuente de la versión
+const VERSION = 'v' + self.APP_VERSION;
 const SHELL = 'juegitos-shell-' + VERSION;
 const EXTRA = 'juegitos-extra-' + VERSION;
 const ARCHIVOS = [
@@ -60,6 +61,8 @@ const ARCHIVOS = [
   'js/pwa.js',
   'js/save-load.js',
   'js/vibracion.js',
+  'js/version.js',
+  'js/pantalla.js',
   'js/window-bars.js',
   'manifest.webmanifest'
 ];

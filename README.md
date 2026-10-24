@@ -10,6 +10,14 @@ Escritorio estilo Windows XP con juegos clásicos (Buscaminas, Tetris, Ajedrez, 
 - **Online**: un móvil es el **Bolero** (anfitrión, que también puede tener cartones propios) y los demás son **jugadores** (de 1 a 6 cartones cada uno). El anfitrión reparte los cartones, saca las bolas y comprueba cada «¡LÍNEA!» y «¡BINGO!» contra los cartones que él mismo ha repartido: nadie puede cantar en falso, tampoco él. Voz opcional y recuperación si alguien recarga la página (incluido el Bolero).
 - **Compartir**: desde el bingo, **🔗 Compartir** y **▦ QR**. El enlace lleva sala y contraseña: quien lo abre solo escribe su nombre y entra directamente en el bingo.
 
+## Instalación y pantalla completa
+
+- Hasta que la app esté instalada, bajo «Cargar» hay un botón **📲 Instalar app**: lanza el diálogo de instalación del navegador o, si este no lo ofrece, explica los pasos (Safari en iPhone: Compartir → «Añadir a pantalla de inicio»). Instalada, el botón desaparece.
+- Instalada se abre a **pantalla completa** (`display: fullscreen` en el manifest): sin la barra de notificaciones ni la del navegador. Si ya la tenías instalada, Android actualiza el manifest cuando puede; si no se nota el cambio, desinstálala e instálala de nuevo.
+- En el navegador, el primer toque pide la pantalla completa y el botón **⛶** de la barra la activa o desactiva (se recuerda). En iPhone/iPad no existe esa API para páginas web, así que solo se consigue instalando la app.
+- Los créditos (©) muestran la versión.
+- «🌐 Conectar» de cada juego abre la conexión con un botón **← Volver** al juego; y si ocultas la barra superior de un juego (□) se oculta también «Conectar».
+
 ## Vibración
 
 El interruptor 📳 de la barra activa o desactiva **toda** la vibración de la app (se recuerda al recargar). Vibra al tocar botones, iconos, fichas, casillas, cartones y números, y en los avisos online (bola nueva, tu turno, el rival ha movido, ha salido el número). Todo pasa por `js/vibracion.js` (`window.Vibra.pulso(ms | patrón)`).
@@ -69,12 +77,15 @@ js/online/casino-engine.js    reglas del póquer (sin DOM)
 js/online/j-ruleta.js         Ruleta original online
 js/online/j-blackjack.js      Blackjack original online
 js/online/qrcode.js           generador de QR (MIT)
-js/pwa.js                     instalación, actualizaciones y accesos directos (?abrir=bingo | ?abrir=sala)
+js/pwa.js                     instalación (botón «Instalar app»), actualizaciones, versión en créditos y accesos directos (?abrir=bingo | ?abrir=sala)
+js/version.js                 versión de la app (única fuente)
+js/pantalla.js                pantalla completa (oculta la barra de notificaciones)
+js/vibracion.js               vibración común (interruptor 📳)
 sw.js, manifest.webmanifest, icons/   PWA
 tests/                        pruebas
 ```
 
-Si cambias archivos de la aplicación: sube `VERSION` en `sw.js` y añade a `ARCHIVOS` cualquier archivo nuevo (`tests/pwa.js` lo comprueba).
+Si cambias archivos de la aplicación: sube `APP_VERSION` (y `APP_FECHA`) en `js/version.js` —de ahí salen la versión de los créditos y el nombre de la caché del service worker— y añade a `ARCHIVOS` de `sw.js` cualquier archivo nuevo (`tests/pwa.js` lo comprueba).
 
 ## Pruebas
 
@@ -96,6 +107,7 @@ Si cambias archivos de la aplicación: sube `VERSION` en `sw.js` y añade a `ARC
 | `npm run test:blackjack` | Blackjack original online: apuestas, carta oculta, dividir, pagos, siguiente ronda, vuelta a local |
 | `npm run test:reloj` | relojes de ajedrez: iniciar, pausar, reanudar, turno, reinicio, reloj grande y tiempo agotado |
 | `npm run test:invitacion` | enlace/QR a cada juego entra directo (sin menú); sala general con menú |
+| `npm run test:app` | botón Volver de la conexión, ocultar la barra oculta «Conectar», versión en créditos, «Instalar app» y pantalla completa |
 | `npm run test:vibracion` | interruptor 📳, vibración en casillas y cartones, avisos online, recordar el ajuste y respaldo háptico de iPhone |
 | `npm run test:turn` | credenciales TURN del Worker y respaldo solo con STUN si falla |
 | `npm run test:pwa` | manifest, iconos, caché, sin conexión, botón de instalar y accesos directos |

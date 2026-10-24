@@ -148,6 +148,7 @@
     $('salaDentro').style.display = S.activo ? '' : 'none';
     ['salaCrear', 'salaUnir'].forEach(id => { $(id).disabled = S.ocupado; });
     $('salaJuegoFila').style.display = S.objetivo ? 'none' : '';
+    if ($('salaVolver')) $('salaVolver').textContent = S.objetivo && JUEGOS[S.objetivo] ? '← Volver a ' + JUEGOS[S.objetivo].nombre : (S.activo && S.juego && JUEGOS[S.juego] ? '← Volver a ' + JUEGOS[S.juego].nombre : '← Volver');
     $('salaConectarT').textContent = S.objetivo && JUEGOS[S.objetivo] ? JUEGOS[S.objetivo].icono + ' Sala de ' + JUEGOS[S.objetivo].nombre : '📡 Multijugador';
     if (!S.activo) return;
     $('salaTitulo').textContent = S.sala || 'Sala';
@@ -280,11 +281,21 @@
       document.head.appendChild(sc);
     });
   }
-  // Abre la ventana del juego de la sala (y, si no es el bingo, su lobby encima).
-  function irAlJuego() {
-    const j = S.juego, d = JUEGOS[j]; if (!d || typeof window.openGame !== 'function') return;
+  function abrirVentana(j) {
+    const d = JUEGOS[j]; if (!d || typeof window.openGame !== 'function') return false;
     ocultarInicio();
     if (j === 'ajedrez' || j === 'damas') window.openChessTab(d.tab); else window.openGame(d.win);
+    return true;
+  }
+  // Botón «← Volver» de la ventana de conexión: de vuelta al juego desde el que se llegó (o al escritorio)
+  function volver() {
+    if (S.objetivo) { const j = S.objetivo; S.objetivo = null; pintar(); abrirVentana(j); }
+    else if (S.activo && S.juego) irAlJuego();
+    else { const x = $('btnCloseSala'); if (x) x.click(); }
+  }
+  // Abre la ventana del juego de la sala (y, si no es el bingo, su lobby encima).
+  function irAlJuego() {
+    const j = S.juego, d = JUEGOS[j]; if (!d || !abrirVentana(j)) return;
     if (j !== 'bingo') cargarLobby().then(L => L.mostrar(j)).catch(e => toast(e.message));
     if (j === 'bingo') return;
   }
@@ -303,6 +314,7 @@
     $('salaNombre').value = lsGet(LS_NOM) || ''; $('salaSala').value = lsGet(LS_SAL) || '';
     $('salaCrear').onclick = () => conectar('crear');
     $('salaUnir').onclick = () => conectar('unir');
+    if ($('salaVolver')) $('salaVolver').onclick = volver;
     $('salaCerrar').onclick = () => { if (confirm(S.host ? '¿Cerrar la sala? Todos los jugadores saldrán.' : '¿Salir de la sala?')) salir(); };
     $('salaCompartir').onclick = compartir;
     $('salaQRbtn').onclick = qr;

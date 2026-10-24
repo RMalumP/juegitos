@@ -8,7 +8,7 @@ function dimPng(f) { const b = fs.readFileSync(path.join(root, f)); return [b.re
 (async () => {
   // --- estático
   const man = JSON.parse(fs.readFileSync(path.join(root, 'manifest.webmanifest'), 'utf8'));
-  ok(man.display === 'standalone' && man.start_url && man.scope && man.name && man.short_name && man.theme_color && man.background_color, 'manifest con nombre, colores, start_url y display standalone');
+  ok(man.display === 'fullscreen' && man.display_override.includes('standalone') && man.start_url && man.scope && man.name && man.short_name && man.theme_color && man.background_color, 'manifest con nombre, colores, start_url y pantalla completa (con standalone de reserva)');
   for (const ic of man.icons.filter(i => i.type === 'image/png')) {
     ok(fs.existsSync(path.join(root, ic.src)) && dimPng(ic.src).join('x') === ic.sizes, 'icono ' + ic.src + ' existe y mide ' + ic.sizes);
   }
@@ -18,6 +18,8 @@ function dimPng(f) { const b = fs.readFileSync(path.join(root, f)); return [b.re
   const necesarios = [...ls('css'), ...ls('js'), ...ls('games'), 'index.html', 'manifest.webmanifest'];
   const faltan = necesarios.filter(f => !lista.includes(f));
   ok(!faltan.length, 'el service worker precachea todos los archivos de la aplicación' + (faltan.length ? ' (faltan: ' + faltan.join(', ') + ')' : ''));
+  const ver = fs.readFileSync(path.join(root, 'js/version.js'), 'utf8');
+  ok(/APP_VERSION = '\d+\.\d+\.\d+'/.test(ver) && /importScripts\('js\/version\.js'\)/.test(sw) && /VERSION = 'v' \+ self\.APP_VERSION/.test(sw), 'la versión de la app sale de js/version.js y el service worker deriva de ahí el nombre de su caché');
   const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
   ok(/rel="manifest"/.test(html) && /rel="apple-touch-icon"/.test(html) && /name="theme-color"/.test(html), 'index.html enlaza manifest, apple-touch-icon y theme-color');
 
