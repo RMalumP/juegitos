@@ -14,11 +14,12 @@ El icono **📡 Sala online** del escritorio abre una ventana donde se crea o se
 
 Cómo funciona (adaptado de «La aldea se duerme» y «El Impostor»):
 
-- WebRTC punto a punto con **PeerJS y solo STUN**. Sin Firebase, sin Cloudflare y sin TURN.
+- WebRTC punto a punto con **PeerJS, STUN y TURN**. Sin Firebase. Las credenciales TURN no están en el repositorio: se piden al Worker de Cloudflare de «El Impostor» (`TURN_PROXY_URL` en `js/online/transport-peer.js`; solo responde a `https://rmalump.github.io`). Si el Worker no responde, la sala funciona igual solo con STUN y se avisa.
 - El móvil del anfitrión hace de servidor: valida la contraseña, acepta o rechaza jugadores y envía a cada uno **solo lo suyo**.
 - La sala es `SHA-256(nombre + contraseña)`: la contraseña nunca se guarda ni se envía.
-- Misma wifi (o hotspot del anfitrión): conexión directa por la red local. El servidor público de PeerJS solo se usa para que los móviles se encuentren, así que hace falta internet al conectar.
-- Limitaciones: sin TURN, algunas redes no permiten conectar (wifi con aislamiento de clientes, datos móviles con NAT de operador). Si el anfitrión cierra la pestaña la partida se detiene; si recarga, se recupera.
+- Misma wifi (o hotspot del anfitrión): conexión directa por la red local; el relé no se usa. Con TURN también conectan wifi ↔ 4G (basta con que lo use un extremo). En la lista de jugadores cada conexión muestra 📶 red local, 🌐 internet o 🔁 relé.
+- Otro Worker: cambia la URL, o `globalThis.JUEGITOS_TURN_PROXY` (cadena vacía = sin relé). Credenciales fijas sin Worker: `localStorage 'juegitos.peer.turn'`.
+- El servidor público de PeerJS solo sirve para que los móviles se encuentren, así que hace falta internet al conectar. Si el anfitrión cierra la pestaña la partida se detiene; si recarga, se recupera.
 
 ## Estructura
 
@@ -49,6 +50,7 @@ Si cambias archivos de la aplicación: sube `VERSION` en `sw.js` y añade a `ARC
 | `npm run test:online` | Bolero + 3 jugadores en navegadores distintos usando el icono Sala online, partida completa |
 | `npm run test:reconexion` | un jugador y el Bolero recargan a mitad de partida |
 | `npm run test:regresion` | todos los juegos del escritorio abren sin errores |
+| `npm run test:turn` | credenciales TURN del Worker y respaldo solo con STUN si falla |
 | `npm run test:pwa` | manifest, iconos, caché, sin conexión, botón de instalar y accesos directos |
 
-Pendiente de probar con móviles reales: conexión entre varios teléfonos en una misma wifi.
+Pendiente de probar con móviles reales: varios teléfonos en una misma wifi y wifi ↔ 4G con el relé (el Worker solo responde desde `https://rmalump.github.io`).

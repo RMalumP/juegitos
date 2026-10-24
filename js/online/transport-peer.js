@@ -1,4 +1,4 @@
-// js/transport-peer.js — Transporte online de Juegos XP (Sala online): PeerJS (WebRTC punto a punto) con STUN, sin TURN ni Firebase.
+// js/transport-peer.js — Transporte online de Juegos XP (Sala online): PeerJS (WebRTC punto a punto) con STUN y TURN opcional (relé), sin Firebase.
 // El móvil del anfitrión hace de servidor (estrella): valida la contraseña, acepta o rechaza a cada jugador, guarda el estado y envía
 // a cada uno SOLO lo suyo. Si el anfitrión cierra la pestaña la partida se detiene; si recarga, recupera la sala desde su snapshot.
 // Adaptado del transporte PeerJS de «La aldea se duerme» (DuermePueblo), a su vez basado en «El Impostor».
@@ -10,7 +10,7 @@
 //   anfitrión → jugador:  enviar(id, { tipo:'rol', ... })                    vista privada (se guarda)
 //   anfitrión → grupo:    enviar(id | [ids] | 'todos', { tipo:'evento', ... })  efímero (chat, avisos); no se guarda
 //
-// Sin TURN: dos móviles en redes que no permiten conexión directa (NAT simétrico, algunas 4G/5G) no podrán conectar entre sí.
+// Sin TURN (si el Worker no responde): dos móviles en redes que no permiten conexión directa (NAT simétrico, algunas 4G/5G) no podrán conectar entre sí.
 // En una misma red wifi (incluido un hotspot) la conexión es directa por la red local. Ver diagnostico() y tipoConexion().
 
 const PEERJS_VERSION = '1.5.4';
@@ -113,12 +113,45 @@ function cargarPeerJS() {
   return cargaPeerJS;
 }
 
-// ---------- servidores STUN (sin TURN, sin Cloudflare, sin Firebase) ----------
-// Misma wifi (o hotspot): conexión directa por la red local. Los STUN solo sirven para descubrir la dirección propia.
-let iceUsado = [];
+// ---------- servidores STUN + TURN (relé para wifi ↔ 4G) ----------
+// Misma wifi (o hotspot): conexión directa por la red local; el TURN no se usa. Entre redes que no permiten conexión directa (p. ej. anfitrión en wifi y jugador
+// con 4G con NAT de operador) un servidor de relé es lo único que lo arregla. Con TURN basta con que lo use UNO de los dos extremos.
+// Las credenciales TURN no están en el repositorio: se piden al Worker de Cloudflare de «El Impostor» (solo responde a https://rmalump.github.io).
+// Se piden al crear o unirse a una sala; si el Worker no responde la sala funciona igual, solo con STUN, y se avisa.
+//   · Otro Worker: cambia TURN_PROXY_URL, o define globalThis.JUEGITOS_TURN_PROXY (cadena vacía = no usar relé).
+//   · Credenciales fijas sin Worker: globalThis.JUEGITOS_TURN o localStorage 'juegitos.peer.turn' con [{ urls: 'turn:servidor:3478', username: '…', credential: '…' }].
+const TURN_PROXY_URL = 'https://impostor-turn.raul110082.workers.dev';
+const T_TURN = 4000;      // ms máx. esperando credenciales al Worker
+function turnExtra() {
+  let l = globalThis.JUEGITOS_TURN;
+  if (!l) { try { l = JSON.parse(lsGet(LS + 'turn') || '[]'); } catch (e) { l = []; } }
+  return (Array.isArray(l) ? l : []).filter(x => x && x.urls && [].concat(x.urls).every(u => /^(turn|turns):/.test(String(u))));
+}
+let iceCache = null, iceUsado = [];
 async function obtenerIce() {
-  iceUsado = STUN.slice();
-  return { iceServers: iceUsado, avisos: [] };
+  if (iceCache && Date.now() - iceCache.t < 4 * 60 * 1000) return iceCache.v;
+  const avisos = []; let turn = turnExtra();
+  const url = globalThis.JUEGITOS_TURN_PROXY !== undefined ? globalThis.JUEGITOS_TURN_PROXY : TURN_PROXY_URL;
+  if (url) {
+    try {
+      const ctl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+      const t = setTimeout(() => ctl && ctl.abort(), T_TURN);
+      const r = await fetch(url, { cache: 'no-store', signal: ctl ? ctl.signal : undefined });
+      clearTimeout(t);
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const d = await r.json(), arr = Array.isArray(d) ? d : (d && d.iceServers);
+      const buenos = (Array.isArray(arr) ? arr : []).filter(x => x && x.urls && [].concat(x.urls).every(u => /^(stun|turn|turns):/.test(String(u))));
+      if (!buenos.length) throw new Error('respuesta sin servidores');
+      turn = [...turn, ...buenos];
+    } catch (e) {
+      console.warn('TURN no disponible:', e && e.message);
+      avisos.push('No se pudo obtener el servidor de relé: se usa solo conexión directa y algunas redes 4G/5G no podrán conectar con wifi distintos.');
+    }
+  } else if (!turn.length) avisos.push('Sin servidor de relé: algunas redes 4G/5G no podrán conectar con wifi distintos.');
+  const v = { iceServers: [...STUN, ...turn], avisos };
+  iceUsado = v.iceServers;
+  if (!avisos.length) iceCache = { t: Date.now(), v };   // un fallo no se cachea: se reintenta en la siguiente conexión
+  return v;
 }
 function nuevoPeer(id, iceServers) {
   return new Promise((resolve, reject) => {
@@ -514,7 +547,7 @@ async function cerrarSala() {
 // Estado del juego del anfitrión (motor): se guarda en el snapshot para recuperar la partida al recargar.
 function guardarExtra(obj) { const s = sala; if (!s || !s.esHost) return; s.extra = JSON.parse(JSON.stringify(obj)); clearTimeout(s.persistT); guardarSnap(); } // inmediato: el móvil puede matar la pestaña en cualquier momento
 function leerExtra() { const s = sala; return s && s.esHost && s.extra ? JSON.parse(JSON.stringify(s.extra)) : null; }
-// 'local' (red local: mismo wifi/hotspot) · 'internet' (por STUN) · 'relay' (nunca aquí: no hay TURN) · null si no se pudo medir.
+// 'local' (red local: mismo wifi/hotspot) · 'internet' (por STUN) · 'relay' (por el servidor TURN) · null si no se pudo medir.
 async function tipoConexion(conn) {
   try {
     const pc = conn && conn.peerConnection; if (!pc || !pc.getStats) return null;

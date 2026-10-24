@@ -24,7 +24,7 @@ async function entorno(puertoWeb = 9302, puertoPeer = 9301) {
   async function contexto(opts) {
     const ctx = await browser.newContext(Object.assign({ viewport: { width: 400, height: 760 }, hasTouch: true }, opts || {}));
     await ctx.route(/cdn\.jsdelivr\.net|unpkg\.com/, r => r.fulfill({ contentType: 'text/javascript', body: PEERJS }));
-    await ctx.addInitScript(p => { window.JUEGITOS_PEER_SERVER = { host: '127.0.0.1', port: p, path: '/juegitos', secure: false }; }, puertoPeer);
+    await ctx.addInitScript(p => { window.JUEGITOS_TURN_PROXY = ''; window.JUEGITOS_PEER_SERVER = { host: '127.0.0.1', port: p, path: '/juegitos', secure: false }; }, puertoPeer);
     return ctx;
   }
   async function pagina(ctx, nombre) {
