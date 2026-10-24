@@ -98,3 +98,7 @@
 .olComun{background:#0004;padding:8px;border-radius:4px;text-align:center}.olBote{margin-top:6px;font-weight:700}
 .olFin{background:#ffd24d;color:#3a2600;font-weight:700;padding:8px;border-radius:4px;text-align:center}
 .olSubir{display:flex;gap:6px;align-items:center}.olSubir input{flex:1}.olSubN{font-size:12px;min-width:76px}
+
+/* ----- Ruleta y Blackjack ORIGINALES en online: se ocultan los ajustes de partida local (jugadores, monedas, modo y «Nueva partida») ----- */
+.rulOnline #roulSetup,.rulOnline #roulNewGame{display:none!important}
+.bjOnline #bjNumPlayers,.bjOnline #bjNewGame,.bjOnline #bjPlayerTabs{display:none!important}

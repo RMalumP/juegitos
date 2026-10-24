@@ -6,7 +6,7 @@
   'use strict';
   var L = window.JuegosOnline, S = window.Sala, CE = window.CasinoEngine, esc = L.esc, mk = L.mk;
   var $ = function (id) { return document.getElementById(id); };
-  var JUEGOS = ['ruleta', 'blackjack', 'poker'];
+  var JUEGOS = ['blackjack', 'poker'];
   var st = { s: null, ronda: -1, ficha: 5, subida: 0, sigT: null, fasePrev: {} };
   var en = function (j) { return S.activo && S.juego === j; };
   var jugando = function (j) { return en(j) && (S.estado.phase === 'jugando' || S.estado.phase === 'fin') && !!S.estado.mesa; };
