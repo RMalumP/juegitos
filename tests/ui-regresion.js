@@ -13,6 +13,7 @@ const JUEGOS = ['mine', 'ast', 'sud', 'sol', 'carta', 'bj', 'roul', 'poker', 'te
     ok(vis, 'se abre «' + j + '»');
     const otros = await pg.evaluate(() => Array.from(document.querySelectorAll('.win')).filter(w => !w.classList.contains('hidden')).length);
     ok(otros === 1, '«' + j + '»: solo hay una ventana visible');
+    ok(await pg.evaluate(() => { const w = Array.from(document.querySelectorAll('.win')).find(x => !x.classList.contains('hidden')); return w.getBoundingClientRect().bottom <= document.getElementById('taskbar').getBoundingClientRect().top + 0.5; }), '«' + j + '»: la ventana no tapa la barra de tareas');
   }
   // los chips de la barra de los dos juegos nuevos
   ok(await pg.locator('#chipBingo').count() === 1 && await pg.locator('#chipSala').count() === 1, 'la barra tiene los chips de Bingo y Sala');

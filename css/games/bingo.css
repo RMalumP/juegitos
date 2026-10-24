@@ -1,5 +1,5 @@
 /* bingo.css — Juegos XP: Bingo (estilo Windows XP). */
-#bingoWrap{flex:1;overflow-y:auto;padding:8px;display:flex;flex-direction:column;gap:8px;background:#d4d0c8;color:#000;font-size:13px}
+#bingoWrap{flex:1;min-height:0;overflow-y:auto;padding:8px;display:flex;flex-direction:column;gap:8px;background:#d4d0c8;color:#000;font-size:13px}
 #bingoMenuSala.on{background:#2ecc4055;border-radius:2px}
 .bgTitulo{text-align:center;font-size:30px;font-weight:700;color:#0a246a;letter-spacing:.06em;padding:14px 0 6px}.bgTitulo small{font-size:12px;letter-spacing:0;color:#555;font-weight:400}
 .bgBtn{cursor:pointer;background:linear-gradient(#fff 0,#d4d0c8);border:2px solid gray;border-color:#fff gray gray #fff;border-radius:3px;padding:8px 10px;font-size:13px;font-weight:700;color:#000;flex:1}

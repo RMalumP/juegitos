@@ -49,7 +49,7 @@ function dimPng(f) { const b = fs.readFileSync(path.join(root, f)); return [b.re
   await pg.locator('#startScreen').evaluate(e => { e.style.display = 'none'; });
   await pg.locator('#iconBingo').click();
   await pg.waitForSelector('.bgTitulo', { timeout: 10000 });
-  await pg.getByText('Soy el Bolero').click();
+  await pg.locator('#bingoWrap >> text=Empezar partida').click(); await pg.waitForSelector('.bgTablero');
   await pg.locator('#bingoWrap >> text=Sacar bola').click();
   ok(await pg.locator('.bgT.sal').count() === 1, 'sin conexión el bingo local funciona (carga diferida desde la caché)');
   await pg.evaluate(() => window.openGame('tetris')); await pg.waitForSelector('#winTetris:not(.hidden)');

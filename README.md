@@ -4,13 +4,15 @@ Escritorio estilo Windows XP con juegos clásicos (Buscaminas, Tetris, Ajedrez, 
 
 ## Bingo
 
-- **Bolero (local)**: bombo animado, tablero 1–90, voz que canta el número, modo automático y «Comprobar cartón».
-- **Mis cartones (local)**: cartones españoles 3×9 (15 números) que se marcan a toque, con aviso de línea y bingo.
-- **Online**: un móvil es el **Bolero** (anfitrión) y los demás son **jugadores**. El anfitrión reparte los cartones (cada jugador elige de 1 a 6), saca las bolas y comprueba cada «¡LÍNEA!» y «¡BINGO!» contra los cartones que él mismo ha repartido: nadie puede cantar en falso. Marcado manual o automático, voz opcional y recuperación si alguien recarga la página (incluido el Bolero).
+- **Un único modo Bolero** (local): bombo animado, tablero 1–90, voz que canta el número y modo automático. Puedes añadirte **cartones propios (0–6)**, que salen debajo y juegas a la vez que cantas las bolas. Con 0 cartones sirve para jugar con **cartones físicos**.
+- **Cartones** españoles 3×9 (15 números), numerados (**Cartón Nº 7**, único en toda la sala), que se marcan a toque (o con marcado automático), con aviso de línea y bingo. Un canto falso **borra del cartón las casillas mal marcadas**.
+- **Comprobar cartones**: el Bolero ve la lista de todos los cartones de la sala (número, jugador, cuánto les falta), abre cualquiera con las bolas salidas y su veredicto de línea y bingo, o escribe los números de un cartón físico.
+- **Online**: un móvil es el **Bolero** (anfitrión, que también puede tener cartones propios) y los demás son **jugadores** (de 1 a 6 cartones cada uno). El anfitrión reparte los cartones, saca las bolas y comprueba cada «¡LÍNEA!» y «¡BINGO!» contra los cartones que él mismo ha repartido: nadie puede cantar en falso, tampoco él. Voz opcional y recuperación si alguien recarga la página (incluido el Bolero).
+- **Compartir**: desde el bingo, **🔗 Compartir** y **▦ QR**. El enlace lleva sala y contraseña: quien lo abre solo escribe su nombre y entra directamente en el bingo.
 
 ## Sala online (la conexión es una app)
 
-El icono **📡 Multijugador** del escritorio (junto a Guardar y Cargar, no en el menú de inicio) abre una ventana donde se crea o se entra en una sala con nombre + contraseña (también por **QR** o enlace). El símbolo **📶** de la barra inferior muestra el estado (gris sin sala, ámbar conectando, verde conectado) y abre la misma ventana. Los juegos no tienen pantalla de conexión propia: usan `window.Sala`.
+El icono **📡 Multijugador** del escritorio (junto a Guardar y Cargar, no en el menú de inicio) abre una ventana donde se crea o se entra en una sala con nombre + contraseña (también por **QR** o enlace). El símbolo **📶** de la barra inferior muestra el estado (gris sin sala, ámbar conectando, verde conectado) y abre la misma ventana; si plegas la barra con ▾, el símbolo se queda flotando junto al botón ▲. Los juegos no tienen pantalla de conexión propia: usan `window.Sala`.
 
 Cómo funciona (adaptado de «La aldea se duerme» y «El Impostor»):
 
@@ -46,8 +48,9 @@ Si cambias archivos de la aplicación: sube `VERSION` en `sw.js` y añade a `ARC
 | Comando | Qué cubre |
 |---|---|
 | `npm test` | motor del bingo: cartones válidos, bombo, premios, empates y 100 partidas simuladas |
-| `npm run test:ui` | bingo local: bolero, cartones, recarga |
-| `npm run test:online` | Bolero + 3 jugadores en navegadores distintos usando el icono Sala online, partida completa |
+| `npm run test:ui` | bingo local: Bolero con y sin cartones propios, recarga, marcas falsas, comprobar cartones |
+| `npm run test:online` | Bolero (con cartón propio) + 3 jugadores en navegadores distintos usando el icono Multijugador: cartones numerados, comprobar, cantos y dos partidas completas |
+| `npm run test:enlace` | entrar por enlace solo con el nombre, símbolo con la barra plegada y que los iconos del escritorio no se solapen |
 | `npm run test:reconexion` | un jugador y el Bolero recargan a mitad de partida |
 | `npm run test:regresion` | todos los juegos del escritorio abren sin errores |
 | `npm run test:turn` | credenciales TURN del Worker y respaldo solo con STUN si falla |
