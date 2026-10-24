@@ -524,6 +524,13 @@ async function enviar(destino, mensaje) {
     persistir(); enviarRol(destino);
   } else throw errApp('destino', 'Destino no válido.');
 }
+// Sala general (creada sin juego): el anfitrión fija el juego y su límite de jugadores cuando abre uno; los invitados reciben el cambio en el estado.
+async function fijarJuego(juego, max) {
+  const s = sala; if (!s || !s.esHost) throw errApp('no-anfitrion', 'Solo el anfitrión puede elegir el juego.');
+  if (s.juego && s.juego !== juego) throw errApp('otro-juego', 'La sala ya es de otro juego.');
+  s.juego = juego; s.max = max || MAX_JUGADORES;
+  aplicarEstado({ juego }); persistir(); difundirEstado();
+}
 // El anfitrión avisa al jugador, lo borra de la sala y cierra su conexión.
 async function expulsar(id) {
   const s = sala; if (!s || !s.esHost) throw errApp('no-anfitrion', 'Solo el anfitrión puede expulsar jugadores.');
@@ -574,7 +581,7 @@ async function leerRoles() { return sala && sala.esHost ? JSON.parse(JSON.string
 
 export default {
   nombre: 'peer',
-  crearSala, unirse, reanudar, enviar, expulsar, salir, cerrarSala, leerRoles, guardarExtra, leerExtra, diagnostico, iceActual: () => iceUsado.slice(),
+  crearSala, unirse, reanudar, enviar, fijarJuego, expulsar, salir, cerrarSala, leerRoles, guardarExtra, leerExtra, diagnostico, iceActual: () => iceUsado.slice(),
   alRecibir(cb) { cbs.msg.push(cb); },
   alCambiarJugadores(cb) { cbs.jug.push(cb); },
   alConexion(cb) { cbs.con.push(cb); },

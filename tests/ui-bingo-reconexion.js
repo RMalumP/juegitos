@@ -6,7 +6,7 @@ const { entorno, wait, ok, fin } = require('./helpers');
   const abre = async (ctx, n) => { const pg = await env.pagina(ctx, n); await pg.locator('#startScreen').evaluate(e => { e.style.display = 'none'; }); return pg; };
   let H = await abre(ctxH, 'bolero'), A = await abre(ctxA, 'ana'), B = await abre(ctxB, 'beto');
   await H.evaluate(() => window.openGame('sala'));
-  await H.fill('#salaNombre', 'Bolero'); await H.fill('#salaSala', 'recon sala'); await H.fill('#salaPass', 'clave1'); await H.click('#salaCrear');
+  await H.selectOption('#salaJuegoSel', 'bingo'); await H.fill('#salaNombre', 'Bolero'); await H.fill('#salaSala', 'recon sala'); await H.fill('#salaPass', 'clave1'); await H.click('#salaCrear');
   await H.waitForSelector('.bgSala', { timeout: 25000 });
   for (const [J, n] of [[A, 'Ana'], [B, 'Beto']]) {
     await J.evaluate(() => window.openGame('sala'));

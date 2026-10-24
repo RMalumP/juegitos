@@ -56,11 +56,11 @@
     switch (m.tipo) {
       case 'estado': {
         const { tipo, ...r } = m; S.estado = r;
-        if (r.juego && r.juego !== S.juego) { // la sala es de un juego: se pasa a él si se estaba mirando la ventana de la sala (o se acaba de entrar/recuperar)
+        if (r.juego && r.juego !== S.juego) {            // la sala es (o pasa a ser) de un juego: los invitados van directamente a él
           S.juego = r.juego; pintar();
-          const w = $('winSala'); if ((!S.host && w && !w.classList.contains('hidden')) || S.irAlEntrar) irAlJuego();
-          S.irAlEntrar = false;
-        }
+          if (!S.host || S.irAlEntrar) irAlJuego();
+        } else if (!r.juego && !S.juego && S.irAlEntrar) mostrarInicio();   // sala general: se ve el menú de juegos
+        if (S.irAlEntrar && (r.juego || !S.juego)) S.irAlEntrar = false;
         emit('estado', S.estado); break;
       }
       case 'rol': { const { tipo, vacio, ...r } = m; S.rol = vacio ? null : r; emit('rol', S.rol); break; }
@@ -105,13 +105,14 @@
     try {
       const T = await cargarTransporte();
       S.pass = pass;
-      const juego = S.objetivo || ($('salaJuegoSel') ? $('salaJuegoSel').value : 'bingo');
-      const r = await (modo === 'crear' ? T.crearSala(sala, pass, nombre, { juego, max: JUEGOS[juego].max }) : T.unirse(sala, pass, nombre, S.objetivo ? { juego: S.objetivo } : undefined));
+      let juego = S.objetivo || ($('salaJuegoSel') ? $('salaJuegoSel').value : 'general'); if (juego === 'general') juego = null;   // sala general: el juego se elige después
+      const r = await (modo === 'crear' ? T.crearSala(sala, pass, nombre, { juego, max: juego ? JUEGOS[juego].max : 25 }) : T.unirse(sala, pass, nombre, S.objetivo ? { juego: S.objetivo } : undefined));
       lsSet(LS_NOM, nombre); lsSet(LS_SAL, sala);
       entrar(r, { nombre, sala, pass });
       if (modo === 'crear') S.juego = juego; else if (S.objetivo) S.juego = S.objetivo;
       S.objetivo = null; pintar();
       if (S.juego) irAlJuego();
+      else { S.irAlEntrar = true; if (modo === 'crear') mostrarInicio(); }      // general (o sin saber aún el juego): al llegar el estado se decide
     } catch (e) { setRed('off'); aviso((e && e.message) || 'No se pudo conectar.'); }
     S.ocupado = false; pintar();
   }
@@ -154,6 +155,7 @@
     $('salaEstadoTxt').textContent = S.conectado ? 'Conectado' : 'Reconectando…';
     $('salaEstadoTxt').className = S.conectado ? 'ok' : 'warn';
     $('salaIrJuego').style.display = S.juego ? '' : 'none';
+    if ($('salaMenuJuegos')) $('salaMenuJuegos').style.display = S.activo && !S.juego ? '' : 'none';
 
     $('salaIrJuego').textContent = S.juego && JUEGOS[S.juego] ? JUEGOS[S.juego].icono + ' Ir a ' + JUEGOS[S.juego].nombre : 'Ir al juego';
     $('salaCerrar').textContent = S.host ? 'Cerrar sala' : 'Salir de la sala';
@@ -238,7 +240,34 @@
       if (S.activo) { o.remove(); aviso(''); irAlJuego(); } else { S.irAlEntrar = false; $('salaEntrarOk').disabled = false; }
     };
     $('salaEntrarOk').onclick = ir; inp.onkeydown = e => { if (e.key === 'Enter') ir(); };
-    $('salaEntrarNo').onclick = () => { o.remove(); aviso(''); };
+    $('salaEntrarNo').onclick = () => { o.remove(); aviso(''); mostrarInicio(); };
+  }
+
+  /* ---------- pantalla «¿Qué quieres jugar?» ---------- */
+  function ocultarInicio() { const p = $('startScreen'); if (p) p.style.display = 'none'; const c = $('creditsBtn'); if (c) c.style.display = 'none'; }
+  function mostrarInicio() { const p = $('startScreen'); if (p) p.style.display = 'flex'; const c = $('creditsBtn'); if (c) c.style.display = 'flex'; }
+
+  // Sala general: cuando el anfitrión abre un juego, la sala pasa a ser de ese juego (con su límite de jugadores) y los invitados van a él.
+  async function fijarJuego(j) {
+    const d = JUEGOS[j]; if (!S.activo || !S.host || S.juego || !d || !S.T) return false;
+    if (S.jug.length > d.max) { toast('Hay ' + S.jug.length + ' personas en la sala y ' + d.nombre + ' admite ' + d.max + '.'); return false; }
+    try { await S.T.fijarJuego(j, d.max); S.juego = j; pintar(); return true; } catch (e) { toast(e.message); return false; }
+  }
+  function vigilarVentanas() {
+    const mapa = { winBingo: 'bingo', winParchis: 'parchis', winRoul: 'ruleta', winBJ: 'blackjack', winPoker: 'poker', winChess: 'chess' };
+    const obs = new MutationObserver(ms => {
+      if (!S.activo || !S.host || S.juego) return;
+      ms.forEach(m => {
+        const w = m.target, k = mapa[w.id]; if (!k || w.classList.contains('hidden')) return;
+        const abrirLobbyDe = j => fijarJuego(j).then(ok => { if (ok && j !== 'bingo') cargarLobby().then(L => L.mostrar(j)).catch(() => {}); });
+        if (k !== 'chess') { abrirLobbyDe(k); return; }
+        let n = 0; (function t() {                                  // Ajedrez o Damas según la pestaña abierta
+          let tab = -1; try { tab = $('chessFrame').contentWindow.getActiveTab(); } catch (e) { /* aún no cargado */ }
+          if (tab >= 0) abrirLobbyDe(tab === 2 ? 'damas' : 'ajedrez'); else if (++n < 50) setTimeout(t, 60);
+        })();
+      });
+    });
+    Object.keys(mapa).forEach(id => { const w = $(id); if (w) obs.observe(w, { attributes: true, attributeFilter: ['class'] }); });
   }
 
   /* ---------- apertura de la ventana ---------- */
@@ -254,6 +283,7 @@
   // Abre la ventana del juego de la sala (y, si no es el bingo, su lobby encima).
   function irAlJuego() {
     const j = S.juego, d = JUEGOS[j]; if (!d || typeof window.openGame !== 'function') return;
+    ocultarInicio();
     if (j === 'ajedrez' || j === 'damas') window.openChessTab(d.tab); else window.openGame(d.win);
     if (j !== 'bingo') cargarLobby().then(L => L.mostrar(j)).catch(e => toast(e.message));
     if (j === 'bingo') return;
@@ -286,6 +316,9 @@
     }; });
     if ($('iconBingo')) $('iconBingo').addEventListener('click', function () { if (typeof window.openGame === 'function') window.openGame('bingo'); }); // el icono del bingo abre con un solo toque (los demás, con doble toque)
     if (location.protocol === 'file:') aviso('El modo online solo funciona desde una página https. Abriendo el archivo con doble clic puedes usar el bingo en local.');
+    vigilarVentanas();
+    if ($('salaMenuJuegos')) $('salaMenuJuegos').onclick = () => { mostrarInicio(); };
+    if (/^#s=/.test(location.hash)) ocultarInicio();      // invitación por enlace o QR: no se enseña el menú de juegos
     pintar();
     if (!aplicarEnlace()) recuperar();
     window.addEventListener('hashchange', aplicarEnlace);
@@ -297,7 +330,8 @@
     get sala() { return S.sala; }, get conectado() { return S.conectado; },
     on(ev, f) { (L[ev] = L[ev] || []).push(f); if (ev === 'msg') pendientes.splice(0).forEach(m => { try { f(m); } catch (e) { console.error(e); } }); }, off(ev, f) { L[ev] = (L[ev] || []).filter(x => x !== f); },
     enviar, salir, abrir, irAlJuego, toast, compartir, qr, lobby, JUEGOS, get juego() { return S.juego; }, get max() { return S.juego && JUEGOS[S.juego] ? JUEGOS[S.juego].max : 25; },
-    usarEn(juego) { if (!S.juego) { S.juego = juego; pintar(); } },
+    usarEn(juego) { if (S.activo && S.host && !S.juego) fijarJuego(juego); },
+    mostrarInicio,
     expulsar: id => S.T.expulsar(id),
     guardarExtra: o => S.T && S.T.guardarExtra(o), leerExtra: () => (S.T ? S.T.leerExtra() : null),
     ahora: () => (S.T ? S.T.ahora() : Date.now())

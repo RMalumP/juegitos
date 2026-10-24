@@ -9,7 +9,7 @@ const { entorno, wait, ok, fin } = require('./helpers');
   await H.pg.locator('#btnSala').click();
   await H.pg.waitForSelector('#winSala:not(.hidden)');
   ok(await H.pg.locator('#trayNet.tray-off').count() === 1, 'símbolo de la barra apagado antes de conectar');
-  await H.pg.fill('#salaNombre', 'Bolero'); await H.pg.fill('#salaSala', 'sala bingo'); await H.pg.fill('#salaPass', 'clave1');
+  await H.pg.selectOption('#salaJuegoSel', 'bingo'); await H.pg.fill('#salaNombre', 'Bolero'); await H.pg.fill('#salaSala', 'sala bingo'); await H.pg.fill('#salaPass', 'clave1');
   await H.pg.click('#salaCrear');
   await H.pg.waitForFunction(() => window.Sala.activo, null, { timeout: 25000 });
   ok(await H.pg.locator('#trayNet.tray-ok').count() === 1, 'el símbolo de la barra se pone en verde al conectar');
