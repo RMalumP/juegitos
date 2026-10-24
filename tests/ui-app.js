@@ -63,24 +63,15 @@ const { entorno, wait, ok, fin } = require('./helpers');
   ok(!(await pi.locator('#btnInstalar').isVisible()), 'con la app ya instalada el botón «Instalar app» no aparece');
   await ctx.close();
 
-  // ---------------- pantalla completa por defecto (sin botón) ----------------
+  // ---------------- el aspecto es el de siempre: sin botón de pantalla completa, sin texto suelto y con la barra de tareas entera ----------------
   ctx = await env.contexto({ hasTouch: true });
-  await ctx.addInitScript(() => { window.__fs = 0; Element.prototype.requestFullscreen = function () { window.__fs++; Object.defineProperty(document, 'fullscreenElement', { value: this, configurable: true }); document.dispatchEvent(new Event('fullscreenchange')); return Promise.resolve(); };
-    Object.defineProperty(document, 'fullscreenElement', { value: null, configurable: true }); });
-  const pf = await env.pagina(ctx, 'fs'); await pf.locator('#startScreen').evaluate(e => { e.style.display = 'none'; });
-  ok(await pf.locator('#fsToggle').count() === 0, 'ya no hay botón de pantalla completa');
-  await pf.evaluate(() => document.body.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }))); await wait(300);
-  ok(await pf.evaluate(() => window.__fs) === 1, 'con el primer toque la app ocupa toda la pantalla por defecto (también la barra de notificaciones)');
-  await pf.evaluate(() => { Object.defineProperty(document, 'fullscreenElement', { value: null, configurable: true }); document.dispatchEvent(new Event('fullscreenchange')); });
-  await pf.evaluate(() => document.body.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }))); await wait(300);
-  ok(await pf.evaluate(() => window.__fs) === 1, 'si sales a propósito con el gesto del sistema, no insiste hasta que recargues');
-  // la app se estira por toda la pantalla (zona de la cámara y de la barra incluidas)
-  const css = fs.readFileSync(path.join(env.root, 'css/sala.css'), 'utf8'), html = fs.readFileSync(path.join(env.root, 'index.html'), 'utf8');
-  ok(/viewport-fit=cover/.test(html), 'el viewport usa viewport-fit=cover: el contenido llega hasta los bordes y no deja franja negra en la zona de la cámara');
-  ok(/#desktop\{height:100dvh;padding:env\(safe-area-inset-top\)/.test(css) && /#taskbar\{height:calc\(36px \+ env\(safe-area-inset-bottom\)\)/.test(css), 'el escritorio ocupa 100dvh y deja márgenes seguros arriba y abajo para que nada quede tapado');
-  const alto = await pf.evaluate(() => ({ h: document.getElementById('desktop').getBoundingClientRect().height, v: window.innerHeight, fondo: getComputedStyle(document.body).backgroundColor }));
-  ok(Math.abs(alto.h - alto.v) <= 1 && alto.fondo === 'rgb(0, 128, 128)', 'el escritorio mide exactamente lo que la pantalla y el fondo no es negro');
-  ok(/icon\.svg/.test(html.match(/<link rel="icon"[^>]*>/)[0]), 'la pestaña usa el icono de la app (mando dentro de una ventana)');
-  ok(JSON.parse(fs.readFileSync(path.join(env.root, 'manifest.webmanifest'), 'utf8')).display === 'fullscreen', 'instalada, el manifest pide display «fullscreen»');
+  const pf = await env.pagina(ctx, 'aspecto'); await pf.locator('#startScreen').evaluate(e => { e.style.display = 'none'; }); await wait(300);
+  ok(await pf.locator('#fsToggle').count() === 0, 'no hay botón de pantalla completa en la barra');
+  ok(await pf.evaluate(() => Array.from(document.body.childNodes).concat(Array.from(document.head.childNodes)).filter(n => n.nodeType === 3 && n.textContent.trim()).length) === 0 && await pf.evaluate(() => document.body.innerText.trim().startsWith('"')) === false, 'no queda texto suelto en la esquina superior izquierda');
+  const geo = await pf.evaluate(() => ({ tb: document.getElementById('taskbar').getBoundingClientRect().bottom, v: window.innerHeight, d: document.getElementById('desktop').getBoundingClientRect().height }));
+  ok(Math.abs(geo.tb - geo.v) <= 1 && Math.abs(geo.d - geo.v) <= 1, 'la barra de tareas termina justo en el borde inferior: no se corta');
+  const htmlTxt = fs.readFileSync(path.join(env.root, 'index.html'), 'utf8'), mf = JSON.parse(fs.readFileSync(path.join(env.root, 'manifest.webmanifest'), 'utf8'));
+  ok(!/viewport-fit/.test(htmlTxt) && mf.display === 'standalone' && !mf.display_override && !fs.existsSync(path.join(env.root, 'js/pantalla.js')), 'sin pantalla completa forzada: la app instalada se ve como siempre (con su barra de notificaciones)');
+  ok(/<link rel="icon" type="image\/svg\+xml" href="icons\/icon\.svg">/.test(htmlTxt), 'la pestaña usa el icono de la app (mando dentro de una ventana)');
   await env.cerrar(); fin();
 })().catch(e => { console.error(e); process.exit(1); });

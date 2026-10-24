@@ -10,11 +10,9 @@ Escritorio estilo Windows XP con juegos clásicos (Buscaminas, Tetris, Ajedrez, 
 - **Online**: un móvil es el **Bolero** (anfitrión, que también puede tener cartones propios) y los demás son **jugadores** (de 1 a 6 cartones cada uno). El anfitrión reparte los cartones, saca las bolas y comprueba cada «¡LÍNEA!» y «¡BINGO!» contra los cartones que él mismo ha repartido: nadie puede cantar en falso, tampoco él. Voz opcional y recuperación si alguien recarga la página (incluido el Bolero).
 - **Compartir**: desde el bingo, **🔗 Compartir** y **▦ QR**. El enlace lleva sala y contraseña: quien lo abre solo escribe su nombre y entra directamente en el bingo.
 
-## Instalación y pantalla completa
+## Instalación
 
 - Hasta que la app esté instalada, bajo «Cargar» hay un botón **📲 Instalar app**: lanza el diálogo de instalación del navegador o, si este no lo ofrece, explica los pasos (Safari en iPhone: Compartir → «Añadir a pantalla de inicio»). Instalada, el botón desaparece.
-- Instalada se abre a **pantalla completa** (`display: fullscreen` en el manifest): la app ocupa también la zona de la barra de notificaciones. La página usa `viewport-fit=cover` y márgenes seguros (`env(safe-area-inset-*)`), así que se estira hasta los bordes sin franjas negras junto a la cámara. Si ya la tenías instalada, Android actualiza el manifest cuando puede; si no se nota el cambio, desinstálala e instálala de nuevo.
-- En el navegador, el primer toque pide la pantalla completa (no hay botón; si sales con el gesto del sistema, no insiste hasta recargar). En iPhone/iPad no existe esa API para páginas web, así que solo se consigue instalando la app.
 - Los créditos (©) muestran la versión.
 - «🌐 Conectar» de cada juego abre la conexión con un botón **← Volver** al juego; y si ocultas la barra superior de un juego (□) se oculta también «Conectar».
 
@@ -79,7 +77,6 @@ js/online/j-blackjack.js      Blackjack original online
 js/online/qrcode.js           generador de QR (MIT)
 js/pwa.js                     instalación (botón «Instalar app»), actualizaciones, versión en créditos y accesos directos (?abrir=bingo | ?abrir=sala)
 js/version.js                 versión de la app (única fuente)
-js/pantalla.js                pantalla completa por defecto en el navegador
 js/vibracion.js               vibración común (interruptor 📳)
 sw.js, manifest.webmanifest, icons/   PWA
 tests/                        pruebas
@@ -107,7 +104,7 @@ Si cambias archivos de la aplicación: sube `APP_VERSION` (y `APP_FECHA`) en `js
 | `npm run test:blackjack` | Blackjack original online: apuestas, carta oculta, dividir, pagos, siguiente ronda, vuelta a local |
 | `npm run test:reloj` | relojes de ajedrez: iniciar, pausar, reanudar, turno, reinicio, reloj grande y tiempo agotado |
 | `npm run test:invitacion` | enlace/QR a cada juego entra directo (sin menú); sala general con menú |
-| `npm run test:app` | botón Volver de la conexión, ocultar la barra oculta «Conectar», versión en créditos, «Instalar app» y pantalla completa sin franjas negras |
+| `npm run test:app` | botón Volver de la conexión, ocultar la barra oculta «Conectar», versión en créditos, «Instalar app» y aspecto del escritorio (sin texto suelto, barra de tareas entera) |
 | `npm run test:vibracion` | interruptor 📳, vibración en casillas y cartones, avisos online, recordar el ajuste y respaldo háptico de iPhone |
 | `npm run test:turn` | credenciales TURN del Worker y respaldo solo con STUN si falla |
 | `npm run test:pwa` | manifest, iconos, caché, sin conexión, botón de instalar y accesos directos |

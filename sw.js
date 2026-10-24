@@ -62,7 +62,6 @@ const ARCHIVOS = [
   'js/save-load.js',
   'js/vibracion.js',
   'js/version.js',
-  'js/pantalla.js',
   'js/window-bars.js',
   'manifest.webmanifest'
 ];

@@ -8,7 +8,7 @@ function dimPng(f) { const b = fs.readFileSync(path.join(root, f)); return [b.re
 (async () => {
   // --- estático
   const man = JSON.parse(fs.readFileSync(path.join(root, 'manifest.webmanifest'), 'utf8'));
-  ok(man.display === 'fullscreen' && man.display_override.includes('standalone') && man.start_url && man.scope && man.name && man.short_name && man.theme_color && man.background_color, 'manifest con nombre, colores, start_url y pantalla completa (con standalone de reserva)');
+  ok(man.display === 'standalone' && man.start_url && man.scope && man.name && man.short_name && man.theme_color && man.background_color, 'manifest con nombre, colores, start_url y display standalone');
   for (const ic of man.icons.filter(i => i.type === 'image/png')) {
     ok(fs.existsSync(path.join(root, ic.src)) && dimPng(ic.src).join('x') === ic.sizes, 'icono ' + ic.src + ' existe y mide ' + ic.sizes);
   }

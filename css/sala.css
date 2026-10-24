@@ -105,10 +105,3 @@
 #pwaAyuda{position:fixed;inset:0;z-index:600;background:#000000d9;display:flex;align-items:center;justify-content:center;padding:20px}
 #pwaAyuda .salaQRcaja{text-align:left;display:flex;flex-direction:column;gap:10px;font-size:14px;line-height:1.45}
 #pwaAyuda button{cursor:pointer;background:linear-gradient(#fff 0,#d4d0c8);border:2px solid gray;border-color:#fff gray gray #fff;border-radius:3px;padding:9px 10px;font-size:14px;font-weight:700;color:#000}
-
-/* ----- pantalla completa «de verdad»: la app ocupa todo, incluida la zona de la barra de notificaciones y de la cámara (sin franja negra) ----- */
-html,body{height:100%;min-height:100dvh;background:teal}
-#desktop{height:100dvh;padding:env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left)}
-#taskbar{height:calc(36px + env(safe-area-inset-bottom));padding-bottom:env(safe-area-inset-bottom)}
-#taskbar.tbHidden{margin-bottom:calc(-36px - env(safe-area-inset-bottom))}
-#salaToast{bottom:calc(52px + env(safe-area-inset-bottom))}
