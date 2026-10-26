@@ -6,7 +6,8 @@ const JUEGOS = [
   { id: 'parchis', nombre: 'Parchís', max: 4, win: 'winParchis', abrir: pg => pg.evaluate(() => window.openGame('parchis')) },
   { id: 'ruleta', nombre: 'Ruleta', max: 6, win: 'winRoul', abrir: pg => pg.evaluate(() => window.openGame('roul')) },
   { id: 'blackjack', nombre: 'Blackjack', max: 6, win: 'winBJ', abrir: pg => pg.evaluate(() => window.openGame('bj')) },
-  { id: 'poker', nombre: 'Póquer', max: 6, win: 'winPoker', abrir: pg => pg.evaluate(() => window.openGame('poker')) }
+  { id: 'poker', nombre: 'Póquer', max: 6, win: 'winPoker', abrir: pg => pg.evaluate(() => window.openGame('poker')) },
+  { id: 'hundir', nombre: 'Hundir la flota', max: 2, win: 'winHundir', abrir: pg => pg.evaluate(() => window.openGame('hundir')) }
 ];
 const LB = j => '#' + j.win + ' .olLobby[data-j=' + j.id + ']';
 (async () => {
