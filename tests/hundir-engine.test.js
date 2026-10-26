@@ -94,3 +94,52 @@ test('vistas: aguas y propio', () => {
   const mi = H.propio(pub, f1, 1);
   assert.strictEqual(mi[c[0]], 3, 'mi barco hundido'); assert.ok(mi.some(x => x === 5), 'se ven mis barcos');
 });
+
+// ---------- tablero y flota configurables ----------
+test('validarConfig: límites de tamaño, barcos y casillas', () => {
+  assert.ok(H.validarConfig({}).ok, 'valores por defecto');
+  assert.ok(H.validarConfig({ n: 6, flota: [3, 2, 2] }).ok); assert.ok(H.validarConfig({ n: 15, flota: [6, 5, 4] }).ok);
+  for (const malo of [{ n: 5 }, { n: 16 }, { n: 10.5 }, { n: 10, flota: [] }, { n: 10, flota: Array(13).fill(1) }, { n: 10, flota: [7] }, { n: 10, flota: [0, 2] }, { n: 10, flota: [2.5] }, { n: 8, flota: [6, 6, 6, 6, 6] }, { n: 10, flota: 'x' }])
+    assert.ok(!H.validarConfig(malo).ok, 'rechaza ' + JSON.stringify(malo));
+  assert.ok(H.validarConfig({ n: 8, flota: [6, 6, 6, 4], tocar: true }).ok && !H.validarConfig({ n: 8, flota: [6, 6, 6, 4], tocar: false }).ok, 'sin tocarse el tope es menor');
+  assert.deepStrictEqual(H.validarConfig({ n: 10, flota: [2, 5, 3] }).flota, [5, 3, 2], 'se ordena de mayor a menor');
+  assert.throws(() => H.crear({ n: 4 }), /tablero/);
+});
+test('las plantillas son válidas con y sin barcos tocándose y la flota aleatoria cabe en todas', () => {
+  const rng = rngDe(99);
+  for (const p of H.PLANTILLAS) for (const tocar of [true, false]) {
+    assert.ok(H.validarConfig({ n: p.n, flota: p.flota, tocar }).ok, p.nombre + ' tocar=' + tocar);
+    for (let i = 0; i < 40; i++) { const f = H.flotaAleatoria(rng, tocar, p); assert.ok(H.validarFlota(f, tocar, p), p.nombre); assert.strictEqual(f.length, p.flota.length); }
+  }
+});
+test('partida en un tablero 8×8 con flota propia: límites, vistas y fin', () => {
+  const cfg = { n: 8, flota: [4, 3, 3, 2] }, rng = rngDe(5);
+  const pt = H.crear({ turno: 0, ...cfg });
+  assert.deepStrictEqual(pt.op.flota, [4, 3, 3, 2]); assert.strictEqual(pt.op.n, 8);
+  const f0 = H.flotaAleatoria(rng, true, pt.op), f1 = H.flotaAleatoria(rng, true, pt.op);
+  assert.ok(!H.colocar(pt, 0, H.flotaAleatoria(rng, true)), 'una flota clásica no vale en esta partida');
+  assert.ok(H.colocar(pt, 0, f0) && H.colocar(pt, 1, f1));
+  assert.strictEqual(H.disparar(pt, 0, 64), null, 'la casilla 64 no existe en 8×8'); assert.ok(H.disparar(pt, 0, 63));
+  const pub = H.publico(pt);
+  assert.strictEqual(pub.op.n, 8); assert.strictEqual(H.aguas(pub, 0).length, 64); assert.strictEqual(H.propio(pub, f0, 0).length, 64);
+  // se hunde todo: la IA contra una flota de 12 casillas en 8×8
+  const rng2 = rngDe(7), pt2 = H.crear({ turno: 0, ...cfg }); H.colocar(pt2, 0, H.flotaAleatoria(rng2, true, pt2.op)); H.colocar(pt2, 1, H.flotaAleatoria(rng2, true, pt2.op));
+  let n = 0; while (pt2.fase === 'jugando' && n < 200) { const idx = H.ia(3, H.vistaIA(H.publico(pt2), 0), rng2); assert.ok(H.disparar(pt2, 0, idx)); n++; if (pt2.fase === 'jugando') pt2.turno = 0; }
+  assert.strictEqual(pt2.fase, 'fin'); assert.ok(n <= 64);
+});
+test('la IA nunca repite ni se sale en 6×6, 8×8, 12×12 y 15×15; en 8×8 difícil < fácil', () => {
+  function disparos(nivel, n, flota, sem) {
+    const rng = rngDe(sem), pt = H.crear({ turno: 0, n, flota }); H.colocar(pt, 0, H.flotaAleatoria(rng, true, pt.op)); H.colocar(pt, 1, H.flotaAleatoria(rng, true, pt.op));
+    let k = 0; const vistos = new Set();
+    while (pt.fase === 'jugando' && k < n * n + 5) { const idx = H.ia(nivel, H.vistaIA(H.publico(pt), 0), rng); assert.ok(idx >= 0 && idx < n * n && !vistos.has(idx), 'casilla válida y nueva'); vistos.add(idx); assert.ok(H.disparar(pt, 0, idx)); k++; if (pt.fase === 'jugando') pt.turno = 0; }
+    assert.strictEqual(pt.fase, 'fin'); return k;
+  }
+  for (const [n, flota] of [[6, [3, 2, 2]], [8, [4, 3, 3, 2]], [12, [6, 5, 4, 4, 3, 3, 2, 2]], [15, [6, 5, 5, 4, 4, 3, 3, 3, 2, 2, 2, 1]]]) for (const nivel of [1, 2, 3]) disparos(nivel, n, flota, 30 + nivel);
+  const media = nv => { let t = 0; for (let i = 0; i < 60; i++) t += disparos(nv, 8, [4, 3, 3, 2], 500 + i); return t / 60; };
+  const f = media(1), d = media(3); console.log('   8×8 → fácil', f.toFixed(1), '· difícil', d.toFixed(1)); assert.ok(d < f);
+});
+test('la flota más grande cabe en un mensaje de red', () => {
+  const p = H.PLANTILLAS[3], f = H.flotaAleatoria(rngDe(2), true, p);
+  assert.ok(H.codificar(f).length < 400 && H.decodificar(H.codificar(f)).length === 12);
+  assert.strictEqual(H.decodificar('1,0,0,1;'.repeat(13)), null, 'más de 12 barcos se rechaza');
+});

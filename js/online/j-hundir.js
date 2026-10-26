@@ -88,23 +88,36 @@
   }
 
   /* ---------- lobby ---------- */
+  function opDe(est) {                                                   // opciones completas (con valores por defecto) a partir del estado del lobby
+    var op = est.op || {}, cf = HE.validarConfig({ n: op.n, flota: op.flota, tocar: op.tocar !== false });
+    return { tocar: op.tocar !== false, repite: !!op.repite, n: cf.ok ? cf.n : HE.N, flota: cf.ok ? cf.flota : HE.LONGS.slice() };
+  }
   function opciones(host, est) {
-    var op = est.op || { tocar: true, repite: false };
-    if (!host) return [L.mk('div', 'olNota', 'Barcos tocándose: <b>' + (op.tocar !== false ? 'sí' : 'no') + '</b> · Repetir turno al acertar: <b>' + (op.repite ? 'sí' : 'no') + '</b>')];
-    function envia(n) { S.enviar('todos', { tipo: 'estado', op: Object.assign({ tocar: op.tocar !== false, repite: !!op.repite }, n) }).catch(function () {}); }
+    var op = opDe(est), resumen = op.n + '×' + op.n + ' · ' + op.flota.length + ' barcos (' + op.flota.join(' ') + ')';
+    if (!host) return [L.mk('div', 'olNota', 'Tablero: <b>' + L.esc(resumen) + '</b><br>Barcos tocándose: <b>' + (op.tocar ? 'sí' : 'no') + '</b> · Repetir turno al acertar: <b>' + (op.repite ? 'sí' : 'no') + '</b>')];
+    function envia(n) {
+      var nueva = Object.assign({}, op, n), cf = HE.validarConfig(nueva);
+      if (!cf.ok) { S.toast(cf.msg); return; }                           // p. ej. «barcos sin tocarse» en un tablero que se queda pequeño
+      S.enviar('todos', { tipo: 'estado', op: nueva }).catch(function () {});
+    }
+    var f0 = L.mk('div', 'olOp'); f0.appendChild(L.mk('span', '', 'Partida:'));
+    HE.PLANTILLAS.forEach(function (p) {
+      var activa = p.n === op.n && p.flota.join() === op.flota.join();
+      f0.appendChild(L.boton(p.nombre, activa ? 'on' : '', function () { envia({ n: p.n, flota: p.flota.slice() }); }));
+    });
     var f1 = L.mk('div', 'olOp'); f1.appendChild(L.mk('span', '', 'Barcos tocándose:'));
-    f1.appendChild(L.boton('Sí', op.tocar !== false ? 'on' : '', function () { envia({ tocar: true }); }));
-    f1.appendChild(L.boton('No', op.tocar === false ? 'on' : '', function () { envia({ tocar: false }); }));
+    f1.appendChild(L.boton('Sí', op.tocar ? 'on' : '', function () { envia({ tocar: true }); }));
+    f1.appendChild(L.boton('No', !op.tocar ? 'on' : '', function () { envia({ tocar: false }); }));
     var f2 = L.mk('div', 'olOp'); f2.appendChild(L.mk('span', '', 'Repetir turno al acertar:'));
     f2.appendChild(L.boton('No', !op.repite ? 'on' : '', function () { envia({ repite: false }); }));
     f2.appendChild(L.boton('Sí', op.repite ? 'on' : '', function () { envia({ repite: true }); }));
-    return [f1, f2, L.mk('div', 'olNota', 'Cada jugador coloca su flota en secreto: el rival solo ve los disparos y los barcos que hunde.')];
+    return [f0, L.mk('div', 'olNota', 'Tablero: <b>' + L.esc(resumen) + '</b>. (La flota y el tamaño a medida se eligen en el modo local.)'), f1, f2, L.mk('div', 'olNota', 'Cada jugador coloca su flota en secreto: el rival solo ve los disparos y los barcos que hunde.')];
   }
   function preparar(ctx) {
-    var op = ctx.op || {};
-    var pt = HE.crear({ tocar: op.tocar !== false, repite: !!op.repite, turno: Math.random() < 0.5 ? 0 : 1 });
+    var op = opDe({ op: ctx.op || {} });
+    var pt = HE.crear({ tocar: op.tocar, repite: op.repite, n: op.n, flota: op.flota, turno: Math.random() < 0.5 ? 0 : 1 });
     R.pendiente = pt;                                                    // la copia completa se queda en el anfitrión
-    return { estado: { hf: HE.publico(pt), op: { tocar: pt.op.tocar, repite: pt.op.repite } } };
+    return { estado: { hf: HE.publico(pt), op: { tocar: pt.op.tocar, repite: pt.op.repite, n: pt.op.n, flota: pt.op.flota } } };
   }
   function alEstado(est) {
     if (!en()) return;

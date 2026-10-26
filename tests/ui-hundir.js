@@ -100,5 +100,62 @@ async function dispararPrimero(pg) {
   }
   ok(await pg.locator('#hunFin').isVisible() && (await txt(pg, '#hunFinT')).includes('Gana'), 'local: la partida termina y dice quién gana');
   ok(await pg.locator('#hunEnemy .rev, #hunEnemy .hund').count() > 0, 'local: al final se ven los barcos del rival');
+
+  // ---------- tamaño del agua y flota configurables ----------
+  async function partidaCompleta() {
+    let t = 0;
+    while (!(await pg.locator('#hunFin').isVisible()) && t < 500) { if (!(await dispararPrimero(pg))) await wait(20); t++; if (t % 5 === 0) await wait(15); }
+    return pg.locator('#hunFin').isVisible();
+  }
+  await pg.evaluate(() => window.hundirStartNew()); await wait(100);
+  ok(await pg.locator('#hunMenu [data-plantilla]').count() === 5, 'config: 4 plantillas y «Personalizar»');
+  ok(/10×10 · 5 barcos \(17 casillas\)/.test(await pg.locator('#hunResumen').innerText()), 'config: por defecto la flota clásica 10×10');
+  await pg.click('#hunMenu [data-plantilla="rapida"]');
+  ok(/8×8 · 4 barcos \(12 casillas\)/.test(await pg.locator('#hunResumen').innerText()), 'config: «Rápida» = 8×8 con 4 barcos');
+  await pg.click('#hunMenu [data-modo="cpu"]'); await wait(100);
+  ok(await pg.locator('#hunOwn .hunC').count() === 64 && await pg.locator('#hunShips .hunBarco').count() === 4, '8×8: 64 casillas y 4 barcos para colocar');
+  await pg.locator('#hunOwn .hunC').nth(5).click();                              // el portaaviones (4) se ajusta al borde: columna 4
+  e = await est(pg);
+  ok(e.draft[0] && e.draft[0].l === 4 && e.draft[0].c === 4 && e.draft[0].r === 0, '8×8: un barco de 4 se ajusta al borde del tablero pequeño');
+  await colocarAleatorio(pg);
+  ok(await pg.locator('#hunOwn .barco').count() === 12 && (await est(pg)).fase === 'jugando', '8×8: la flota ocupa 12 casillas y empieza la batalla');
+  ok(await partidaCompleta(), '8×8: la partida contra la CPU termina');
+  await pg.click('#hunFinBtn'); await wait(100);
+
+  await pg.click('#hunMenu [data-plantilla="grande"]'); await pg.click('#hunMenu [data-modo="cpu"]'); await wait(100);
+  ok(await pg.locator('#hunOwn .hunC').count() === 144 && await pg.locator('#hunShips .hunBarco').count() === 8, '12×12: 144 casillas y 8 barcos');
+  await colocarAleatorio(pg); ok(await pg.locator('#hunOwn .barco').count() === 29, '12×12: la flota ocupa 29 casillas');
+  await pg.evaluate(() => window.hundirStartNew()); await wait(100);
+  await pg.click('#hunMenu [data-plantilla="armada"]'); await pg.click('#hunMenu [data-modo="cpu"]'); await wait(100);
+  ok(await pg.locator('#hunOwn .hunC').count() === 225 && await pg.locator('#hunShips .hunBarco').count() === 12, '15×15: 225 casillas y 12 barcos');
+  await colocarAleatorio(pg); ok(await pg.locator('#hunOwn .barco').count() === 40, '15×15: la flota ocupa 40 casillas');
+
+  // personalizar: tablero 6×6 con 3 barcos; una flota imposible se rechaza
+  await pg.evaluate(() => window.hundirStartNew()); await wait(100);
+  await pg.click('#hunMenu [data-plantilla="custom"]');
+  ok(await pg.locator('#hunPers').isVisible(), 'personalizar: aparece el editor de tablero y barcos');
+  for (let i = 0; i < 12; i++) await pg.click('#hunMenu [data-nstep="-1"]');
+  ok((await pg.locator('#hunNval').innerText()) === '6×6', 'personalizar: el tablero no baja de 6×6');
+  for (let l = 1; l <= 6; l++) for (let i = 0; i < 5; i++) await pg.click('#hunMenu [data-bl="' + l + '"][data-d="-1"]');
+  ok(/⚠/.test(await pg.locator('#hunCfgMsg').innerText()) && await pg.locator('#hunMenu [data-modo="cpu"]').isDisabled() && await pg.locator('#hunMenu [data-modo="local"]').isDisabled(), 'personalizar: sin barcos no se puede empezar');
+  for (let i = 0; i < 4; i++) await pg.click('#hunMenu [data-bl="6"][data-d="1"]');
+  ok(/demasiado grande/.test(await pg.locator('#hunCfgMsg').innerText()) && await pg.locator('#hunMenu [data-modo="cpu"]').isDisabled(), 'personalizar: una flota que no cabe se rechaza con aviso');
+  for (let i = 0; i < 4; i++) await pg.click('#hunMenu [data-bl="6"][data-d="-1"]');
+  await pg.click('#hunMenu [data-bl="3"][data-d="1"]'); await pg.click('#hunMenu [data-bl="2"][data-d="1"]'); await pg.click('#hunMenu [data-bl="2"][data-d="1"]');
+  ok((await pg.locator('#hunCfgMsg').innerText()) === '' && await pg.locator('#hunMenu [data-modo="cpu"]').isEnabled() && /6×6 · 3 barcos \(7 casillas\)/.test(await pg.locator('#hunResumen').innerText()), 'personalizar: 6×6 con un barco de 3 y dos de 2 es válido');
+  // se recuerda al recargar
+  await pg.reload(); await abrir(pg);
+  ok(/6×6 · 3 barcos/.test(await pg.locator('#hunResumen').innerText()), 'config: la partida personalizada se recuerda al recargar');
+  await pg.click('#hunMenu [data-modo="cpu"]'); await wait(100);
+  ok(await pg.locator('#hunOwn .hunC').count() === 36 && await pg.locator('#hunShips .hunBarco').count() === 3, '6×6: 36 casillas y 3 barcos');
+  await colocarAleatorio(pg); ok(await partidaCompleta(), '6×6: la partida termina');
+  await pg.click('#hunFinBtn'); await wait(100);
+  // sin tocarse: una flota que solo cabe tocándose queda desactivada
+  await pg.click('#hunMenu [data-plantilla="armada"]'); await pg.click('#hunMenu [data-reg="tocar"][data-v="0"]');
+  ok((await pg.locator('#hunMenu [data-modo="cpu"]').isEnabled()), 'armada 15×15 sigue siendo válida sin tocarse');
+  await pg.click('#hunMenu [data-plantilla="custom"]');
+  for (let i = 0; i < 9; i++) await pg.click('#hunMenu [data-nstep="-1"]');
+  ok(await pg.locator('#hunMenu [data-modo="cpu"]').isDisabled(), 'una flota de 40 casillas no cabe en 6×6 sin tocarse');
+  await pg.click('#hunMenu [data-reg="tocar"][data-v="1"]'); await pg.click('#hunMenu [data-plantilla="clasica"]');
   await env.cerrar(); fin();
 })().catch(e => { console.error(e); process.exit(1); });

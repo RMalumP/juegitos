@@ -7,21 +7,26 @@
 (function () {
   'use strict';
   var $ = function (id) { return document.getElementById(id); };
-  var HE = window.HundirEngine, N = 10;
-  var NOM_LONG = { 5: 'Portaaviones', 4: 'Acorazado', 3: 'Crucero / Submarino', 2: 'Destructor' };
-  var LETRAS = 'ABCDEFGHIJ';
+  var HE = window.HundirEngine, N = 10;                      // N = lado del tablero de la partida actual (6-15)
+  var LETRAS = 'ABCDEFGHIJKLMNO';
 
   var U = { modo: null, nivel: 2, op: { tocar: true, repite: false }, nombres: ['Tú', 'CPU'], pt: null, pub: null, mia: null, actor: 0, p: 0,
-    draft: [], sel: 0, h: true, msg: '', ultimo: -1, bloqueado: false, online: null, fin: false, timer: null };
+    draft: [], sel: 0, h: true, msg: '', ultimo: -1, bloqueado: false, online: null, fin: false, timer: null,
+    cfg: { n: 10, flota: HE.LONGS.slice() },                   // tablero y flota de la partida en curso
+    conf: { pl: 'clasica', n: 10, cuenta: { 1: 0, 2: 1, 3: 2, 4: 1, 5: 1, 6: 0 } } };   // lo elegido en el menú (cpu / 2 jugadores)
   try { var sn = parseInt(localStorage.getItem('hunNivel'), 10); if (sn >= 1 && sn <= 3) U.nivel = sn; } catch (e) { /* sin ajustes */ }
   try { var so = JSON.parse(localStorage.getItem('hunOp')); if (so) U.op = { tocar: so.tocar !== false, repite: !!so.repite }; } catch (e) { /* sin ajustes */ }
-  function guardarAjustes() { try { localStorage.setItem('hunNivel', U.nivel); localStorage.setItem('hunOp', JSON.stringify(U.op)); } catch (e) { /* nada */ } }
+  try { var sc = JSON.parse(localStorage.getItem('hunCfg')); if (sc && sc.cuenta && HE.validarConfig({ n: sc.n, flota: flotaDeCuenta(sc.cuenta) }).ok) U.conf = sc; } catch (e) { /* sin ajustes */ }
+  function guardarAjustes() { try { localStorage.setItem('hunNivel', U.nivel); localStorage.setItem('hunOp', JSON.stringify(U.op)); localStorage.setItem('hunCfg', JSON.stringify(U.conf)); } catch (e) { /* nada */ } }
+  function flotaDeCuenta(cuenta) { var f = []; for (var l = HE.L_MAX; l >= HE.L_MIN; l--) for (var k = 0; k < (cuenta[l] || 0); k++) f.push(l); return f; }
+  function cuentaDeFlota(flota) { var c = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 }; flota.forEach(function (l) { c[l]++; }); return c; }
   function vib(p) { if (typeof window.vibrate === 'function') window.vibrate(p); }
 
   /* ---------- tableros ---------- */
   var celdasEnemigo = [], celdasPropio = [];
   function construir(cont, lista, alClic, alPasar) {
     cont.innerHTML = ''; lista.length = 0;
+    cont.style.gridTemplateColumns = '1.4em repeat(' + N + ',1fr)'; cont.style.setProperty('--hn', N);
     var vacia = document.createElement('div'); vacia.className = 'hunEt'; cont.appendChild(vacia);
     for (var c = 0; c < N; c++) { var h = document.createElement('div'); h.className = 'hunEt'; h.textContent = c + 1; cont.appendChild(h); }
     for (var r = 0; r < N; r++) {
@@ -68,7 +73,7 @@
     var g;
     if (colocando) {
       g = Array(N * N).fill(0);
-      U.draft.forEach(function (b) { if (b) HE.celdas(b).forEach(function (c) { g[c] = 5; }); });
+      U.draft.forEach(function (b) { if (b) HE.celdas(b, N).forEach(function (c) { g[c] = 5; }); });
     } else g = HE.propio(pub || { shots: [[], []], hund: [[], []] }, miFlota(p), p);
     celdasPropio.forEach(function (b, i) {
       var v = g[i], cl = 'hunC';
@@ -98,7 +103,7 @@
       if (espera) return;
       boton(U.h ? '↻ Horizontal' : '↻ Vertical', function () { U.h = !U.h; pintar(); }, 'giro');
       boton('🎲 Aleatorio', function () { aleatorio(); });
-      boton('🗑 Borrar', function () { U.draft = Array(HE.LONGS.length).fill(null); U.sel = 0; pintar(); });
+      boton('🗑 Borrar', function () { U.draft = Array(U.cfg.flota.length).fill(null); U.sel = 0; pintar(); });
       boton('✔ Listo', listo, 'ok', U.draft.some(function (x) { return !x; }));
       return;
     }
@@ -111,10 +116,10 @@
     var c = $('hunShips'); c.innerHTML = '';
     c.style.display = colocando && !(U.modo === 'online' && U.pub && U.pub.listos[U.p]) ? 'flex' : 'none';
     if (!colocando) return;
-    HE.LONGS.forEach(function (l, i) {
+    U.cfg.flota.forEach(function (l, i) {
       var b = document.createElement('button'); b.type = 'button';
       b.className = 'hunBarco' + (U.draft[i] ? ' puesto' : '') + (U.sel === i ? ' sel' : '');
-      b.innerHTML = '<span class=hunPuntos>' + '■'.repeat(l) + '</span><span class=hunNom>' + (NOM_LONG[l] || '') + '</span>';
+      b.innerHTML = '<span class=hunPuntos>' + '■'.repeat(l) + '</span><span class=hunNom>' + (HE.NOMBRES[l] || '') + '</span>';
       b.addEventListener('click', function () { U.sel = i; pintar(); });
       c.appendChild(b);
     });
@@ -144,14 +149,14 @@
     celdasPropio.forEach(function (b) { b.classList.remove('prevOk', 'prevMal'); });
     previa = i; if (i < 0 || !enColocacion()) return;
     var b = barcoEn(i); if (!b) return;
-    var ok = HE.cabeEn(b.barco, resto(U.sel), U.op.tocar);
-    HE.celdas(b.barco).forEach(function (c) { if (celdasPropio[c]) celdasPropio[c].classList.add(ok ? 'prevOk' : 'prevMal'); });
+    var ok = HE.cabeEn(b.barco, resto(U.sel), opcionesRegla().tocar, N);
+    HE.celdas(b.barco, N).forEach(function (c) { if (celdasPropio[c]) celdasPropio[c].classList.add(ok ? 'prevOk' : 'prevMal'); });
   }
   function enColocacion() { var pub = publicoActual(); return U.modo && fase(pub) === 'colocando' && !(U.modo === 'online' && pub && pub.listos[U.p]); }
   function resto(sin) { return U.draft.filter(function (b, k) { return b && k !== sin; }); }
   function barcoEn(i) {                                      // barco seleccionado con su casilla «ancla» en la celda i (se ajusta para que quepa)
     if (U.sel == null || U.sel < 0) return null;
-    var l = HE.LONGS[U.sel], r = Math.floor(i / N), c = i % N;
+    var l = U.cfg.flota[U.sel], r = Math.floor(i / N), c = i % N;
     if (U.h) c = Math.min(c, N - l); else r = Math.min(r, N - l);
     return { barco: { l: l, r: r, c: c, h: U.h } };
   }
@@ -159,19 +164,19 @@
   function clicColocar(i) {
     if (!enColocacion()) return;
     // tocar un barco ya colocado lo recoge
-    for (var k = 0; k < U.draft.length; k++) if (U.draft[k] && HE.celdas(U.draft[k]).indexOf(i) >= 0) { U.sel = k; U.draft[k] = null; U.msg = ''; pintar(); return; }
+    for (var k = 0; k < U.draft.length; k++) if (U.draft[k] && HE.celdas(U.draft[k], N).indexOf(i) >= 0) { U.sel = k; U.draft[k] = null; U.msg = ''; pintar(); return; }
     if (U.sel == null || U.sel < 0 || U.draft[U.sel]) { var libre = U.draft.findIndex(function (x) { return !x; }); if (libre < 0) return; U.sel = libre; }
     var b = barcoEn(i).barco;
-    if (!HE.cabeEn(b, resto(U.sel), opcionesRegla().tocar)) { U.msg = '⚠ Ahí no cabe' + (opcionesRegla().tocar ? '' : ' (los barcos no pueden tocarse)') + '.'; vib(30); pintar(); return; }
+    if (!HE.cabeEn(b, resto(U.sel), opcionesRegla().tocar, N)) { U.msg = '⚠ Ahí no cabe' + (opcionesRegla().tocar ? '' : ' (los barcos no pueden tocarse)') + '.'; vib(30); pintar(); return; }
     U.draft[U.sel] = b; U.msg = '';
     var sig = U.draft.findIndex(function (x) { return !x; }); U.sel = sig < 0 ? -1 : sig;
     pintar();
   }
-  function aleatorio() { U.draft = HE.flotaAleatoria(null, opcionesRegla().tocar); U.sel = -1; U.msg = ''; pintar(); }
+  function aleatorio() { U.draft = HE.flotaAleatoria(null, opcionesRegla().tocar, U.cfg); U.sel = -1; U.msg = ''; pintar(); }
   function listo() {
     if (U.draft.some(function (x) { return !x; })) return;
     var flota = U.draft.map(function (b) { return { l: b.l, r: b.r, c: b.c, h: !!b.h }; });
-    if (!HE.validarFlota(flota, opcionesRegla().tocar)) { U.msg = '⚠ La flota no es válida.'; pintar(); return; }
+    if (!HE.validarFlota(flota, opcionesRegla().tocar, U.cfg)) { U.msg = '⚠ La flota no es válida.'; pintar(); return; }
     U.msg = '';
     if (U.modo === 'cpu') { HE.colocar(U.pt, 0, flota); U.draft = []; empezarDisparos(); return; }
     if (U.modo === 'local') {
@@ -182,7 +187,7 @@
     }
     if (U.modo === 'online') { U.mia = flota; U.draft = []; U.online.colocar(HE.codificar(flota)); pintar(); }
   }
-  function nuevoDraft() { U.draft = Array(HE.LONGS.length).fill(null); U.sel = 0; U.h = true; U.msg = ''; }
+  function nuevoDraft() { U.draft = Array(U.cfg.flota.length).fill(null); U.sel = 0; U.h = true; U.msg = ''; }
   function ocultar() {                                      // vacía los tableros antes de pasar el móvil (nada que espiar tras la tapa)
     limpiarCeldas(celdasEnemigo); limpiarCeldas(celdasPropio);
     $('hunStatus').textContent = ''; $('hunShips').style.display = 'none'; $('hunBtns').innerHTML = '';
@@ -194,7 +199,7 @@
     var casilla = LETRAS[Math.floor(i / N)] + (i % N + 1);
     if (r.res === 1) return quien + ' → ' + casilla + ': 💧 agua.';
     if (r.res === 2) return quien + ' → ' + casilla + ': 🔥 ¡tocado!';
-    return quien + ' → ' + casilla + ': 💥 ¡hundido! (' + (NOM_LONG[r.hundido.length] || 'barco').split(' / ')[0] + ')';
+    return quien + ' → ' + casilla + ': 💥 ¡hundido! (' + (HE.NOMBRES[r.hundido.length] || 'barco') + ')';
   }
   function empezarDisparos() {
     U.fin = false; U.bloqueado = false; U.ultimo = -1; U.msg = '';
@@ -263,18 +268,56 @@
     ocultar(); $('hunOwnBox').style.display = 'none'; $('hunStatus').textContent = ''; $('hunInfo').textContent = '';
   }
   function marcarMenu() {
+    pintarConf();
     document.querySelectorAll('#hunMenu [data-nivel]').forEach(function (b) { b.classList.toggle('sel', +b.dataset.nivel === U.nivel); });
     document.querySelectorAll('#hunMenu [data-reg]').forEach(function (b) {
       var valor = b.dataset.reg === 'tocar' ? U.op.tocar : U.op.repite;
       b.classList.toggle('sel', valor === (b.dataset.v === '1'));
     });
   }
+  /* ---------- configuración de la partida (tamaño del tablero y flota) ---------- */
+  function plantilla(id) { return HE.PLANTILLAS.filter(function (p) { return p.id === id; })[0]; }
+  function confActual() { return HE.validarConfig({ n: U.conf.n, flota: flotaDeCuenta(U.conf.cuenta), tocar: U.op.tocar }); }
+  (function construirEditor() {
+    var ed = $('hunBarcosEd'); if (!ed) return;
+    for (var l = HE.L_MIN; l <= HE.L_MAX; l++) {
+      var f = document.createElement('span'); f.className = 'hunBe';
+      f.innerHTML = '<span class=hunBeL>' + '■'.repeat(l) + '</span><button type=button class=hunOpt data-bl=' + l + ' data-d=-1>−</button><b id=hunBc' + l + '>0</b><button type=button class=hunOpt data-bl=' + l + ' data-d=1>+</button>';
+      ed.appendChild(f);
+    }
+  })();
+  function pintarConf() {
+    var c = confActual(), pers = U.conf.pl === 'custom', flota = flotaDeCuenta(U.conf.cuenta);
+    document.querySelectorAll('#hunMenu [data-plantilla]').forEach(function (b) { b.classList.toggle('sel', b.dataset.plantilla === U.conf.pl); });
+    $('hunPers').classList.toggle('show', pers);
+    $('hunNval').textContent = U.conf.n + '×' + U.conf.n;
+    for (var l = HE.L_MIN; l <= HE.L_MAX; l++) $('hunBc' + l).textContent = U.conf.cuenta[l] || 0;
+    $('hunResumen').textContent = U.conf.n + '×' + U.conf.n + ' · ' + flota.length + ' barcos (' + flota.reduce(function (a, x) { return a + x; }, 0) + ' casillas): ' + flota.join(' ');
+    $('hunCfgMsg').textContent = c.ok ? '' : '⚠ ' + c.msg;
+    document.querySelectorAll('#hunMenu [data-modo="cpu"], #hunMenu [data-modo="local"]').forEach(function (b) { b.disabled = !c.ok; });
+  }
+  document.querySelectorAll('#hunMenu [data-plantilla]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var id = b.dataset.plantilla, p = plantilla(id);
+      U.conf.pl = id; if (p) { U.conf.n = p.n; U.conf.cuenta = cuentaDeFlota(p.flota); }
+      guardarAjustes(); marcarMenu();
+    });
+  });
+  document.querySelectorAll('#hunMenu [data-nstep]').forEach(function (b) {
+    b.addEventListener('click', function () { U.conf.n = Math.max(HE.N_MIN, Math.min(HE.N_MAX, U.conf.n + (+b.dataset.nstep))); U.conf.pl = 'custom'; guardarAjustes(); marcarMenu(); });
+  });
+  $('hunBarcosEd').addEventListener('click', function (e) {
+    var b = e.target.closest && e.target.closest('[data-bl]'); if (!b) return;
+    var l = +b.dataset.bl; U.conf.cuenta[l] = Math.max(0, Math.min(4, (U.conf.cuenta[l] || 0) + (+b.dataset.d))); U.conf.pl = 'custom'; guardarAjustes(); marcarMenu();
+  });
   function empezar(modo) {
     $('hunMenu').style.display = 'none'; $('hunFin').style.display = 'none';
     U.modo = modo; U.fin = false; U.bloqueado = false; U.ultimo = -1; U.msg = ''; U.online = null;
-    var turno = Math.random() < 0.5 ? 0 : 1;
-    U.pt = HE.crear({ tocar: U.op.tocar, repite: U.op.repite, turno: turno }); nuevoDraft(); U.actor = 0; U.p = 0;
-    if (modo === 'cpu') { U.nombres = ['Tú', 'CPU']; HE.colocar(U.pt, 1, HE.flotaAleatoria(null, U.op.tocar)); }
+    var turno = Math.random() < 0.5 ? 0 : 1, cf = HE.validarConfig({ n: U.conf.n, flota: flotaDeCuenta(U.conf.cuenta), tocar: U.op.tocar });
+    if (!cf.ok) { menu(); return; }
+    aplicarCfg(cf);
+    U.pt = HE.crear({ tocar: U.op.tocar, repite: U.op.repite, turno: turno, n: cf.n, flota: cf.flota }); nuevoDraft(); U.actor = 0; U.p = 0;
+    if (modo === 'cpu') { U.nombres = ['Tú', 'CPU']; HE.colocar(U.pt, 1, HE.flotaAleatoria(null, U.op.tocar, U.cfg)); }
     else U.nombres = ['Jugador 1', 'Jugador 2'];
     $('hunOwnBox').style.display = ''; pintar();
   }
@@ -300,11 +343,12 @@
       clearTimeout(U.timer); PasarMovil.quitar();
       U.modo = 'online'; U.p = cfg.p; U.nombres = cfg.nombres; U.online = { host: !!cfg.host, op: cfg.op, colocar: cfg.colocar, disparar: cfg.disparar, rendir: cfg.rendir, lobby: cfg.lobby };
       U.pub = cfg.pub || null; U.mia = cfg.flota || null; U.fin = false; U.bloqueado = false; U.ultimo = -1; U.msg = '';
+      if (U.pub && U.pub.op) aplicarCfg(U.pub.op);
       nuevoDraft(); $('hunMenu').style.display = 'none'; $('hunFin').style.display = 'none'; $('hunOwnBox').style.display = ''; pintar();
     },
     publico: function (pub) {
       if (U.modo !== 'online') return;
-      var antes = U.pub; U.pub = pub;
+      var antes = U.pub; U.pub = pub; if (pub.op) aplicarCfg(pub.op);
       if (antes && antes.fase === 'fin' && pub.fase !== 'fin') { U.fin = false; $('hunFin').style.display = 'none'; }
       if (antes && pub.shots) {                              // aviso del último disparo rival
         var rival = pub.shots[1 - U.p], previo = antes.shots ? antes.shots[1 - U.p].length : 0;
@@ -322,6 +366,12 @@
   function iniciarTableros() {
     construir($('hunEnemy'), celdasEnemigo, clicEnemigo);
     construir($('hunOwn'), celdasPropio, clicColocar, previsualizar);
+  }
+  /* fija tablero y flota de la partida; si cambia el tamaño se reconstruyen las dos cuadrículas */
+  function aplicarCfg(c) {
+    var n = c.n || 10, flota = (c.flota || HE.LONGS).slice().sort(function (a, b) { return b - a; });
+    U.cfg = { n: n, flota: flota };
+    if (n !== N) { N = n; iniciarTableros(); }
   }
   iniciarTableros();
   window.initHundir = function () { if (!U.modo) menu(); };

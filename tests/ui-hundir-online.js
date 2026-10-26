@@ -103,5 +103,24 @@ const { entorno, wait, ok, fin } = require('./helpers');
   await boton(G, 'Rendirse').click();
   await H.waitForSelector('#hunFin', { state: 'visible', timeout: 8000 });
   ok(/VICTORIA/.test(await H.locator('#hunFinT').innerText()) && /DERROTA/.test(await G.locator('#hunFinT').innerText()), 'si el invitado se rinde, gana el anfitrión');
+  // ---------- tablero y flota distintos (plantilla Rápida 8×8) ----------
+  await H.click('#hunFinBtn');
+  await H.waitForSelector('#winHundir .olLobby[data-j=hundir]', { state: 'visible', timeout: 15000 }); await G.waitForSelector('#winHundir .olLobby[data-j=hundir]', { state: 'visible', timeout: 15000 });
+  ok(/10×10/.test(await H.locator('.olLobby[data-j=hundir]').innerText()), 'lobby: por defecto 10×10');
+  await H.locator('.olLobby[data-j=hundir] .olOp .olBtn', { hasText: 'Rápida 8×8' }).click();
+  await G.waitForFunction(() => window.Sala.estado.op && window.Sala.estado.op.n === 8, null, { timeout: 8000 });
+  ok(/8×8 · 4 barcos/.test(await G.locator('.olLobby[data-j=hundir]').innerText()), 'lobby: el invitado ve el tablero 8×8 elegido por el anfitrión');
+  await H.locator('.olLobby[data-j=hundir] .olGrande').click();
+  await H.waitForFunction(() => window.hundirEstado().fase === 'colocando', null, { timeout: 15000 });
+  await G.waitForFunction(() => window.hundirEstado().fase === 'colocando' && document.querySelectorAll('#hunOwn .hunC').length === 64, null, { timeout: 15000 });
+  ok(await H.locator('#hunOwn .hunC').count() === 64 && await H.locator('#hunShips .hunBarco').count() === 4, 'online 8×8: los dos tableros tienen 64 casillas y 4 barcos');
+  await G.evaluate(() => window.Sala.enviar('host', { tipo: 'accion', a: 'colocar', f: '5,0,0,1;4,2,0,1;3,4,0,1;3,6,0,1;2,7,0,1' }));   // flota clásica: no vale en 8×8
+  await wait(700); ok((await pub(G)).listos[1] === false, 'online 8×8: el anfitrión rechaza una flota clásica en un tablero de 8×8');
+  await colocar(H); await colocar(G);
+  await H.waitForFunction(() => window.Sala.estado.hf && window.Sala.estado.hf.fase === 'jugando', null, { timeout: 8000 });
+  await G.waitForFunction(() => window.Sala.estado.hf && window.Sala.estado.hf.fase === 'jugando', null, { timeout: 8000 });
+  ok(await H.locator('#hunOwn .barco').count() === 12 && await G.locator('#hunOwn .barco').count() === 12, 'online 8×8: cada jugador ve su flota de 12 casillas');
+  ok(await jugarHastaElFinal(H, G), 'online 8×8: la partida termina en los dos móviles');
+  ok((await pub(G)).op.n === 8 && (await pub(G)).flotas.length === 2, 'online 8×8: el estado público lleva el tamaño y, al final, las flotas');
   await env.cerrar(); fin();
 })().catch(e => { console.error(e); process.exit(1); });
