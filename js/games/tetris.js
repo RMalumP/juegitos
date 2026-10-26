@@ -1,3 +1,455 @@
-/* tetris.js — Juegos XP. Código original sin cambios (solo separado en archivos). */
-(function(){let e=document.getElementById(`tet-bc`),t=e.getContext(`2d`),n=document.getElementById(`tetNC`).getContext(`2d`),o=document.getElementById(`tetHC`).getContext(`2d`),a=20,l=document.getElementById(`tetBoardWrap`),r=document.getElementById(`tetBoardInner`);function c(){let t=l.clientWidth,n=l.clientHeight,o,a;t/n>.5?(a=n,o=.5*a):(o=t,a=2*o),r.style.width=o+`px`,r.style.height=a+`px`,e.style.width=o+`px`,e.style.height=a+`px`}c(),window.addEventListener(`resize`,c);let i=[`#00f0f0`,`#f0a000`,`#a000f0`,`#00f000`,`#f00000`,`#0000f0`,`#f0f000`],d=[[[1,1,1,1]],[[1,1],[1,1]],[[0,1,0],[1,1,1]],[[1,1,0],[0,1,1]],[[0,1,1],[1,1,0]],[[1,0,0],[1,1,1]],[[0,0,1],[1,1,1]]],s,m,u,f,p,y,h,v,g,E,I,b,B,w,L=!0,T=!0,M=null,A=!0,R={left:`ArrowLeft`,right:`ArrowRight`,down:`ArrowDown`,rotate:`ArrowUp`,drop:`Space`,hold:`KeyC`,newgame:`Enter`},x={...R},S=null,C=!1,k=null,K=0,O=[[659,150],[494,75],[523,75],[587,150],[523,75],[494,75],[440,150],[440,75],[523,75],[659,150],[587,75],[523,75],[494,225],[523,75],[587,150],[659,150],[523,150],[440,150],[440,150],[587,150],[698,75],[880,150],[784,75],[698,75],[659,225],[523,75],[659,150],[587,75],[523,75],[494,150],[494,75],[523,75],[587,150],[659,150],[523,150],[440,150],[440,150]];function D(){S||=new(window.AudioContext||window.webkitAudioContext)}function H(){S&&!C&&(C=!0,K=0,N())}function N(){if(!C||!L)return;let e=O[K%O.length],t=S.createOscillator(),n=S.createGain();t.connect(n),n.connect(S.destination),t.type=`triangle`,t.frequency.value=e[0],n.gain.setValueAtTime(.15,S.currentTime),n.gain.exponentialRampToValueAtTime(.001,S.currentTime+e[1]/1e3*.9),t.start(S.currentTime),t.stop(S.currentTime+e[1]/1e3),K++,k=setTimeout(N,e[1])}function X(){C=!1,k&&clearTimeout(k)}function V(e){return{shape:d[e].map(e=>[...e]),color:i[e]}}function F(e,t,n){for(let o=0;o<e.length;o++)for(let a=0;a<e[o].length;a++)if(e[o][a]){let e=t+a,l=n+o;if(e<0||e>=10||l>=20||l>=0&&s[l][e])return!1}return!0}function Y(){let e=function(e){let t=e.length,n=e[0].length;return Array.from({length:n},(n,o)=>Array.from({length:t},(n,a)=>e[t-1-a][o]))}(m.shape);F(e,u,f)?m.shape=e:F(e,u-1,f)?(u--,m.shape=e):F(e,u+1,f)&&(u++,m.shape=e)}function q(){if(!A)return;A=!1;let e=p;M===null?(p=h,h=Math.floor(7*Math.random()),y=V(h)):(p=M,M=e,U()),M=e,m=V(p),u=5-Math.floor(m.shape[0].length/2),f=-1,P(),U()}function G(){m.shape.forEach((e,t)=>e.forEach((e,n)=>{e&&f+t>=0&&(s[f+t][u+n]=m.color)})),function(){if(!S||!T)return;let e=S.createOscillator(),t=S.createGain();e.connect(t),t.connect(S.destination),e.frequency.value=220,e.type=`square`,t.gain.setValueAtTime(.06,S.currentTime),t.gain.exponentialRampToValueAtTime(.001,S.currentTime+.08),e.start(S.currentTime),e.stop(S.currentTime+.1)}(),function(){let e=0;for(let t=19;t>=0;t--)s[t].every(e=>e)&&(s.splice(t,1),s.unshift(Array(10).fill(0)),e++,t++);e&&(S&&T&&[880,1047,1319].forEach((e,t)=>{let n=S.createOscillator(),o=S.createGain();n.connect(o),o.connect(S.destination),n.frequency.value=e,n.type=`square`,o.gain.setValueAtTime(.12,S.currentTime+.06*t),o.gain.exponentialRampToValueAtTime(.001,S.currentTime+.06*t+.15),n.start(S.currentTime+.06*t),n.stop(S.currentTime+.06*t+.2)}),vibrate(e>=4?[0,30,40,30,40,30,40,30]:30*e),v+=[0,100,300,500,800][e]*g,E+=e,g=T0+Math.floor(E/10),b=tetBase(g),document.getElementById(`tet-score-el`).textContent=v,document.getElementById(`tet-level-el`).textContent=g,document.getElementById(`tet-lines-el`).textContent=E)}(),W()}function W(){p=h,m=V(p),u=5-Math.floor(m.shape[0].length/2),f=-1,h=Math.floor(7*Math.random()),y=V(h),A=!0,P(),F(m.shape,u,f+1)||(I=!1,X(),cancelAnimationFrame(w),vibrate(200),document.getElementById(`tet-ov-title`).textContent=`GAME OVER`,document.getElementById(`tet-ov-sub`).innerHTML=`Puntuación: `+v+`<br>Nivel: `+g+`<br>Líneas: `+E,document.getElementById(`tet-ov-btn`).textContent=`REINICIAR`,tetSel(`flex`),document.getElementById(`tetOverlay`).style.display=`flex`)}function J(e,t,n,o,a){o.fillStyle=e,o.fillRect(t*a+1,n*a+1,a-2,a-2),o.strokeStyle=`rgba(255,255,255,0.18)`,o.strokeRect(t*a+1,n*a+1,a-2,a-2)}function P(){n.fillStyle=`#0d0d1a`,n.fillRect(0,0,60,60);let e=Math.floor((4-y.shape[0].length)/2),t=Math.floor((4-y.shape.length)/2);y.shape.forEach((o,a)=>o.forEach((o,l)=>{o&&(n.fillStyle=y.color,n.fillRect(12*(e+l)+3,12*(t+a)+3,10,10),n.strokeStyle=`rgba(255,255,255,0.2)`,n.strokeRect(12*(e+l)+3,12*(t+a)+3,10,10))}))}function U(){if(o.fillStyle=`#0d0d1a`,o.fillRect(0,0,60,60),M===null)return;let e=V(M),t=Math.floor((4-e.shape[0].length)/2),n=Math.floor((4-e.shape.length)/2);e.shape.forEach((a,l)=>a.forEach((a,r)=>{a&&(o.fillStyle=e.color,o.fillRect(12*(t+r)+3,12*(n+l)+3,10,10),o.strokeStyle=`rgba(255,255,255,0.2)`,o.strokeRect(12*(t+r)+3,12*(n+l)+3,10,10))}))}function j(e){I&&(e-B>b&&(F(m.shape,u,f+1)?f++:G(),B=e),function(){t.fillStyle=`#0d0d1a`,t.fillRect(0,0,200,400),t.strokeStyle=`#1e1e3a`,t.lineWidth=.5;for(let e=0;e<20;e++)for(let n=0;n<10;n++)t.strokeRect(n*20,e*20,20,20);if(s.forEach((e,n)=>e.forEach((e,o)=>{e&&J(e,o,n,t,20)})),m){let e=function(){let e=f;for(;F(m.shape,u,e+1);)e++;return e}();m.shape.forEach((n,o)=>n.forEach((n,l)=>{n&&(t.fillStyle=`rgba(255,255,255,0.1)`,t.fillRect((u+l)*20+1,(e+o)*20+1,18,18))})),m.shape.forEach((e,n)=>e.forEach((e,o)=>{e&&J(m.color,u+o,f+n,t,20)}))}}(),w=requestAnimationFrame(j))}let kr={};function tetKD(a){if(I){if(a===`left`)F(m.shape,u-1,f)&&u--;else if(a===`right`)F(m.shape,u+1,f)&&u++;else if(a===`down`)F(m.shape,u,f+1)&&(f++,B=performance.now())}}document.addEventListener(`keydown`,e=>{if(e.code===x.newgame&&!e.repeat&&!document.getElementById(`tetRemapModal`).classList.contains(`active`)&&!document.getElementById(`winTetris`).classList.contains(`hidden`)){e.preventDefault(),(I?(window.tetShowMenu&&window.tetShowMenu()):ee());return}if(!I||e.repeat)return;let c=e.code;if(c===x.left||c===x.right||c===x.down){let a=c===x.left?`left`:c===x.right?`right`:`down`;tetKD(a),kr[c]||(kr[c]=tetRep(()=>tetKD(a),a===`down`?50:60,a===`down`?120:170))}else if(c===x.rotate)Y();else if(c===x.hold)q();else if(c===x.drop){for(e.preventDefault();F(m.shape,u,f+1);)f++;G(),B=performance.now()}});function tetRep(f,every,delay){let h={t:null,i:null};h.t=setTimeout(()=>{h.i=setInterval(f,every)},delay);return h}function tetClr(h){h&&(clearTimeout(h.t),clearInterval(h.i))}function krClear(e){kr[e]&&(tetClr(kr[e]),delete kr[e])}document.addEventListener(`keyup`,e=>krClear(e.code));window.addEventListener(`blur`,()=>{for(let e in kr)tetClr(kr[e]);kr={}});let z={active:!1,startX:0,startY:0,startTime:0,lastX:0,movedH:!1,movedV:!1},Q=!1,Z=!1,ld=!1;function $(e,t,n){let o=document.getElementById(e),a=null;function l(e){e.preventDefault(),o.classList.remove(`pressed`),tetClr(a),a=null}o.addEventListener(`pointerdown`,function(e){e.preventDefault(),o.classList.add(`pressed`),t(),n&&(tetClr(a),a=tetRep(t,n,n===80?120:170))}),o.addEventListener(`pointerup`,l),o.addEventListener(`pointerleave`,l),o.addEventListener(`pointercancel`,l)}e.addEventListener(`touchstart`,e=>{e.preventDefault();if(z.active&&e.touches.length>1){I&&Y();return}let t=e.touches[0];z.active=!0,z.startX=t.clientX,z.startY=t.clientY,z.lastX=t.clientX,z.startTime=performance.now(),z.movedH=!1,z.movedV=!1,Z=!1,function(){if(Q)return;Q=!0;let e=document.getElementById(`tetSwipeHint`);e.style.opacity=`1`,setTimeout(()=>{e.style.opacity=`0`},3e3)}(),ld&&setTimeout(()=>{z.active&&!z.movedH&&!z.movedV&&I&&(Z=!0)},800)},{passive:!1}),e.addEventListener(`touchmove`,e=>{if(e.preventDefault(),!I||!z.active)return;let t=e.touches[0],n=t.clientX-z.startX,o=t.clientY-z.startY,a=t.clientX-z.lastX;if(Math.abs(n)>Math.abs(o)&&Math.abs(a)>20){let e=a>0?1:-1;F(m.shape,u+e,f)&&(u+=e),z.lastX=t.clientX,z.movedH=!0}o>20&&Math.abs(o)>1.5*Math.abs(n)&&(F(m.shape,u,f+1)&&(f++,B=performance.now()),z.startY=t.clientY,z.movedV=!0)},{passive:!1}),e.addEventListener(`touchend`,e=>{if(e.preventDefault(),e.touches.length>0)return;if(!I)return void(z.active=!1);let t=performance.now()-z.startTime,n=Math.abs(e.changedTouches[0].clientX-z.startX),o=Math.abs(e.changedTouches[0].clientY-z.startY);if(e.changedTouches[0].clientY-z.startY<-40&&t<400&&n<30)return q(),void(z.active=!1);if(Z&&!z.movedH&&!z.movedV&&n<18&&o<18){for(;F(m.shape,u,f+1);)f++;G(),B=performance.now(),z.active=!1,Z=!1;return}!z.movedH&&!z.movedV&&t<150&&n<18&&o<18&&Y(),z.active=!1,Z=!1},{passive:!1}),e.addEventListener(`touchcancel`,e=>{e.preventDefault(),z.active=!1},{passive:!1}),$(`tet-b-left`,()=>{I&&F(m.shape,u-1,f)&&u--},70),$(`tet-b-right`,()=>{I&&F(m.shape,u+1,f)&&u++},70),$(`tet-b-down`,()=>{I&&F(m.shape,u,f+1)&&(f++,B=performance.now())},80),$(`tet-b-up`,()=>{I&&Y()},null),$(`tet-b-hold`,()=>{I&&q()},null),$(`tetBDrop`,()=>{if(I){for(;F(m.shape,u,f+1);)f++;G(),B=performance.now()}},null);let T0=1;function tetBase(L){return Math.max(80,Math.round(1e3*Math.pow(.85,L-1)))}function tetSel(v){let e=document.getElementById(`tetLevelSelect`);e&&(e.style.display=v)}{let G0=document.getElementById(`tetLevelGrid`);function mk(){G0&&G0.querySelectorAll(`.tetLevelCell`).forEach(c=>c.classList.toggle(`selected`,+c.textContent===T0))}if(G0){for(let e=1;e<=15;e++){let c=document.createElement(`div`);c.className=`tetLevelCell`,c.textContent=String(e),c.addEventListener(`click`,()=>{T0=e,mk()}),G0.appendChild(c)}mk()}}let _=!1;function ee(){_?(_=!1,I=!0,document.getElementById(`tetOverlay`).style.display=`none`,L&&H(),B=performance.now(),cancelAnimationFrame(w),w=requestAnimationFrame(j)):(D(),s=Array.from({length:20},()=>Array(10).fill(0)),v=0,g=T0,E=0,I=!0,b=tetBase(T0),B=0,M=null,A=!0,document.getElementById(`tet-score-el`).textContent=0,document.getElementById(`tet-level-el`).textContent=T0,document.getElementById(`tet-lines-el`).textContent=0,document.getElementById(`tetOverlay`).style.display=`none`,h=Math.floor(7*Math.random()),y=V(h),W(),X(),U(),L&&H(),cancelAnimationFrame(w),B=performance.now(),w=requestAnimationFrame(j))}function te(){let e=document.getElementById(`tetRemapModal`),t=document.getElementById(`tetRemapKeys`);t.innerHTML=``,[{key:`left`,label:`Mover ←`},{key:`right`,label:`Mover →`},{key:`down`,label:`Bajar ↓`},{key:`rotate`,label:`Girar ↑`},{key:`hold`,label:`Guardar`},{key:`drop`,label:`Caída`},{key:`newgame`,label:`Nueva partida`}].forEach(e=>{let n=document.createElement(`div`);n.className=`tetRemapRow`;let o=document.createElement(`div`);o.className=`tetRemapLabel`,o.textContent=e.label;let a=document.createElement(`div`);a.className=`tetRemapKey`,a.textContent=oe(x[e.key]),a.dataset.action=e.key,a.addEventListener(`click`,()=>{a.classList.add(`waiting`),a.textContent=`Pulsa tecla...`;let t=n=>{n.preventDefault(),x[e.key]=n.code,a.textContent=oe(n.code),a.classList.remove(`waiting`),document.removeEventListener(`keydown`,t)};document.addEventListener(`keydown`,t)}),n.appendChild(o),n.appendChild(a),t.appendChild(n)});let le=document.createElement(`div`);le.className=`tetRemapRow`,le.style.marginTop=`6px`,le.style.borderTop=`1px solid #4a4a8a`,le.style.paddingTop=`8px`;let re=document.createElement(`div`);re.className=`tetRemapLabel`,re.style.width=`auto`,re.style.flex=`1`,re.textContent=`Caída por pulsación larga (táctil)`;let ce=document.createElement(`div`);ce.className=`tetRemapKey`,ce.textContent=ld?`ON`:`OFF`,ce.addEventListener(`click`,()=>{ld=!ld,ce.textContent=ld?`ON`:`OFF`}),le.appendChild(re),le.appendChild(ce),t.appendChild(le),e.classList.add(`active`)}function ne(){document.getElementById(`tetRemapModal`).classList.remove(`active`),localStorage.setItem(`tetKeyMap`,JSON.stringify(x)),localStorage.setItem(`tetLongPressDrop`,ld?`1`:`0`)}function oe(e){return{ArrowLeft:`←`,ArrowRight:`→`,ArrowUp:`↑`,ArrowDown:`↓`,Space:`Space`,Enter:`Enter`,KeyW:`W`,KeyA:`A`,KeyS:`S`,KeyD:`D`,KeyJ:`J`,KeyK:`K`,KeyL:`L`,KeyI:`I`,KeyC:`C`}[e]||e}if(document.getElementById(`tet-ov-btn`).addEventListener(`click`,ee),document.getElementById(`tet-ov-btn`).addEventListener(`touchend`,e=>{e.preventDefault(),ee()}),document.getElementById(`tetStartSideBtn`).addEventListener(`click`,()=>{I=!1,_=!1,X(),cancelAnimationFrame(w),document.getElementById(`tetOverlay`).style.display=`flex`,document.getElementById(`tet-ov-title`).textContent=`TETRIS`,document.getElementById(`tet-ov-sub`).innerHTML=`← → mover &nbsp;·&nbsp; ↑ rotar<br>↓ bajar &nbsp;·&nbsp; Espacio: caer<br><br>📱 desliza en el tablero<br>toca rápido = rotar`,document.getElementById(`tet-ov-btn`).textContent=`INICIAR`}),document.getElementById(`tetStartSideBtn`).addEventListener(`touchend`,e=>{e.preventDefault(),e.target.click()}),window.tetShowMenu=()=>document.getElementById(`tetStartSideBtn`).click(),document.getElementById(`tet-music-btn`).addEventListener(`click`,()=>{D(),L=!L,document.getElementById(`tet-music-btn`).innerHTML=`♩ Música<br>`+(L?`ON`:`OFF`),L&&I?(X(),H()):L||X()}),document.getElementById(`tet-sfx-btn`).addEventListener(`click`,()=>{T=!T,document.getElementById(`tet-sfx-btn`).innerHTML=`♪ Efectos<br>`+(T?`ON`:`OFF`)}),document.getElementById(`tetRemapBtn`).addEventListener(`click`,()=>{te()}),document.getElementById(`tet-remap-close`).addEventListener(`click`,ne),document.getElementById(`tet-remap-reset`).addEventListener(`click`,function(){x={...R},te()}),document.getElementById(`tetRemapModal`).addEventListener(`click`,e=>{e.target.id===`tetRemapModal`&&ne()}),localStorage.getItem(`tetKeyMap`))try{x=Object.assign({},R,JSON.parse(localStorage.getItem(`tetKeyMap`)))}catch{}localStorage.getItem(`tetLongPressDrop`)===`1`&&(ld=!0),window.initTetris=function(){c(),t.fillStyle=`#0d0d1a`,t.fillRect(0,0,200,400),n.fillStyle=`#0d0d1a`,n.fillRect(0,0,60,60),o.fillStyle=`#0d0d1a`,o.fillRect(0,0,60,60)},window.pauseTetris=function(){I!==void 0&&I&&(I=!1,_=!0,X(),cancelAnimationFrame(w),document.getElementById(`tetOverlay`).style.display=`flex`,document.getElementById(`tet-ov-title`).textContent=`PAUSA`,document.getElementById(`tet-ov-sub`).innerHTML=`Puntuación: `+v+`<br>Nivel: `+g+`<br>Líneas: `+E,document.getElementById(`tet-ov-btn`).textContent=`CONTINUAR`,tetSel(`none`))}})();
-;
+/* tetris.js — Juegos XP. Control y reglas rehechos:
+   · Una sola entrada: teclado, botones y gestos se convierten en acciones (left, right, soft, hard, rotCW, rotCCW, hold)
+     y varias fuentes a la vez (tecla + botón) no duplican la velocidad.
+   · DAS/ARR dentro del bucle de juego (sin setInterval), con prioridad a la última dirección pulsada.
+     Un toque corto mueve una sola casilla; al soltar la pieza se para en el acto.
+   · Pointer Events con captura para botones y gestos (sin touch* ni click fantasma).
+   · Reglas: rotación SRS con kicks, bolsa de 7 piezas, lock delay de 500 ms (máx. 15 reinicios) y soft drop con puntos.
+   · Ajustes (DAS, ARR, SDF, control táctil) en ⚙ Opciones (js/opciones.js). Teclas reasignables (tetKeyMap). */
+(function () {
+  'use strict';
+  var $ = function (id) { return document.getElementById(id); };
+  var cv = $('tet-bc'), ctx = cv.getContext('2d');
+  var nctx = $('tetNC').getContext('2d'), hctx = $('tetHC').getContext('2d');
+  var COLS = 10, ROWS = 20, CELL = 20, LOCK_MS = 500, MAX_RESETS = 15;
+  var wrap = $('tetBoardWrap'), inner = $('tetBoardInner');
+
+  function fit() {
+    var w = wrap.clientWidth, h = wrap.clientHeight, aw, ah;
+    if (w / h > 0.5) { ah = h; aw = 0.5 * ah; } else { aw = w; ah = 2 * aw; }
+    inner.style.width = aw + 'px'; inner.style.height = ah + 'px';
+    cv.style.width = aw + 'px'; cv.style.height = ah + 'px';
+  }
+  fit(); window.addEventListener('resize', fit);
+
+  /* ---------- piezas (orden y colores originales: I O T S Z J L) ---------- */
+  var COLORS = ['#00f0f0', '#f0a000', '#a000f0', '#00f000', '#f00000', '#0000f0', '#f0f000'];
+  var BASE = [
+    [[0, 0, 0, 0], [1, 1, 1, 1], [0, 0, 0, 0], [0, 0, 0, 0]],
+    [[1, 1], [1, 1]],
+    [[0, 1, 0], [1, 1, 1], [0, 0, 0]],
+    [[0, 1, 1], [1, 1, 0], [0, 0, 0]],
+    [[1, 1, 0], [0, 1, 1], [0, 0, 0]],
+    [[1, 0, 0], [1, 1, 1], [0, 0, 0]],
+    [[0, 0, 1], [1, 1, 1], [0, 0, 0]]
+  ];
+  function girar(m) { var n = m.length; return m.map(function (_, r) { return m[r].map(function (_, c) { return m[n - 1 - c][r]; }); }); }
+  var ESTADOS = BASE.map(function (m) { var s = [m]; for (var i = 1; i < 4; i++) s.push(girar(s[i - 1])); return s; });
+
+  /* kicks SRS: [dx, dy] con y hacia arriba (se invierte al aplicar) */
+  var KICK_JLSTZ = {
+    '0>1': [[0, 0], [-1, 0], [-1, 1], [0, -2], [-1, -2]], '1>0': [[0, 0], [1, 0], [1, -1], [0, 2], [1, 2]],
+    '1>2': [[0, 0], [1, 0], [1, -1], [0, 2], [1, 2]], '2>1': [[0, 0], [-1, 0], [-1, 1], [0, -2], [-1, -2]],
+    '2>3': [[0, 0], [1, 0], [1, 1], [0, -2], [1, -2]], '3>2': [[0, 0], [-1, 0], [-1, -1], [0, 2], [-1, 2]],
+    '3>0': [[0, 0], [-1, 0], [-1, -1], [0, 2], [-1, 2]], '0>3': [[0, 0], [1, 0], [1, 1], [0, -2], [1, -2]]
+  };
+  var KICK_I = {
+    '0>1': [[0, 0], [-2, 0], [1, 0], [-2, -1], [1, 2]], '1>0': [[0, 0], [2, 0], [-1, 0], [2, 1], [-1, -2]],
+    '1>2': [[0, 0], [-1, 0], [2, 0], [-1, 2], [2, -1]], '2>1': [[0, 0], [1, 0], [-2, 0], [1, -2], [-2, 1]],
+    '2>3': [[0, 0], [2, 0], [-1, 0], [2, 1], [-1, -2]], '3>2': [[0, 0], [-2, 0], [1, 0], [-2, -1], [1, 2]],
+    '3>0': [[0, 0], [-1, 0], [2, 0], [-1, 2], [2, -1]], '0>3': [[0, 0], [1, 0], [-2, 0], [1, -2], [-2, 1]]
+  };
+
+  /* ---------- estado ---------- */
+  var board, cur = null, queue = [], holdT = null, canHold = true;
+  var score = 0, level = 1, lines = 0, startLevel = 1;
+  var playing = false, paused = false, raf = 0, lastT = 0;
+  var gravAcc = 0, lockT = 0, lockResets = 0, lowestY = 0, grounded = false, congelado = false;
+  var musicOn = true, sfxOn = true, ac = null, musicTimer = null, musicIdx = 0, musicRunning = false;
+
+  function tetBase(l) { return Math.max(80, Math.round(1e3 * Math.pow(0.85, l - 1))); }
+  function opt(k, def) { return (window.Opciones && window.Opciones.get(k)) || def; }
+  function hayTactil() { return !!(window.Opciones && window.Opciones.tactil()); }
+  function vib(p) { if (typeof window.vibrate === 'function') window.vibrate(p); }
+
+  function vacio() { return Array.from({ length: ROWS }, function () { return Array(COLS).fill(0); }); }
+  board = vacio();
+
+  function cabe(t, r, x, y) {
+    var m = ESTADOS[t][r];
+    for (var i = 0; i < m.length; i++) for (var j = 0; j < m[i].length; j++) if (m[i][j]) {
+      var cx = x + j, cy = y + i;
+      if (cx < 0 || cx >= COLS || cy >= ROWS || (cy >= 0 && board[cy][cx])) return false;
+    }
+    return true;
+  }
+
+  /* ---------- bolsa de 7 ---------- */
+  function rellenar() {
+    while (queue.length < 7) {
+      var b = [0, 1, 2, 3, 4, 5, 6];
+      for (var i = 6; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)), t = b[i]; b[i] = b[j]; b[j] = t; }
+      queue = queue.concat(b);
+    }
+  }
+  function tomar() { rellenar(); var t = queue.shift(); rellenar(); return t; }
+
+  /* ---------- pieza activa ---------- */
+  function aparecer(t) {
+    cur = { t: t, r: 0, x: t === 1 ? 4 : 3, y: -1 };
+    gravAcc = 0; lockT = 0; lockResets = 0; lowestY = cur.y; grounded = false;
+    if (!cabe(cur.t, cur.r, cur.x, cur.y)) { finPartida(); return false; }
+    grounded = !cabe(cur.t, cur.r, cur.x, cur.y + 1);
+    return true;
+  }
+  /* tras mover o girar: si está apoyada se reinicia el lock delay (con tope) */
+  function tocado() {
+    var g = !cabe(cur.t, cur.r, cur.x, cur.y + 1);
+    if (g) { if (lockResets < MAX_RESETS) { lockT = 0; lockResets++; } } else lockT = 0;
+    grounded = g;
+  }
+  function mover(dx) {
+    if (!playing || !cur || !cabe(cur.t, cur.r, cur.x + dx, cur.y)) return false;
+    cur.x += dx; tocado(); return true;
+  }
+  function rotar(dir) {
+    if (!playing || !cur || cur.t === 1) return false;
+    var to = (cur.r + dir + 4) % 4, tabla = (cur.t === 0 ? KICK_I : KICK_JLSTZ)[cur.r + '>' + to];
+    for (var k = 0; k < tabla.length; k++) {
+      var nx = cur.x + tabla[k][0], ny = cur.y - tabla[k][1];
+      if (cabe(cur.t, to, nx, ny)) { cur.r = to; cur.x = nx; cur.y = ny; if (cur.y > lowestY) { lowestY = cur.y; lockResets = 0; } tocado(); return true; }
+    }
+    return false;
+  }
+  function bajarUno(conPunto) {
+    if (!playing || !cur || !cabe(cur.t, cur.r, cur.x, cur.y + 1)) return false;
+    cur.y++; if (conPunto) score++;
+    if (cur.y > lowestY) { lowestY = cur.y; lockResets = 0; }
+    lockT = 0; grounded = !cabe(cur.t, cur.r, cur.x, cur.y + 1); hud(); return true;
+  }
+  function caidaFuerte() {
+    if (!playing || !cur) return;
+    var d = 0; while (cabe(cur.t, cur.r, cur.x, cur.y + 1)) { cur.y++; d++; }
+    score += 2 * d; fijar();
+  }
+  function guardar() {
+    if (!playing || !cur || !canHold) return;
+    canHold = false;
+    var t = cur.t;
+    if (holdT === null) { holdT = t; aparecer(tomar()); } else { var h = holdT; holdT = t; aparecer(h); }
+    dibujarPrevias();
+  }
+
+  /* ---------- fijar pieza y líneas ---------- */
+  function fijar() {
+    var m = ESTADOS[cur.t][cur.r];
+    for (var i = 0; i < m.length; i++) for (var j = 0; j < m[i].length; j++) if (m[i][j] && cur.y + i >= 0) board[cur.y + i][cur.x + j] = COLORS[cur.t];
+    pitido(220, 0.06, 0.08);
+    var n = 0;
+    for (var y = ROWS - 1; y >= 0; y--) if (board[y].every(function (c) { return c; })) { board.splice(y, 1); board.unshift(Array(COLS).fill(0)); n++; y++; }
+    if (n) {
+      [880, 1047, 1319].forEach(function (f, k) { pitido(f, 0.12, 0.15, 0.06 * k); });
+      vib(n >= 4 ? [0, 30, 40, 30, 40, 30, 40, 30] : 30 * n);
+      score += [0, 100, 300, 500, 800][n] * level; lines += n;
+      level = startLevel + Math.floor(lines / 10);
+    }
+    canHold = true; hud();
+    if (aparecer(tomar())) dibujarPrevias();
+  }
+  function hud() {
+    $('tet-score-el').textContent = score; $('tet-level-el').textContent = level; $('tet-lines-el').textContent = lines;
+  }
+
+  /* ---------- sonido ---------- */
+  function audio() { if (!ac) { try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { ac = null; } } return ac; }
+  function pitido(freq, gain, dur, delay) {
+    if (!sfxOn || !audio()) return;
+    var o = ac.createOscillator(), g = ac.createGain(), t0 = ac.currentTime + (delay || 0);
+    o.connect(g); g.connect(ac.destination); o.type = 'square'; o.frequency.value = freq;
+    g.gain.setValueAtTime(gain, t0); g.gain.exponentialRampToValueAtTime(0.001, t0 + dur);
+    o.start(t0); o.stop(t0 + dur + 0.02);
+  }
+  var MEL = [[659, 150], [494, 75], [523, 75], [587, 150], [523, 75], [494, 75], [440, 150], [440, 75], [523, 75], [659, 150], [587, 75], [523, 75], [494, 225], [523, 75], [587, 150], [659, 150], [523, 150], [440, 150], [440, 150], [587, 150], [698, 75], [880, 150], [784, 75], [698, 75], [659, 225], [523, 75], [659, 150], [587, 75], [523, 75], [494, 150], [494, 75], [523, 75], [587, 150], [659, 150], [523, 150], [440, 150], [440, 150]];
+  function musicaNota() {
+    if (!musicRunning || !musicOn || !ac) return;
+    var n = MEL[musicIdx % MEL.length], o = ac.createOscillator(), g = ac.createGain();
+    o.connect(g); g.connect(ac.destination); o.type = 'triangle'; o.frequency.value = n[0];
+    g.gain.setValueAtTime(0.15, ac.currentTime); g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + n[1] / 1e3 * 0.9);
+    o.start(ac.currentTime); o.stop(ac.currentTime + n[1] / 1e3);
+    musicIdx++; musicTimer = setTimeout(musicaNota, n[1]);
+  }
+  function musicaOn() { if (ac && !musicRunning) { musicRunning = true; musicIdx = 0; musicaNota(); } }
+  function musicaOff() { musicRunning = false; if (musicTimer) clearTimeout(musicTimer); musicTimer = null; }
+
+  /* ---------- dibujo ---------- */
+  function celda(c, x, y, g, s) {
+    g.fillStyle = c; g.fillRect(x * s + 1, y * s + 1, s - 2, s - 2);
+    g.strokeStyle = 'rgba(255,255,255,0.18)'; g.strokeRect(x * s + 1, y * s + 1, s - 2, s - 2);
+  }
+  function dibujar() {
+    ctx.fillStyle = '#0d0d1a'; ctx.fillRect(0, 0, 200, 400);
+    ctx.strokeStyle = '#1e1e3a'; ctx.lineWidth = 0.5;
+    for (var y = 0; y < ROWS; y++) for (var x = 0; x < COLS; x++) ctx.strokeRect(x * CELL, y * CELL, CELL, CELL);
+    for (y = 0; y < ROWS; y++) for (x = 0; x < COLS; x++) if (board[y][x]) celda(board[y][x], x, y, ctx, CELL);
+    if (!cur) return;
+    var m = ESTADOS[cur.t][cur.r], gy = cur.y;
+    while (cabe(cur.t, cur.r, cur.x, gy + 1)) gy++;
+    for (var i = 0; i < m.length; i++) for (var j = 0; j < m[i].length; j++) if (m[i][j]) {
+      if (gy + i >= 0) { ctx.fillStyle = 'rgba(255,255,255,0.1)'; ctx.fillRect((cur.x + j) * CELL + 1, (gy + i) * CELL + 1, CELL - 2, CELL - 2); }
+    }
+    for (i = 0; i < m.length; i++) for (j = 0; j < m[i].length; j++) if (m[i][j] && cur.y + i >= 0) celda(COLORS[cur.t], cur.x + j, cur.y + i, ctx, CELL);
+  }
+  function pieza60(g, t, alfa) {
+    g.fillStyle = '#0d0d1a'; g.fillRect(0, 0, 60, 60);
+    if (t === null || t === undefined) return;
+    var m = ESTADOS[t][0], r0 = 9, r1 = -1, c0 = 9, c1 = -1;
+    m.forEach(function (f, i) { f.forEach(function (v, j) { if (v) { r0 = Math.min(r0, i); r1 = Math.max(r1, i); c0 = Math.min(c0, j); c1 = Math.max(c1, j); } }); });
+    var w = (c1 - c0 + 1) * 12, h = (r1 - r0 + 1) * 12, ox = Math.floor((60 - w) / 2), oy = Math.floor((60 - h) / 2);
+    g.globalAlpha = alfa; g.fillStyle = COLORS[t];
+    m.forEach(function (f, i) { f.forEach(function (v, j) { if (v) { var px = ox + (j - c0) * 12, py = oy + (i - r0) * 12; g.fillRect(px + 1, py + 1, 10, 10); g.strokeStyle = 'rgba(255,255,255,0.2)'; g.strokeRect(px + 1, py + 1, 10, 10); } }); });
+    g.globalAlpha = 1;
+  }
+  function dibujarPrevias() { pieza60(nctx, queue[0], 1); pieza60(hctx, holdT, canHold ? 1 : 0.4); }
+
+  /* ---------- entrada unificada ---------- */
+  var Input = (function () {
+    var held = { left: {}, right: {}, soft: {} }, dir = 0, dasT = 0, arrT = 0;
+    function algunaFuente(a) { for (var k in held[a]) return true; return false; }
+    function pulsar(a, src) {
+      if (!playing) return;
+      if (a === 'left' || a === 'right' || a === 'soft') {
+        var primera = !algunaFuente(a); held[a][src] = 1;
+        if (!primera) return;
+        if (a === 'soft') { bajarUno(true); gravAcc = 0; return; }   // soft drop: una casilla al pulsar y luego a ritmo acelerado
+        dir = a === 'left' ? -1 : 1; dasT = 0; arrT = 0; mover(dir);           // la última dirección pulsada manda
+      } else if (a === 'hard') caidaFuerte();
+      else if (a === 'rotCW') rotar(1);
+      else if (a === 'rotCCW') rotar(-1);
+      else if (a === 'hold') guardar();
+    }
+    function soltar(a, src) {
+      if (!held[a]) return;
+      delete held[a][src];
+      if (a === 'soft' || algunaFuente(a)) return;
+      if (dir === (a === 'left' ? -1 : 1)) {
+        var otra = a === 'left' ? 'right' : 'left';
+        if (algunaFuente(otra)) { dir = otra === 'left' ? -1 : 1; dasT = 0; arrT = 0; } else { dir = 0; dasT = 0; arrT = 0; }
+      }
+    }
+    function actualizar(dt) {
+      if (!dir) return;
+      dasT += dt; if (dasT < opt('das', 160)) return;
+      arrT += dt; var arr = Math.max(opt('arr', 45), 8);
+      while (arrT >= arr) { arrT -= arr; if (!mover(dir)) { arrT = 0; break; } }
+    }
+    function reiniciar() { held = { left: {}, right: {}, soft: {} }; dir = 0; dasT = 0; arrT = 0; }
+    return { pulsar: pulsar, soltar: soltar, actualizar: actualizar, reiniciar: reiniciar, soft: function () { return algunaFuente('soft'); } };
+  })();
+
+  /* ---------- bucle ---------- */
+  function paso(dt) {
+    if (!cur) return;
+    Input.actualizar(dt);
+    if (congelado) { dibujar(); return; }
+    var gi = tetBase(level), soft = Input.soft();
+    if (soft) gi = Math.max(gi / opt('sdf', 20), 12);
+    gravAcc += dt;
+    while (gravAcc >= gi) { gravAcc -= gi; if (!bajarUno(soft)) { gravAcc = 0; break; } }
+    grounded = !cabe(cur.t, cur.r, cur.x, cur.y + 1);
+    if (grounded) { lockT += dt; if (lockT >= LOCK_MS) fijar(); } else lockT = 0;
+  }
+  function bucle(now) {
+    if (!playing) return;
+    var dt = Math.min(now - (lastT || now), 100); lastT = now;
+    paso(dt); dibujar();
+    raf = requestAnimationFrame(bucle);
+  }
+  function arrancarBucle() { cancelAnimationFrame(raf); lastT = performance.now(); raf = requestAnimationFrame(bucle); }
+
+  /* ---------- ayuda y pantallas ---------- */
+  function ayuda() {
+    var k = '← → mover &nbsp;·&nbsp; ↑ rotar &nbsp;·&nbsp; Z rotar ↺<br>↓ bajar &nbsp;·&nbsp; Espacio: caer &nbsp;·&nbsp; C: guardar';
+    var t = '<br><br>📱 arrastra = mover · toca = rotar<br>desliza ↓ = caer · desliza ↑ = guardar<br>2 dedos = rotar ↺';
+    return k + (hayTactil() ? t : '<br><br>⚙ Opciones: activa el control táctil');
+  }
+  function mostrarMenu() {
+    playing = false; paused = false; Input.reiniciar(); musicaOff(); cancelAnimationFrame(raf);
+    $('tetOverlay').style.display = 'flex'; $('tet-ov-title').textContent = 'TETRIS';
+    $('tet-ov-sub').innerHTML = ayuda(); $('tet-ov-btn').textContent = 'INICIAR'; tetSel('flex');
+  }
+  function tetSel(v) { var e = $('tetLevelSelect'); if (e) e.style.display = v; }
+  function finPartida() {
+    playing = false; Input.reiniciar(); musicaOff(); cancelAnimationFrame(raf); vib(200);
+    $('tet-ov-title').textContent = 'GAME OVER';
+    $('tet-ov-sub').innerHTML = 'Puntuación: ' + score + '<br>Nivel: ' + level + '<br>Líneas: ' + lines;
+    $('tet-ov-btn').textContent = 'REINICIAR'; $('tetOverlay').style.display = 'flex'; tetSel('flex');
+  }
+  function iniciarOReanudar() {
+    if (paused) {
+      paused = false; playing = true; $('tetOverlay').style.display = 'none';
+      if (musicOn) { audio(); musicaOn(); }
+      arrancarBucle(); return;
+    }
+    audio(); board = vacio(); score = 0; level = startLevel; lines = 0; holdT = null; canHold = true; queue = []; rellenar();
+    playing = true; paused = false; Input.reiniciar();
+    $('tetOverlay').style.display = 'none'; hud();
+    aparecer(tomar()); dibujarPrevias();
+    musicaOff(); if (musicOn) musicaOn();
+    arrancarBucle();
+  }
+  function pausar() {
+    if (!playing) return;
+    playing = false; paused = true; Input.reiniciar(); musicaOff(); cancelAnimationFrame(raf);
+    $('tetOverlay').style.display = 'flex'; $('tet-ov-title').textContent = 'PAUSA';
+    $('tet-ov-sub').innerHTML = 'Puntuación: ' + score + '<br>Nivel: ' + level + '<br>Líneas: ' + lines;
+    $('tet-ov-btn').textContent = 'CONTINUAR'; tetSel('none');
+  }
+
+  /* selector de nivel inicial */
+  (function () {
+    var g = $('tetLevelGrid'); if (!g) return;
+    function marcar() { g.querySelectorAll('.tetLevelCell').forEach(function (c) { c.classList.toggle('selected', +c.textContent === startLevel); }); }
+    for (var i = 1; i <= 15; i++) {
+      var c = document.createElement('div'); c.className = 'tetLevelCell'; c.textContent = i;
+      c.addEventListener('click', (function (n) { return function () { startLevel = n; marcar(); }; })(i));
+      g.appendChild(c);
+    }
+    marcar();
+  })();
+
+  /* ---------- teclado ---------- */
+  var DEF = { left: 'ArrowLeft', right: 'ArrowRight', down: 'ArrowDown', rotate: 'ArrowUp', rotateCCW: 'KeyZ', drop: 'Space', hold: 'KeyC', newgame: 'Enter' };
+  var keys = Object.assign({}, DEF);
+  try { var sv = localStorage.getItem('tetKeyMap'); if (sv) keys = Object.assign({}, DEF, JSON.parse(sv)); } catch (e) { /* sin ajustes */ }
+  var ACCION = { left: 'left', right: 'right', down: 'soft', rotate: 'rotCW', rotateCCW: 'rotCCW', drop: 'hard', hold: 'hold' };
+  function accionDe(code) { for (var k in ACCION) if (keys[k] === code) return ACCION[k]; return null; }
+  function ventanaVisible() { var w = $('winTetris'); return !!w && !w.classList.contains('hidden'); }
+  function modalAbierto() { var m = $('tetRemapModal'), o = $('optModal'); return (m && m.classList.contains('active')) || (o && o.classList.contains('show')); }
+  function enCampo(t) { return !!t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)); }
+
+  document.addEventListener('keydown', function (e) {
+    if (!ventanaVisible() || modalAbierto() || enCampo(e.target)) return;
+    if (e.code === keys.newgame) {
+      if (e.repeat) return; e.preventDefault();
+      if (playing) mostrarMenu(); else iniciarOReanudar();
+      return;
+    }
+    if (e.code === 'KeyP' || e.code === 'Escape') {
+      if (e.repeat) return;
+      if (playing) { e.preventDefault(); pausar(); } else if (paused) { e.preventDefault(); iniciarOReanudar(); }
+      return;
+    }
+    if (!playing) return;
+    var a = accionDe(e.code); if (!a) return;
+    e.preventDefault();
+    if (e.repeat) return;                                // la repetición la hace el bucle (DAS/ARR), no el sistema
+    Input.pulsar(a, 'k' + e.code);
+  });
+  document.addEventListener('keyup', function (e) { var a = accionDe(e.code); if (a) Input.soltar(a, 'k' + e.code); });
+  window.addEventListener('blur', function () { Input.reiniciar(); });
+  document.addEventListener('visibilitychange', function () { if (document.hidden) { Input.reiniciar(); pausar(); } });
+
+  /* ---------- botones en pantalla (Pointer Events con captura) ---------- */
+  function enlazarBoton(id, accion) {
+    var b = $(id); if (!b) return;
+    function bajar(e) { e.preventDefault(); try { b.setPointerCapture(e.pointerId); } catch (_) { /* nada */ } b.classList.add('pressed'); Input.pulsar(accion, 'b' + id + e.pointerId); }
+    function subir(e) { b.classList.remove('pressed'); Input.soltar(accion, 'b' + id + e.pointerId); }
+    b.addEventListener('pointerdown', bajar);
+    ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(function (ev) { b.addEventListener(ev, subir); });
+    b.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+  }
+  enlazarBoton('tet-b-left', 'left'); enlazarBoton('tet-b-right', 'right'); enlazarBoton('tet-b-down', 'soft');
+  enlazarBoton('tet-b-up', 'rotCW'); enlazarBoton('tet-b-hold', 'hold'); enlazarBoton('tetBDrop', 'hard');
+
+  /* ---------- gestos en el tablero (solo con el control táctil activado) ---------- */
+  (function () {
+    var ptr = {};
+    cv.style.touchAction = 'none';
+    function celdaPx() { return cv.getBoundingClientRect().width / COLS || 20; }
+    function numPunteros() { return Object.keys(ptr).length; }
+    cv.addEventListener('pointerdown', function (e) {
+      if (!playing || !hayTactil()) return;
+      e.preventDefault(); try { cv.setPointerCapture(e.pointerId); } catch (_) { /* nada */ }
+      if (numPunteros() >= 1) { rotar(-1); for (var k in ptr) ptr[k].usado = true; ptr[e.pointerId] = { usado: true }; return; }   // segundo dedo: girar ↺
+      ptr[e.pointerId] = { x0: e.clientX, y0: e.clientY, lx: e.clientX, ly: e.clientY, t0: performance.now(), ax: 0, ay: 0, modo: '', usado: false };
+    });
+    cv.addEventListener('pointermove', function (e) {
+      var p = ptr[e.pointerId]; if (!p || p.usado || !playing) return;
+      var c = celdaPx(), dx = e.clientX - p.lx, dy = e.clientY - p.ly; p.lx = e.clientX; p.ly = e.clientY;
+      var tx = e.clientX - p.x0, ty = e.clientY - p.y0;
+      if (!p.modo && Math.hypot(tx, ty) > 0.5 * c) p.modo = Math.abs(ty) > 1.5 * Math.abs(tx) ? 'v' : 'h';
+      if (p.modo === 'h') {
+        p.ax += dx;
+        while (Math.abs(p.ax) >= 0.9 * c) { var s = p.ax > 0 ? 1 : -1; p.ax -= s * 0.9 * c; mover(s); }
+      } else if (p.modo === 'v') {
+        if (dy > 0) p.ay += dy;
+        while (p.ay >= 0.9 * c) { p.ay -= 0.9 * c; bajarUno(true); }
+      }
+    });
+    function fin(e, cancelado) {
+      var p = ptr[e.pointerId]; delete ptr[e.pointerId];
+      if (!p || p.usado || cancelado || !playing) return;
+      var c = celdaPx(), dt = performance.now() - p.t0, tx = e.clientX - p.x0, ty = e.clientY - p.y0;
+      if (Math.hypot(tx, ty) < 0.5 * c && dt < 280) rotar(1);                                  // toque = girar
+      else if (ty > 3 * c && dt < 300 && Math.abs(tx) < 0.6 * ty) caidaFuerte();                // deslizar rápido abajo = caer
+      else if (ty < -2 * c && dt < 350 && Math.abs(tx) < 0.6 * -ty) guardar();                  // deslizar rápido arriba = guardar
+    }
+    cv.addEventListener('pointerup', function (e) { fin(e, false); });
+    cv.addEventListener('pointercancel', function (e) { fin(e, true); });
+    window.addEventListener('opciones', function () {
+      if (!hayTactil()) ptr = {};
+      if (!playing && !paused && $('tet-ov-title').textContent === 'TETRIS') $('tet-ov-sub').innerHTML = ayuda();   // la ayuda del menú sigue al ajuste
+    });
+  })();
+
+  /* ---------- botones del menú, música y efectos ---------- */
+  $('tet-ov-btn').addEventListener('click', iniciarOReanudar);
+  $('tetStartSideBtn').addEventListener('click', mostrarMenu);
+  window.tetShowMenu = mostrarMenu;
+  $('tet-music-btn').addEventListener('click', function () {
+    audio(); musicOn = !musicOn;
+    $('tet-music-btn').innerHTML = '♩ Música<br>' + (musicOn ? 'ON' : 'OFF');
+    if (musicOn && playing) { musicaOff(); musicaOn(); } else if (!musicOn) musicaOff();
+  });
+  $('tet-sfx-btn').addEventListener('click', function () { sfxOn = !sfxOn; $('tet-sfx-btn').innerHTML = '♪ Efectos<br>' + (sfxOn ? 'ON' : 'OFF'); });
+
+  /* ---------- reasignar teclas ---------- */
+  var NOMBRES = { ArrowLeft: '←', ArrowRight: '→', ArrowUp: '↑', ArrowDown: '↓', Space: 'Space', Enter: 'Enter', KeyW: 'W', KeyA: 'A', KeyS: 'S', KeyD: 'D', KeyJ: 'J', KeyK: 'K', KeyL: 'L', KeyI: 'I', KeyC: 'C', KeyZ: 'Z', KeyX: 'X' };
+  function nombreTecla(c) { return NOMBRES[c] || String(c).replace(/^Key/, '').replace(/^Digit/, ''); }
+  var FILAS = [['left', 'Mover ←'], ['right', 'Mover →'], ['down', 'Bajar ↓'], ['rotate', 'Girar ↻'], ['rotateCCW', 'Girar ↺'], ['hold', 'Guardar'], ['drop', 'Caída'], ['newgame', 'Nueva partida']];
+  function abrirRemap() {
+    var m = $('tetRemapModal'), cont = $('tetRemapKeys'); cont.innerHTML = '';
+    FILAS.forEach(function (f) {
+      var fila = document.createElement('div'); fila.className = 'tetRemapRow';
+      var et = document.createElement('div'); et.className = 'tetRemapLabel'; et.textContent = f[1];
+      var bt = document.createElement('div'); bt.className = 'tetRemapKey'; bt.textContent = nombreTecla(keys[f[0]]); bt.dataset.action = f[0];
+      bt.addEventListener('click', function () {
+        bt.classList.add('waiting'); bt.textContent = 'Pulsa tecla...';
+        function captura(ev) {
+          ev.preventDefault(); ev.stopPropagation();
+          document.removeEventListener('keydown', captura, true); bt.classList.remove('waiting');
+          if (ev.code !== 'Escape') {                       // Esc cancela; si la tecla ya era de otra acción, se intercambian
+            for (var k in keys) if (k !== f[0] && keys[k] === ev.code) keys[k] = keys[f[0]];
+            keys[f[0]] = ev.code;
+          }
+          abrirRemap();
+        }
+        document.addEventListener('keydown', captura, true);
+      });
+      fila.appendChild(et); fila.appendChild(bt); cont.appendChild(fila);
+    });
+    var o = document.createElement('div'); o.className = 'tetRemapRow'; o.style.cssText = 'margin-top:6px;border-top:1px solid #4a4a8a;padding-top:8px';
+    var l = document.createElement('div'); l.className = 'tetRemapLabel'; l.style.cssText = 'width:auto;flex:1'; l.textContent = 'Control táctil, DAS y ARR: ⚙ Opciones';
+    var b = document.createElement('div'); b.className = 'tetRemapKey'; b.textContent = '⚙'; b.addEventListener('click', function () { cerrarRemap(); if (window.Opciones) window.Opciones.abrir(); });
+    o.appendChild(l); o.appendChild(b); cont.appendChild(o);
+    m.classList.add('active');
+  }
+  function cerrarRemap() {
+    $('tetRemapModal').classList.remove('active');
+    try { localStorage.setItem('tetKeyMap', JSON.stringify(keys)); } catch (e) { /* nada */ }
+  }
+  $('tetRemapBtn').addEventListener('click', abrirRemap);
+  $('tet-remap-close').addEventListener('click', cerrarRemap);
+  $('tet-remap-reset').addEventListener('click', function () { keys = Object.assign({}, DEF); abrirRemap(); });
+  $('tetRemapModal').addEventListener('click', function (e) { if (e.target.id === 'tetRemapModal') cerrarRemap(); });
+
+  /* ---------- exportado ---------- */
+  window.initTetris = function () {
+    fit(); dibujar(); pieza60(nctx, null, 1); pieza60(hctx, null, 1);
+    if ($('tetOverlay').style.display !== 'none') $('tet-ov-sub').innerHTML = ayuda();
+  };
+  window.pauseTetris = pausar;
+  /* solo lectura / pruebas */
+  window.tetEstado = function () { return cur ? { t: cur.t, r: cur.r, x: cur.x, y: cur.y, score: score, level: level, lines: lines, playing: playing, grounded: grounded } : { playing: playing, score: score, level: level, lines: lines }; };
+  window.tetCongelar = function (v) { congelado = !!v; };
+})();

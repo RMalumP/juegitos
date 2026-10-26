@@ -19,6 +19,8 @@ Escritorio estilo Windows XP con juegos clásicos (Buscaminas, Tetris, Ajedrez, 
 
 ## Vibración
 
+**⚙ Opciones** (barra de tareas): en un móvil los controles en pantalla y los gestos van activados; en un ordenador se usa el teclado, los controles en pantalla quedan **plegados** (no se eliminan) y los gestos desactivados. Se puede cambiar a mano (Automático / Activado / Desactivado).
+
 El interruptor 📳 de la barra activa o desactiva **toda** la vibración de la app (se recuerda al recargar). Vibra al tocar botones, iconos, fichas, casillas, cartones y números, y en los avisos online (bola nueva, tu turno, el rival ha movido, ha salido el número). Todo pasa por `js/vibracion.js` (`window.Vibra.pulso(ms | patrón)`).
 
 - **Android** (Chrome, Edge, Firefox, Samsung Internet): API de vibración del navegador.
@@ -79,6 +81,7 @@ js/online/qrcode.js           generador de QR (MIT)
 js/pwa.js                     instalación (botón «Instalar app»), actualizaciones, versión en créditos y accesos directos (?abrir=bingo | ?abrir=sala)
 js/version.js                 versión de la app (única fuente)
 js/vibracion.js               vibración común (interruptor 📳)
+js/opciones.js                ⚙ Opciones: detecta móvil/ordenador, control táctil (auto/activado/desactivado) y repetición de Tetris (DAS, ARR, SDF)
 sw.js, manifest.webmanifest, icons/   PWA
 tests/                        pruebas
 ```
@@ -95,7 +98,7 @@ Si cambias archivos de la aplicación: sube `APP_VERSION` (y `APP_FECHA`) en `js
 | `npm run test:ui` | bingo local: Bolero con y sin cartones propios, recarga, marcas falsas, comprobar cartones |
 | `npm run test:online` | Bolero (con cartón propio) + 3 jugadores en navegadores distintos usando el icono Multijugador: cartones numerados, comprobar, cantos y dos partidas completas |
 | `npm run test:niveles` | niveles y dificultades de los juegos de arcade: Snake (4 dificultades), Invaders/Pac-Man/Frogger/Asteroids/Tetris (15 niveles) y Pong (10 niveles de CPU) |
-| `npm run test:tetris` | un toque corto en Tetris mueve una sola casilla (retardo antes de repetir) y al soltar se para en el acto |
+| `npm run test:tetris` | control de Tetris: toque corto = 1 casilla, DAS/ARR, última dirección, caída, guardar, lock delay, pausa, gestos táctiles y Opciones (escritorio con botones plegados y sin gestos / móvil con ambos) |
 | `npm run test:enlace` | entrar por enlace solo con el nombre, símbolo con la barra plegada y que los iconos del escritorio no se solapen |
 | `npm run test:reconexion` | un jugador y el Bolero recargan a mitad de partida |
 | `npm run test:regresion` | todos los juegos del escritorio abren sin errores |
