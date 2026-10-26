@@ -88,6 +88,7 @@ const ARCHIVOS = [
   'js/online/transport-peer.js',
   'js/pwa.js',
   'js/save-load.js',
+  'js/escala.js',
   'js/opciones.js',
   'js/vibracion.js',
   'js/version.js',
