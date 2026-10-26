@@ -1,0 +1,73 @@
+/* g2048.js — Juegos XP: 2048 en tableros de 4×4, 5×5 y 6×6 (js/games/g2048-engine.js).
+   Teclado (flechas / WASD) y deslizamiento táctil con Pointer Events. Deshacer una jugada. Mejor puntuación por tamaño (g2048Best_<n>). */
+(function () {
+  'use strict';
+  var $ = function (id) { return document.getElementById(id); };
+  var E = window.G2048Engine;
+  var n = 4, grid, score = 0, best = 0, prev = null, over = false, ganado = false, seguir = false, nueva = null;
+  try { var sn = parseInt(localStorage.getItem('g2048Size'), 10); if (sn >= 4 && sn <= 6) n = sn; } catch (e) { /* sin ajustes */ }
+  function lsBest() { try { return parseInt(localStorage.getItem('g2048Best_' + n), 10) || 0; } catch (e) { return 0; } }
+  function vib(p) { if (typeof window.vibrate === 'function') window.vibrate(p); }
+
+  function pintar() {
+    var b = $('g48Board'); b.style.setProperty('--n', n); b.innerHTML = '';
+    for (var r = 0; r < n; r++) for (var c = 0; c < n; c++) {
+      var v = grid[r][c], t = document.createElement('div');
+      t.className = 'g48T' + (v ? ' v' + Math.min(v, 4096) + (v > 4096 ? ' vmax' : '') : '') + (nueva && nueva[0] === r && nueva[1] === c ? ' nuevo' : '');
+      t.textContent = v || ''; t.dataset.v = v; b.appendChild(t);
+    }
+    $('g48Score').textContent = score; $('g48Best').textContent = best; $('g48Max').textContent = E.maximo(grid);
+    document.querySelectorAll('.g48Sz').forEach(function (e) { e.classList.toggle('sel', +e.dataset.n === n); });
+    $('g48Undo').style.opacity = prev ? 1 : 0.4;
+  }
+  function nuevoJuego() {
+    best = lsBest(); grid = E.nuevoJuego(n); score = 0; prev = null; over = false; ganado = false; seguir = false; nueva = null;
+    $('g48Over').classList.remove('show'); pintar();
+  }
+  function fin(t, s, cont) {
+    $('g48OverT').textContent = t; $('g48OverS').textContent = s; $('g48Cont').style.display = cont ? '' : 'none'; $('g48Over').classList.add('show');
+  }
+  function mover(dir) {
+    if (over || !$('g48Over') || $('g48Over').classList.contains('show')) return;
+    var r = E.mover(grid, dir); if (!r.movido) return;
+    prev = { grid: E.copiar(grid), score: score };
+    grid = r.grid; score += r.puntos; nueva = E.agregar(grid);
+    if (score > best) { best = score; try { localStorage.setItem('g2048Best_' + n, best); } catch (e) { /* nada */ } }
+    if (r.puntos) vib(12);
+    pintar();
+    if (!ganado && !seguir && E.maximo(grid) >= 2048) { ganado = true; vib([0, 40, 60, 40]); fin('🏆 ¡2048!', 'Has llegado a 2048. Puntos: ' + score, true); return; }
+    if (!E.puedeMover(grid)) { over = true; vib(200); fin('FIN DE LA PARTIDA', 'Puntos: ' + score + ' · Ficha mayor: ' + E.maximo(grid), false); }
+  }
+  function deshacer() { if (!prev || over) return; grid = prev.grid; score = prev.score; prev = null; nueva = null; $('g48Over').classList.remove('show'); pintar(); }
+
+  /* teclado: solo con la ventana visible */
+  var TECLAS = { ArrowLeft: 0, KeyA: 0, ArrowUp: 1, KeyW: 1, ArrowRight: 2, KeyD: 2, ArrowDown: 3, KeyS: 3 };
+  document.addEventListener('keydown', function (e) {
+    var w = $('winG2048'); if (!w || w.classList.contains('hidden')) return;
+    var t = e.target; if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
+    if (e.code in TECLAS) { e.preventDefault(); if (!e.repeat) mover(TECLAS[e.code]); }
+    else if (e.code === 'KeyZ' && !e.repeat) deshacer();
+    else if (e.code === 'Enter' && !e.repeat && $('g48Over').classList.contains('show')) { e.preventDefault(); if (ganado && !over) $('g48Cont').click(); else $('g48Again').click(); }
+  });
+  /* deslizar con el dedo (o el ratón) */
+  var p0 = null, tz = $('g48BoardWrap');
+  tz.style.touchAction = 'none';
+  tz.addEventListener('pointerdown', function (e) { if (e.target.closest && e.target.closest('#g48Over')) return; p0 = { id: e.pointerId, x: e.clientX, y: e.clientY }; try { tz.setPointerCapture(e.pointerId); } catch (_) { /* nada */ } });
+  function soltar(e, cancel) {
+    if (!p0 || p0.id !== e.pointerId) return; var dx = e.clientX - p0.x, dy = e.clientY - p0.y; p0 = null;
+    if (cancel || Math.max(Math.abs(dx), Math.abs(dy)) < 24) return;
+    mover(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 2 : 0) : (dy > 0 ? 3 : 1));
+  }
+  tz.addEventListener('pointerup', function (e) { soltar(e, false); });
+  tz.addEventListener('pointercancel', function (e) { soltar(e, true); });
+
+  document.querySelectorAll('.g48Sz').forEach(function (b) { b.addEventListener('click', function () { n = +b.dataset.n; try { localStorage.setItem('g2048Size', n); } catch (e) { /* nada */ } nuevoJuego(); }); });
+  $('g48NewGame').addEventListener('click', nuevoJuego); $('g48Again').addEventListener('click', nuevoJuego);
+  $('g48Undo').addEventListener('click', deshacer);
+  $('g48Cont').addEventListener('click', function () { seguir = true; $('g48Over').classList.remove('show'); });
+  window.initG2048 = function () { if (!grid) nuevoJuego(); };
+  window.g2048StartNew = nuevoJuego;
+  window.pauseG2048 = function () { /* sin reloj: la partida espera */ };
+  window.g2048Estado = function () { return { n: n, grid: E.copiar(grid), score: score, best: best, over: over, ganado: ganado }; };
+  window.g2048Poner = function (g) { grid = E.copiar(g); n = g.length; pintar(); };   // solo pruebas
+})();
