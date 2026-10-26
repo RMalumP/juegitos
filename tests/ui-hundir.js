@@ -157,5 +157,20 @@ async function dispararPrimero(pg) {
   for (let i = 0; i < 9; i++) await pg.click('#hunMenu [data-nstep="-1"]');
   ok(await pg.locator('#hunMenu [data-modo="cpu"]').isDisabled(), 'una flota de 40 casillas no cabe en 6×6 sin tocarse');
   await pg.click('#hunMenu [data-reg="tocar"][data-v="1"]'); await pg.click('#hunMenu [data-plantilla="clasica"]');
+  // barcos pegados: se distinguen (contorno + tono distinto)
+  await pg.click('#hunMenu [data-modo="cpu"]'); await wait(150);
+  const cel = i => pg.locator('#hunOwn .hunC').nth(i);
+  await cel(0).click(); await cel(10).click(); await wait(80);       // un barco de 5 (A1–A5) y otro de 4 (B1–B4) pegados
+  const cl = async i => (await cel(i).getAttribute('class')).split(/\s+/);
+  const c0 = await cl(0), c1 = await cl(1), c10 = await cl(10), c4 = await cl(4);
+  ok(c0.includes('barco') && c10.includes('barco'), 'barcos pegados: ambos se pintan');
+  ok(c0.includes('bb') && c10.includes('bt'), 'barcos pegados: hay contorno entre los dos (' + c0.join(' ') + ' | ' + c10.join(' ') + ')');
+  ok(c0.includes('bl') && c4.includes('br'), 'barco: contorno en sus extremos');
+  ok(!c1.includes('bl') && !c1.includes('br'), 'barco: sin contorno entre casillas del mismo barco');
+  const tono = c => c.find(x => /^sc\d$/.test(x));
+  ok(tono(c0) && tono(c10) && tono(c0) !== tono(c10), 'barcos pegados: tonos distintos (' + tono(c0) + ' / ' + tono(c10) + ')');
+  ok(tono(c0) === tono(c1) && tono(c0) === tono(c4), 'un mismo barco mantiene un solo tono');
+  const fondo = async i => cel(i).evaluate(e => getComputedStyle(e).backgroundColor);
+  ok(await fondo(0) !== await fondo(10), 'barcos pegados: colores de fondo distintos');
   await env.cerrar(); fin();
 })().catch(e => { console.error(e); process.exit(1); });

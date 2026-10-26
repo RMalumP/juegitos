@@ -59,11 +59,34 @@
   function fase(pub) { return pub ? pub.fase : (U.modo ? 'colocando' : 'menu'); }
 
   /* ---------- pintado ---------- */
+  /* barcos distinguibles: contorno grueso en los lados donde el vecino no es del mismo barco + un tono distinto para cada barco contiguo */
+  function clasesBarcos(barcos) {
+    var dueno = {}, tono = [];
+    barcos.forEach(function (cs, k) { cs.forEach(function (c) { dueno[c] = k; }); });
+    barcos.forEach(function (cs, k) {
+      var usado = {};
+      cs.forEach(function (c) {
+        [c % N > 0 ? c - 1 : -1, c % N < N - 1 ? c + 1 : -1, c - N, c + N].forEach(function (v) { var o = dueno[v]; if (o != null && o !== k && tono[o] != null) usado[tono[o]] = true; });
+      });
+      var t = 0; while (usado[t]) t++; tono[k] = t % 4;
+    });
+    var cl = {};
+    Object.keys(dueno).forEach(function (key) {
+      var c = +key, k = dueno[c], x = ' sc' + tono[k];
+      if (c < N || dueno[c - N] !== k) x += ' bt';
+      if (c >= N * (N - 1) || dueno[c + N] !== k) x += ' bb';
+      if (c % N === 0 || dueno[c - 1] !== k) x += ' bl';
+      if (c % N === N - 1 || dueno[c + 1] !== k) x += ' br';
+      cl[c] = x;
+    });
+    return cl;
+  }
   function limpiarCeldas(lista) { lista.forEach(function (b) { b.className = 'hunC'; b.disabled = false; }); }
   function pintarEnemigo(pub, p, puedeDisparar) {
     var g = HE.aguas(pub, p);
+    var extra = clasesBarcos(pub.flotas && pub.flotas[1 - p] ? pub.flotas[1 - p].map(function (b) { return HE.celdas(b, N); }) : pub.hund[p]);
     celdasEnemigo.forEach(function (b, i) {
-      var v = g[i], cl = 'hunC';
+      var v = g[i], cl = 'hunC' + (extra[i] || '');
       if (v === 1) cl += ' agua'; else if (v === 2) cl += ' toc'; else if (v === 3) cl += ' hund'; else if (v === 4) cl += ' rev';
       if (i === U.ultimo) cl += ' ultimo';
       b.className = cl; b.disabled = !(puedeDisparar && v === 0);
@@ -75,8 +98,10 @@
       g = Array(N * N).fill(0);
       U.draft.forEach(function (b) { if (b) HE.celdas(b, N).forEach(function (c) { g[c] = 5; }); });
     } else g = HE.propio(pub || { shots: [[], []], hund: [[], []] }, miFlota(p), p);
+    var flota = colocando ? U.draft.filter(function (b) { return b; }) : (miFlota(p) || []);
+    var extra = clasesBarcos(flota.map(function (b) { return HE.celdas(b, N); }));
     celdasPropio.forEach(function (b, i) {
-      var v = g[i], cl = 'hunC';
+      var v = g[i], cl = 'hunC' + (extra[i] || '');
       if (v === 5) cl += ' barco'; else if (v === 2) cl += ' barco toc'; else if (v === 3) cl += ' barco hund'; else if (v === 1) cl += ' agua';
       b.className = cl; b.disabled = !colocando;
     });
