@@ -6,7 +6,7 @@ const { entorno, wait, ok, fin } = require('./helpers');
   const sala = async (pg, juego, modo, nombre) => {
     await pg.evaluate(j => (j === 'damas' ? window.openChessTab(2) : window.openChessTab(0)), juego);
     await pg.waitForFunction(() => { const f = document.getElementById('chessFrame'); return f && f.contentWindow && typeof f.contentWindow.getActiveTab === 'function'; });
-    await pg.locator('#winChess [data-conectar]').click();
+    await pg.frameLocator('#chessFrame').locator('#tabConectar').click();
     await pg.fill('#salaNombre', nombre); await pg.fill('#salaSala', 'tablero ' + juego); await pg.fill('#salaPass', 'clave1');
     await pg.click(modo === 'crear' ? '#salaCrear' : '#salaUnir');
     await pg.waitForSelector('#winChess .olLobby[data-j=' + juego + ']', { state: 'visible', timeout: 25000 });
@@ -14,6 +14,16 @@ const { entorno, wait, ok, fin } = require('./helpers');
   const F = (pg, js, arg) => pg.evaluate(([js, arg]) => { const w = document.getElementById('chessFrame').contentWindow; return w.eval('(function(arg){' + js + '})')(arg); }, [js, arg]);
   const click = (pg, r, c) => F(pg, 'chessClick(arg[0],arg[1])', [r, c]);
   const pieza = (pg, r, c) => F(pg, 'return chess.board[arg[0]][arg[1]]', [r, c]);
+
+  // el botón «Conectar» está en la barra de pestañas, en un recuadro entre Damas y Personalizado
+  {
+    const pg0 = await nuevo('pestanas');
+    await pg0.evaluate(() => window.openChessTab(0)); await pg0.waitForFunction(() => document.getElementById('chessFrame').contentWindow.getActiveTab);
+    const tabs = await pg0.frameLocator('#chessFrame').locator('.tabs').locator('.tab-btn').allInnerTexts();
+    ok(JSON.stringify(tabs.map(t => t.trim())) === JSON.stringify(['♟ Ajedrez', '⏱ Reloj', '⛀ Damas', '🌐 Conectar', '🎨 Personalizado']), 'Ajedrez/Damas: «🌐 Conectar» está entre Damas y Personalizado (' + tabs.join(' | ') + ')');
+    ok(await pg0.frameLocator('#chessFrame').locator('.conectar-box #tabConectar').count() === 1 && await pg0.locator('#winChess .menuBar').count() === 0, 'Ajedrez/Damas: el botón está dentro de un recuadro y ya no hay «Conectar» en la barra de menú');
+    await pg0.context().close();
+  }
 
   // ================= AJEDREZ =================
   let H = await nuevo('host'), G = await nuevo('invitado');

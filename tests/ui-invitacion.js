@@ -2,8 +2,8 @@
 const { entorno, wait, ok, fin } = require('./helpers');
 const JUEGOS = [
   { id: 'bingo', win: 'winBingo', crear: async pg => { await pg.click('#btnSala'); await pg.selectOption('#salaJuegoSel', 'bingo'); } },
-  { id: 'ajedrez', win: 'winChess', crear: async pg => { await pg.evaluate(() => window.openChessTab(0)); await pg.waitForFunction(() => document.getElementById('chessFrame').contentWindow.getActiveTab); await pg.locator('#winChess [data-conectar]').click(); } },
-  { id: 'damas', win: 'winChess', crear: async pg => { await pg.evaluate(() => window.openChessTab(2)); await pg.waitForFunction(() => document.getElementById('chessFrame').contentWindow.getActiveTab); await pg.locator('#winChess [data-conectar]').click(); } },
+  { id: 'ajedrez', win: 'winChess', crear: async pg => { await pg.evaluate(() => window.openChessTab(0)); await pg.waitForFunction(() => document.getElementById('chessFrame').contentWindow.getActiveTab); await pg.frameLocator('#chessFrame').locator('#tabConectar').click(); } },
+  { id: 'damas', win: 'winChess', crear: async pg => { await pg.evaluate(() => window.openChessTab(2)); await pg.waitForFunction(() => document.getElementById('chessFrame').contentWindow.getActiveTab); await pg.frameLocator('#chessFrame').locator('#tabConectar').click(); } },
   { id: 'parchis', win: 'winParchis', crear: async pg => { await pg.evaluate(() => window.openGame('parchis')); await pg.locator('#winParchis [data-conectar]').click(); } },
   { id: 'ruleta', win: 'winRoul', crear: async pg => { await pg.evaluate(() => window.openGame('roul')); await pg.locator('#winRoul [data-conectar]').click(); } },
   { id: 'blackjack', win: 'winBJ', crear: async pg => { await pg.evaluate(() => window.openGame('bj')); await pg.locator('#winBJ [data-conectar]').click(); } },

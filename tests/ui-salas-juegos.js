@@ -18,9 +18,10 @@ const LB = j => '#' + j.win + ' .olLobby[data-j=' + j.id + ']';
   async function nuevo(nombre) { const ctx = await env.contexto(); const pg = await env.pagina(ctx, nombre); await pg.locator('#startScreen').evaluate(e => { e.style.display = 'none'; }); return pg; }
   async function conectar(pg, j, modo, sala, nombre) {
     await j.abrir(pg);
-    await pg.waitForSelector('#' + j.win + ' [data-conectar]');
+    const boton = j.win === 'winChess' ? pg.frameLocator('#chessFrame').locator('#tabConectar') : pg.locator('#' + j.win + ' [data-conectar]');   // en Ajedrez/Damas está dentro del iframe, entre Damas y Personalizado
+    await boton.waitFor();
     await pg.waitForFunction(() => { const f = document.getElementById('chessFrame'); return !f || !f.getAttribute('data-loaded') || (f.contentWindow && typeof f.contentWindow.getActiveTab === 'function'); });
-    await pg.locator('#' + j.win + ' [data-conectar]').click();
+    await boton.click();
     await pg.waitForSelector('#winSala:not(.hidden)');
     if (modo === 'crear') ok(/Sala de/.test(await pg.locator('#salaConectarT').innerText()) && !(await pg.locator('#salaJuegoSel').isVisible()), j.nombre + ': el botón Conectar abre la conexión ya fijada a ese juego');
     await pg.fill('#salaNombre', nombre); await pg.fill('#salaSala', sala); await pg.fill('#salaPass', 'clave1');

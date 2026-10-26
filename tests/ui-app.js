@@ -9,7 +9,7 @@ const { entorno, wait, ok, fin } = require('./helpers');
   let ctx = await env.contexto({ hasTouch: true }), pg = await env.pagina(ctx, 'app');
   await pg.locator('#startScreen').evaluate(e => { e.style.display = 'none'; });
   await pg.evaluate(() => window.openChessTab(2)); await pg.waitForFunction(() => document.getElementById('chessFrame').contentWindow.getActiveTab);
-  await pg.locator('#winChess [data-conectar]').click();
+  await pg.frameLocator('#chessFrame').locator('#tabConectar').click();
   await pg.waitForSelector('#winSala:not(.hidden)');
   ok(await pg.locator('#salaVolver').isVisible() && /Volver a Damas/.test(await pg.locator('#salaVolver').innerText()), 'la conexión de Damas tiene un botón «← Volver a Damas»');
   await pg.locator('#salaVolver').click();

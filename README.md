@@ -1,6 +1,8 @@
 # Juegos Windows XP
 
-Escritorio estilo Windows XP con juegos clásicos (Buscaminas, Tetris, Ajedrez, Parchís, Póquer, Hundir la flota, 2048, Breakout, Conecta 4, Memoria, Simon, Flappy, Wordle…), **Bingo** local y online, y la app **Sala online** para jugar con amigos cada uno desde su móvil. Es una PWA instalable y funciona sin conexión (el online necesita https y que los móviles se encuentren por internet una vez).
+Escritorio estilo Windows XP con juegos clásicos (Buscaminas, Tetris, Ajedrez, Parchís, Póquer, Hundir la flota, 2048, Breakout, Conecta 4, Memoria, Simon, Flappy, Wordle…)
+
+**Hundir la flota** admite tableros de 6×6 a 15×15 y flotas a medida (plantillas Clásica, Rápida, Grande y Armada, o un editor de barcos de 1 a 6 casillas) contra la CPU, con 2 jugadores en un móvil y online. **Wordle**: «Del día» no es aleatoria (la palabra sale de la fecha del dispositivo y cambia a medianoche; es la misma para todos); «Libre» elige una palabra al azar cada vez y no cuenta para las estadísticas., **Bingo** local y online, y la app **Sala online** para jugar con amigos cada uno desde su móvil. Es una PWA instalable y funciona sin conexión (el online necesita https y que los móviles se encuentren por internet una vez).
 
 ## Bingo
 
@@ -19,7 +21,7 @@ Escritorio estilo Windows XP con juegos clásicos (Buscaminas, Tetris, Ajedrez, 
 
 ## Vibración
 
-**⚙ Opciones** (barra de tareas): en un móvil los controles en pantalla y los gestos van activados; en un ordenador se usa el teclado, los controles en pantalla quedan **plegados** (no se eliminan) y los gestos desactivados. Se puede cambiar a mano (Automático / Activado / Desactivado).
+**⚙ Opciones** (menú de los juegos con controles en pantalla: Tetris, Pac-Man, Invaders, Snake, Asteroids y Frogger): en un móvil los controles en pantalla y los gestos van activados; en un ordenador se usa el teclado, los controles en pantalla quedan **plegados** (no se eliminan) y los gestos desactivados. Se puede cambiar a mano (Automático / Activado / Desactivado).
 
 El interruptor 📳 de la barra activa o desactiva **toda** la vibración de la app (se recuerda al recargar). Vibra al tocar botones, iconos, fichas, casillas, cartones y números, y en los avisos online (bola nueva, tu turno, el rival ha movido, ha salido el número). Todo pasa por `js/vibracion.js` (`window.Vibra.pulso(ms | patrón)`).
 
@@ -82,6 +84,7 @@ js/pwa.js                     instalación (botón «Instalar app»), actualizac
 js/version.js                 versión de la app (única fuente)
 js/vibracion.js               vibración común (interruptor 📳)
 js/opciones.js                ⚙ Opciones: detecta móvil/ordenador, control táctil (auto/activado/desactivado) y repetición de Tetris (DAS, ARR, SDF)
+js/escala.js                 tamaño en ordenador: la interfaz se agranda según la altura de la pantalla (--ui); ventanas verticales (columna), anchas y completas (data-forma)
 js/pasar-movil.js            «pasa el móvil»: tapa a pantalla completa para jugar varios en un mismo móvil
 js/online/hundir-engine.js    Hundir la flota: reglas, árbitro e IA (sin DOM, con tests)
 js/online/j-hundir.js         Hundir la flota online (el anfitrión es el árbitro)
@@ -117,6 +120,7 @@ Si cambias archivos de la aplicación: sube `APP_VERSION` (y `APP_FECHA`) en `js
 | `npm run test:duelo` | Conecta 4 y Tres en raya: 2 jugadores en un móvil y contra la CPU en los 3 niveles |
 | `npm run test:duelo-online` | Conecta 4 y Tres en raya online con 2 navegadores: turnos, jugadas ilegales ignoradas, victoria, recarga y revancha |
 | `npm run test:fase4` | Memoria (parejas y 2 jugadores), Simon (bot), Flappy (bot) y Wordle (palabras, colores, estadísticas y recarga) |
+| `npm run test:escritorio` | ordenador (1920×1080 y 1366×768): factor --ui, menú de inicio grande, juegos verticales que no se ensanchan, las 27 ventanas caben y el puntero funciona con el zoom; móvil sin cambios |
 | `npm run test:enlace` | entrar por enlace solo con el nombre, símbolo con la barra plegada y que los iconos del escritorio no se solapen |
 | `npm run test:reconexion` | un jugador y el Bolero recargan a mitad de partida |
 | `npm run test:regresion` | todos los juegos del escritorio abren sin errores |

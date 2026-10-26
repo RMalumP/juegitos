@@ -11,7 +11,7 @@ const { entorno, wait, ok, fin } = require('./helpers');
   for (const [pg, modo, n] of [[H, 'crear', 'Anfi'], [G, 'unir', 'Invi']]) {
     await pg.evaluate(() => window.openChessTab(0));
     await pg.waitForFunction(() => document.getElementById('chessFrame').contentWindow.getActiveTab);
-    await pg.locator('#winChess [data-conectar]').click();
+    await pg.frameLocator('#chessFrame').locator('#tabConectar').click();
     await pg.fill('#salaNombre', n); await pg.fill('#salaSala', 'reloj'); await pg.fill('#salaPass', 'clave1'); await pg.click(modo === 'crear' ? '#salaCrear' : '#salaUnir');
     await pg.waitForSelector('.olLobby[data-j=ajedrez]', { state: 'visible', timeout: 25000 });
   }
