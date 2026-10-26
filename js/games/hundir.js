@@ -126,7 +126,7 @@
     if (colocando) {
       var espera = U.modo === 'online' && pub && pub.listos[p];
       if (espera) return;
-      boton(U.h ? '↻ Horizontal' : '↻ Vertical', function () { U.h = !U.h; pintar(); }, 'giro');
+      boton(U.h ? '↻ Horizontal' : '↻ Vertical', girar, 'giro');
       boton('🎲 Aleatorio', function () { aleatorio(); });
       boton('🗑 Borrar', function () { U.draft = Array(U.cfg.flota.length).fill(null); U.sel = 0; pintar(); });
       boton('✔ Listo', listo, 'ok', U.draft.some(function (x) { return !x; }));
@@ -204,7 +204,7 @@
     if (e.repeat) return;
     if (a === 'accion') { K.on = true; if (col) clicColocar(K.i); else if (celdasEnemigo[K.i] && !celdasEnemigo[K.i].disabled) clicEnemigo(K.i); return; }
     if (!col) return;
-    if (a === 'girar') { U.h = !U.h; K.on = true; pintar(); }
+    if (a === 'girar') { K.on = true; girar(); }
     else if (a === 'siguiente') {
       var n = U.cfg.flota.length;
       for (var k = 1; k <= n; k++) { var j = ((U.sel < 0 ? -1 : U.sel) + k) % n; if (!U.draft[j]) { U.sel = j; break; } }
@@ -218,10 +218,10 @@
   $('hunWrap').addEventListener('pointerdown', function () { if (K.on) { K.on = false; pintar(); } });
 
   /* ---------- colocación ---------- */
-  var previa = -1;
+  var previa = -1, ancla = -1;                                // ancla: última casilla señalada (ratón, cursor o barco recogido); el giro se hace en torno a ella
   function previsualizar(i) {
     celdasPropio.forEach(function (b) { b.classList.remove('prevOk', 'prevMal'); });
-    previa = i; if (i < 0 || !enColocacion()) return;
+    previa = i; if (i >= 0) ancla = i; if (i < 0 || !enColocacion()) return;
     var b = barcoEn(i); if (!b) return;
     var ok = HE.cabeEn(b.barco, resto(U.sel), opcionesRegla().tocar, N);
     HE.celdas(b.barco, N).forEach(function (c) { if (celdasPropio[c]) celdasPropio[c].classList.add(ok ? 'prevOk' : 'prevMal'); });
@@ -238,7 +238,7 @@
   function clicColocar(i) {
     if (!enColocacion()) return;
     // tocar un barco ya colocado lo recoge
-    for (var k = 0; k < U.draft.length; k++) if (U.draft[k] && HE.celdas(U.draft[k], N).indexOf(i) >= 0) { U.sel = k; U.draft[k] = null; U.msg = ''; pintar(); return; }
+    for (var k = 0; k < U.draft.length; k++) if (U.draft[k] && HE.celdas(U.draft[k], N).indexOf(i) >= 0) { U.sel = k; var sb = U.draft[k]; U.h = !!sb.h; U.draft[k] = null; U.msg = ''; ancla = sb.r * N + sb.c; K.i = ancla; pintar(); previsualizar(ancla); return; }
     if (U.sel == null || U.sel < 0 || U.draft[U.sel]) { var libre = U.draft.findIndex(function (x) { return !x; }); if (libre < 0) return; U.sel = libre; }
     var b = barcoEn(i).barco;
     if (!HE.cabeEn(b, resto(U.sel), opcionesRegla().tocar, N)) { U.msg = '⚠ Ahí no cabe' + (opcionesRegla().tocar ? '' : ' (los barcos no pueden tocarse)') + '.'; vib(30); pintar(); return; }
@@ -246,6 +246,7 @@
     var sig = U.draft.findIndex(function (x) { return !x; }); U.sel = sig < 0 ? -1 : sig;
     pintar();
   }
+  function girar() { U.h = !U.h; var a = K.on ? K.i : ancla; pintar(); if (a >= 0 && enColocacion()) previsualizar(a); }
   function aleatorio() { U.draft = HE.flotaAleatoria(null, opcionesRegla().tocar, U.cfg); U.sel = -1; U.msg = ''; pintar(); }
   function listo() {
     if (U.draft.some(function (x) { return !x; })) return;

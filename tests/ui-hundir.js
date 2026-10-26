@@ -172,5 +172,17 @@ async function dispararPrimero(pg) {
   ok(tono(c0) === tono(c1) && tono(c0) === tono(c4), 'un mismo barco mantiene un solo tono');
   const fondo = async i => cel(i).evaluate(e => getComputedStyle(e).backgroundColor);
   ok(await fondo(0) !== await fondo(10), 'barcos pegados: colores de fondo distintos');
+  // girar con el botón: en torno a la casilla señalada, sin volver a la posición inicial
+  const boardCel = i => pg.locator('#hunOwn .hunC').nth(i);
+  await boton(pg, 'Borrar').click(); await wait(50);
+  await boardCel(33).hover(); await wait(50);
+  await boton(pg, 'Horizontal').click(); await wait(80);                 // el botón gira el barco en vertical
+  let prev = await pg.evaluate(() => [...document.querySelectorAll('#hunOwn .hunC')].map((e, i) => /prevOk|prevMal/.test(e.className) ? i : -1).filter(i => i >= 0));
+  ok(prev.length > 1 && prev[0] === 33 && prev[1] === 43, 'girar con el botón: la vista previa queda en la última casilla señalada, en vertical (' + prev + ')');
+  await boardCel(33).click(); await wait(60);
+  await boardCel(33).click(); await wait(60);                            // recoge el barco: queda con su orientación y su ancla
+  await boton(pg, 'Vertical').click(); await wait(80);
+  prev = await pg.evaluate(() => [...document.querySelectorAll('#hunOwn .hunC')].map((e, i) => /prevOk|prevMal/.test(e.className) ? i : -1).filter(i => i >= 0));
+  ok(prev[0] === 33 && prev[1] === 34, 'girar un barco recogido: vuelve a horizontal anclado en su primera casilla (' + prev + ')');
   await env.cerrar(); fin();
 })().catch(e => { console.error(e); process.exit(1); });
