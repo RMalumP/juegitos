@@ -24,7 +24,9 @@
     ruleta:   { nombre: 'Ruleta',   icono: '🎯', min: 2, max: 6,  win: 'roul', winId: 'winRoul' },
     blackjack:{ nombre: 'Blackjack',icono: '🎰', min: 2, max: 6,  win: 'bj', winId: 'winBJ' },
     poker:    { nombre: 'Póquer',   icono: '♠️', min: 2, max: 6,  win: 'poker', winId: 'winPoker' },
-    hundir:   { nombre: 'Hundir la flota', icono: '🚢', min: 2, max: 2, win: 'hundir', winId: 'winHundir' }
+    hundir:   { nombre: 'Hundir la flota', icono: '🚢', min: 2, max: 2, win: 'hundir', winId: 'winHundir' },
+    c4:       { nombre: 'Conecta 4', icono: '🔴', min: 2, max: 2, win: 'c4', winId: 'winC4' },
+    ttt:      { nombre: 'Tres en raya', icono: '❌', min: 2, max: 2, win: 'ttt', winId: 'winTtt' }
   };
   const emit = (ev, ...a) => (L[ev] || []).slice().forEach(f => { try { f(...a); } catch (e) { console.error(e); } });
   const lsGet = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
@@ -256,7 +258,7 @@
     try { await S.T.fijarJuego(j, d.max); S.juego = j; pintar(); return true; } catch (e) { toast(e.message); return false; }
   }
   function vigilarVentanas() {
-    const mapa = { winBingo: 'bingo', winParchis: 'parchis', winRoul: 'ruleta', winBJ: 'blackjack', winPoker: 'poker', winChess: 'chess', winHundir: 'hundir' };
+    const mapa = { winBingo: 'bingo', winParchis: 'parchis', winRoul: 'ruleta', winBJ: 'blackjack', winPoker: 'poker', winChess: 'chess', winHundir: 'hundir', winC4: 'c4', winTtt: 'ttt' };
     const obs = new MutationObserver(ms => {
       if (!S.activo || !S.host || S.juego) return;
       ms.forEach(m => {

@@ -1,6 +1,6 @@
 # Juegos Windows XP
 
-Escritorio estilo Windows XP con juegos clásicos (Buscaminas, Tetris, Ajedrez, Parchís, Póquer, Hundir la flota…), **Bingo** local y online, y la app **Sala online** para jugar con amigos cada uno desde su móvil. Es una PWA instalable y funciona sin conexión (el online necesita https y que los móviles se encuentren por internet una vez).
+Escritorio estilo Windows XP con juegos clásicos (Buscaminas, Tetris, Ajedrez, Parchís, Póquer, Hundir la flota, 2048, Breakout, Conecta 4…), **Bingo** local y online, y la app **Sala online** para jugar con amigos cada uno desde su móvil. Es una PWA instalable y funciona sin conexión (el online necesita https y que los móviles se encuentren por internet una vez).
 
 ## Bingo
 
@@ -85,6 +85,11 @@ js/opciones.js                ⚙ Opciones: detecta móvil/ordenador, control t�
 js/pasar-movil.js            «pasa el móvil»: tapa a pantalla completa para jugar varios en un mismo móvil
 js/online/hundir-engine.js    Hundir la flota: reglas, árbitro e IA (sin DOM, con tests)
 js/online/j-hundir.js         Hundir la flota online (el anfitrión es el árbitro)
+js/online/c4-engine.js        Conecta 4: reglas, árbitro e IA (sin DOM, con tests)
+js/online/ttt-engine.js       Tres en raya: reglas, árbitro e IA perfecta (sin DOM, con tests)
+js/games/duelo.js             interfaz común de los juegos de 2 jugadores por turnos (menú CPU / 2 en un móvil / online)
+js/online/j-duelo.js          Conecta 4 y Tres en raya online (el anfitrión valida cada jugada)
+js/games/g2048-engine.js      2048: reglas puras (con tests)
 sw.js, manifest.webmanifest, icons/   PWA
 tests/                        pruebas
 ```
@@ -104,6 +109,10 @@ Si cambias archivos de la aplicación: sube `APP_VERSION` (y `APP_FECHA`) en `js
 | `npm run test:tetris` | control de Tetris: toque corto = 1 casilla, DAS/ARR, última dirección, caída, guardar, lock delay, pausa, gestos táctiles y Opciones (escritorio con botones plegados y sin gestos / móvil con ambos) |
 | `npm run test:hundir` | Hundir la flota: colocación manual, partida contra la CPU y 2 jugadores en un móvil con la tapa «pasa el móvil» |
 | `npm run test:hundir-online` | Hundir la flota online con 2 navegadores: reglas, colocación secreta, validación del anfitrión, privacidad, recarga, partida completa, rendición y revancha |
+| `npm run test:2048` | 2048: jugadas con teclado y ratón, deshacer, tamaños 4×4/5×5/6×6, victoria y récord por tamaño |
+| `npm run test:breakout` | Breakout: 15 niveles de inicio, bot que rompe ladrillos, vidas y fin de partida |
+| `npm run test:duelo` | Conecta 4 y Tres en raya: 2 jugadores en un móvil y contra la CPU en los 3 niveles |
+| `npm run test:duelo-online` | Conecta 4 y Tres en raya online con 2 navegadores: turnos, jugadas ilegales ignoradas, victoria, recarga y revancha |
 | `npm run test:enlace` | entrar por enlace solo con el nombre, símbolo con la barra plegada y que los iconos del escritorio no se solapen |
 | `npm run test:reconexion` | un jugador y el Bolero recargan a mitad de partida |
 | `npm run test:regresion` | todos los juegos del escritorio abren sin errores |
