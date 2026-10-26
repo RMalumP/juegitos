@@ -114,7 +114,10 @@ async function gesto(pg, pasos, ms = 20) {
   ok((await est(pc)).r === s0.r, 'escritorio: un toque en el tablero no gira (gestos desactivados)');
 
   // interruptor en Opciones: activarlo habilita gestos y despliega los botones
-  await pc.click('#optToggle'); await pc.waitForSelector('#optModal.show');
+  ok(await pc.locator('#taskbar #optToggle').count() === 0, 'opciones: la barra de tareas ya no tiene la rueda ⚙');
+  ok(await pc.locator('#winPong #optItemPong, #winBrk #optItemBrk').count() === 0 && await pc.locator('#optItemTetris').count() === 1 && await pc.locator('#optItemPac').count() === 1, 'opciones: «⚙ Opciones» está en Tetris y Pac-Man (tienen controles) y no en Pong ni Breakout');
+  await pc.click('#optItemTetris'); await pc.waitForSelector('#optModal.show');
+  ok(await pc.locator('#optSecTetris').isVisible(), 'opciones: desde Tetris se ven los ajustes de DAS/ARR/SDF');
   await pc.click('#optModal .optRadio[data-v="si"]'); await pc.click('#optClose');
   ok(await pc.evaluate(() => window.Opciones.tactil()), 'opciones: «Activado» enciende el control táctil');
   ok(await pc.locator('#tetDpad.ctHidden').count() === 0, 'opciones: «Activado» despliega los botones en pantalla');
@@ -122,7 +125,7 @@ async function gesto(pg, pasos, ms = 20) {
   await gesto(pc, [['pointerdown', 100, 200], ['pointerup', 100, 200]]); await wait(100);
   const girado = await est(pc);
   ok(s0.t === 1 || girado.r === (s0.r + 1) % 4, 'opciones: con el control táctil activo, tocar el tablero gira');
-  await pc.click('#optToggle'); await pc.click('#optModal .optRadio[data-v="no"]'); await pc.click('#optClose');
+  await pc.click('#optItemTetris'); await pc.click('#optModal .optRadio[data-v="no"]'); await pc.click('#optClose');
   ok(await pc.locator('#tetDpad.ctHidden').count() === 1, 'opciones: «Desactivado» vuelve a plegar los botones');
   await pc.reload(); await wait(300);
   ok(await pc.evaluate(() => window.Opciones.get('tactil')) === 'no', 'opciones: el ajuste se recuerda al recargar');

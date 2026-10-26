@@ -260,7 +260,7 @@
   function ayuda() {
     var k = '← → mover &nbsp;·&nbsp; ↑ rotar &nbsp;·&nbsp; Z rotar ↺<br>↓ bajar &nbsp;·&nbsp; Espacio: caer &nbsp;·&nbsp; C: guardar';
     var t = '<br><br>📱 arrastra = mover · toca = rotar<br>desliza ↓ = caer · desliza ↑ = guardar<br>2 dedos = rotar ↺';
-    return k + (hayTactil() ? t : '<br><br>⚙ Opciones: activa el control táctil');
+    return k + (hayTactil() ? t : '<br><br>Menú ⚙ Opciones: activa el control táctil');
   }
   function mostrarMenu() {
     playing = false; paused = false; Input.reiniciar(); musicaOff(); cancelAnimationFrame(raf);
@@ -430,7 +430,7 @@
     });
     var o = document.createElement('div'); o.className = 'tetRemapRow'; o.style.cssText = 'margin-top:6px;border-top:1px solid #4a4a8a;padding-top:8px';
     var l = document.createElement('div'); l.className = 'tetRemapLabel'; l.style.cssText = 'width:auto;flex:1'; l.textContent = 'Control táctil, DAS y ARR: ⚙ Opciones';
-    var b = document.createElement('div'); b.className = 'tetRemapKey'; b.textContent = '⚙'; b.addEventListener('click', function () { cerrarRemap(); if (window.Opciones) window.Opciones.abrir(); });
+    var b = document.createElement('div'); b.className = 'tetRemapKey'; b.textContent = '⚙'; b.addEventListener('click', function () { cerrarRemap(); if (window.Opciones) window.Opciones.abrir('Tetris'); });
     o.appendChild(l); o.appendChild(b); cont.appendChild(o);
     m.classList.add('active');
   }

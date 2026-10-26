@@ -56,7 +56,7 @@
     modal = el('div'); modal.id = 'optModal';
     var box = el('div'); box.id = 'optBox';
     var tit = el('div'); tit.id = 'optTitle';
-    tit.appendChild(el('span', '', '⚙ Opciones'));
+    var tt = el('span', '', '⚙ Opciones'); tt.id = 'optTitleTxt'; tit.appendChild(tt);
     var x = el('span', '', '✕'); x.id = 'optClose'; tit.appendChild(x);
     var body = el('div'); body.id = 'optBody';
 
@@ -70,16 +70,18 @@
     body.appendChild(grupo);
     var det = el('div', 'optNota'); det.id = 'optDet'; body.appendChild(det);
 
-    body.appendChild(el('div', 'optH', 'Tetris · repetición de teclas y botones'));
+    var sec = el('div', 'optSec'); sec.id = 'optSecTetris';                      // solo se ve al abrir Opciones desde Tetris
+    sec.appendChild(el('div', 'optH', 'Tetris · repetición de teclas y botones'));
     [['das', 'Retardo (DAS)', 'ms'], ['arr', 'Velocidad (ARR)', 'ms'], ['sdf', 'Caída suave (SDF)', '×']].forEach(function (o) {
       var fila = el('div', 'optFila');
       fila.appendChild(el('span', 'optEt', o[1]));
       var r = document.createElement('input'); r.type = 'range'; r.min = LIM[o[0]][0]; r.max = LIM[o[0]][1]; r.id = 'opt-' + o[0];
       r.addEventListener('input', function () { set(o[0], r.value); });
       var v = el('span', 'optVal'); v.id = 'optv-' + o[0]; v.setAttribute('data-u', o[2]);
-      fila.appendChild(r); fila.appendChild(v); body.appendChild(fila);
+      fila.appendChild(r); fila.appendChild(v); sec.appendChild(fila);
     });
-    body.appendChild(el('div', 'optNota', 'Menos retardo y menos ARR = la pieza se mueve antes y más rápido al mantener pulsado. Un toque corto siempre mueve una sola casilla.'));
+    sec.appendChild(el('div', 'optNota', 'Menos retardo y menos ARR = la pieza se mueve antes y más rápido al mantener pulsado. Un toque corto siempre mueve una sola casilla.'));
+    body.appendChild(sec);
     var rst = el('button', 'optBtn', 'Restaurar valores'); rst.type = 'button'; rst.id = 'optReset';
     rst.addEventListener('click', function () { cfg.das = DEF.das; cfg.arr = DEF.arr; cfg.sdf = DEF.sdf; set('tactil', 'auto'); });
     body.appendChild(rst);
@@ -101,18 +103,25 @@
       if (v) v.textContent = cfg[k] + ' ' + v.getAttribute('data-u');
     });
   }
-  function abrir() { if (!modal) construir(); pintar(); modal.classList.add('show'); }
+  /* abrir('Tetris') muestra además los ajustes propios de ese juego; sin argumento, solo los generales */
+  function abrir(juego) {
+    if (!modal) construir();
+    modal.setAttribute('data-juego', juego || '');
+    document.getElementById('optSecTetris').style.display = juego === 'Tetris' ? '' : 'none';
+    document.getElementById('optTitleTxt').textContent = '⚙ Opciones' + (juego ? ' · ' + juego : '');
+    pintar(); modal.classList.add('show');
+  }
   function cerrar() { if (modal) modal.classList.remove('show'); }
 
   function iniciar() {
-    var vib = document.getElementById('vibToggle'), tb = document.getElementById('taskbar');
-    if (tb) {
-      var b = el('div', '', '⚙'); b.id = 'optToggle'; b.title = 'Opciones'; b.setAttribute('role', 'button');
-      b.addEventListener('click', abrir);
-      if (vib && vib.parentNode) vib.parentNode.insertBefore(b, vib); else tb.appendChild(b);
-      if (vib) vib.style.marginLeft = '0';
-      b.style.marginLeft = 'auto';
-    }
+    /* «⚙ Opciones» en el menú de cada juego que usa control táctil / controles en pantalla (los que tienen barra de controles plegable) */
+    document.querySelectorAll('.win').forEach(function (win) {
+      var barra = win.querySelector('.menuBar'), nombre = win.id.replace(/^win/, '');
+      if (!barra || !win.querySelector('.ctrlToggle') || document.getElementById('optItem' + nombre)) return;
+      var it = el('span', 'mItem', '⚙ Opciones'); it.id = 'optItem' + nombre;
+      it.addEventListener('click', function () { abrir(nombre); });
+      barra.appendChild(it);
+    });
     plegarControles('respetar');
   }
 
