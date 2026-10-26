@@ -1,0 +1,17 @@
+/* Memoria — ventana #winMem */
+#memWrap{flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;gap:8px;padding:10px;background:#0f2a3a;color:#e6f4ff;font-family:Arial,sans-serif;overflow:hidden;position:relative}
+#memHeader{display:flex;gap:8px;width:min(100%,460px)}
+.memBox{flex:1;background:#17435c;border-radius:6px;padding:4px 8px;text-align:center}
+.memLab{font-size:9px;letter-spacing:1px;color:#8fc4e6}.memVal{font-size:clamp(15px,4.4vw,20px);font-weight:700}
+#memOpts{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;align-items:center;font-size:11px}
+.memTam,.memJug{background:#17435c;color:#e6f4ff;border:2px solid #2b6a8f;border-radius:4px;padding:4px 9px;cursor:pointer;font-size:11px}
+.memTam.sel,.memJug.sel{background:#fff;color:#0f2a3a;border-color:#fff}
+#memTurno{min-height:1.3em;font-size:13px;color:#ffe08a;font-weight:700;text-align:center}
+#memBoardWrap{position:relative;width:min(100%,460px);flex:1;min-height:0;display:flex;align-items:center;justify-content:center}
+#memBoard{--c:4;--f:4;display:grid;grid-template-columns:repeat(var(--c),1fr);grid-template-rows:repeat(var(--f),1fr);gap:clamp(4px,1.4vw,8px);width:min(100%,calc((100vh - 280px) * var(--c) / var(--f)));aspect-ratio:var(--c)/var(--f);max-height:100%}
+.memCarta{border:none;border-radius:8px;background:linear-gradient(135deg,#2b8ac2,#1b5f8c);cursor:pointer;font-size:clamp(18px,7vw,40px);line-height:1;padding:0;color:#fff;transition:transform .15s}
+.memCarta:not(.up):hover{filter:brightness(1.15)}
+.memCarta.up{background:#f6fbff;transform:none;cursor:default}.memCarta.ok{background:#c9f2d3}
+#memOver{display:none;position:absolute;inset:0;z-index:10;background:#0f2a3af0;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;padding:14px}
+#memOver.show{display:flex}#memOver h1{font-size:clamp(20px,6.6vw,30px)}#memOver .sub{color:#b9d9ee;font-size:13px}
+#mem-again{background:#fff;color:#0f2a3a;border:none;border-radius:5px;padding:10px 20px;font-weight:700;cursor:pointer;margin-top:6px}
