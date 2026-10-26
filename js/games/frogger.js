@@ -12,7 +12,7 @@
 
   var HOME=0,RIVER=[1,2,3,4],MEDIAN=5,ROAD=[6,7,8,9,10],START=11;
   var PADS=[1,4,6,8,11];
-  var MAXLVL=10,startLevel=1;
+  var MAXLVL=15,startLevel=1;
 
   /* configuración base de carriles (velocidad en celdas/seg) */
   var BASE=[
@@ -33,7 +33,9 @@
   function buildLanes(){
     lanes=[];gtime=0;
     BASE.forEach(function(c){
-      var step=c.len+c.gap,count=Math.ceil((COLS+c.len+c.gap)/step)+1,T=count*step,items=[];
+      /* niveles altos: menos hueco entre coches (mín. 2) y más hueco entre troncos/tortugas (máx. 4) */
+      var gap=c.kind==="car"?Math.max(2,c.gap-Math.floor((level-1)/5)):Math.min(c.gap+Math.floor((level-1)/6),4);
+      var step=c.len+gap,count=Math.ceil((COLS+c.len+gap)/step)+1,T=count*step,items=[];
       for(var i=0;i<count;i++)items.push({x:i*step+(c.dir<0?0.5:0),ph:(i*0.41)%1});
       /* niveles difíciles: las tortugas se sumergen (nivel >= 4) */
       var dive=c.sprite==="🐢"&&level>=4;
@@ -52,7 +54,7 @@
     return ((gtime*0.45+it.ph)%1)>0.62;
   }
   function laneAt(row){for(var i=0;i<lanes.length;i++)if(lanes[i].row===row)return lanes[i];return null;}
-  function mult(){return 1+(level-1)*0.18;}
+  function mult(){return Math.min(1+(level-1)*0.09,2.2);}
 
   function updateHUD(){
     document.getElementById("frog-scoreEl").textContent=" "+score;

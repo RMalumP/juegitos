@@ -94,6 +94,7 @@ Si cambias archivos de la aplicación: sube `APP_VERSION` (y `APP_FECHA`) en `js
 | `npm test` | motores: bingo (cartones, bombo, premios) y póquer (400 manos aleatorias, botes secundarios, conservación de fichas) |
 | `npm run test:ui` | bingo local: Bolero con y sin cartones propios, recarga, marcas falsas, comprobar cartones |
 | `npm run test:online` | Bolero (con cartón propio) + 3 jugadores en navegadores distintos usando el icono Multijugador: cartones numerados, comprobar, cantos y dos partidas completas |
+| `npm run test:niveles` | niveles y dificultades de los juegos de arcade: Snake (4 dificultades), Invaders/Pac-Man/Frogger/Asteroids/Tetris (15 niveles) y Pong (10 niveles de CPU) |
 | `npm run test:enlace` | entrar por enlace solo con el nombre, símbolo con la barra plegada y que los iconos del escritorio no se solapen |
 | `npm run test:reconexion` | un jugador y el Bolero recargan a mitad de partida |
 | `npm run test:regresion` | todos los juegos del escritorio abren sin errores |

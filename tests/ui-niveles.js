@@ -15,7 +15,7 @@ const { entorno, wait, ok, fin } = require('./helpers');
   ok((await pg.locator('#snkDiffInfo').textContent()).includes('obstáculos'), 'Snake: Experto explica sus obstáculos');
   await pg.click('#snk-startBtn'); await wait(400);
   ok(await pg.locator('#snkStartScreen').evaluate(e => e.style.display) === 'none', 'Snake: arranca la partida en Experto');
-  await pg.screenshot({ path: process.env.SHOTS ? process.env.SHOTS + '/snake.png' : '/dev/null' });
+  if (process.env.SHOTS) await pg.screenshot({ path: process.env.SHOTS + '/snake.png' });
 
   // ---- Invaders: 15 niveles
   await pg.evaluate(() => window.openGame('inv')); await wait(300);
@@ -54,5 +54,21 @@ const { entorno, wait, ok, fin } = require('./helpers');
   if (process.env.SHOTS) await pg.screenshot({ path: process.env.SHOTS + '/tetris.png' });
   await pg.click('#tet-ov-btn'); await wait(500);
   ok((await pg.locator('#tet-level-el').textContent()).trim() === '6', 'Tetris: empieza en el nivel 6');
+
+  // ---- Pac-Man: 15 niveles
+  await pg.evaluate(() => window.openGame('pac')); await wait(300);
+  ok(await pg.locator('#pacLevelGrid .pacLevelCell').count() === 15, 'Pac-Man: el selector tiene 15 niveles');
+  await pg.click('#pacLevelGrid .pacLevelCell:nth-child(15)');
+  await pg.click('#pac-startBtn'); await wait(2500);
+  ok((await pg.locator('#pac-levelEl').textContent()).trim() === '15', 'Pac-Man: empieza en el nivel 15');
+  await pg.click('#pac-levelDown'); await wait(300);
+  ok((await pg.locator('#pac-levelEl').textContent()).trim() === '14', 'Pac-Man: el botón − baja de nivel');
+
+  // ---- Frogger: 15 niveles
+  await pg.evaluate(() => window.openGame('frog')); await wait(300);
+  ok(await pg.locator('#frogLevelGrid .frogLevelCell').count() === 15, 'Frogger: el selector tiene 15 niveles');
+  await pg.click('#frogLevelGrid .frogLevelCell:nth-child(15)');
+  const fb = await pg.locator('#frog-startBtn').count() ? '#frog-startBtn' : null;
+  if (fb) { await pg.click(fb); await wait(1500); ok((await pg.locator('#frog-levelEl').textContent()).trim() === '15', 'Frogger: empieza en el nivel 15'); }
   await env.cerrar(); fin();
 })().catch(e => { console.error(e); process.exit(1); });

@@ -19,9 +19,10 @@
     "test:tablero": "node tests/ui-tablero.js",
     "test:salas": "node tests/ui-salas-juegos.js",
     "test:enlace": "node tests/ui-enlace-y-barra.js",
+    "test:niveles": "node tests/ui-niveles.js",
     "test:regresion": "node tests/ui-regresion.js",
     "test:reconexion": "node tests/ui-bingo-reconexion.js",
-    "test:all": "npm test && npm run test:ui && npm run test:online && npm run test:regresion && npm run test:turn && npm run test:app && npm run test:vibracion && npm run test:blackjack && npm run test:ruleta && npm run test:reloj && npm run test:invitacion && npm run test:casino && npm run test:parchis && npm run test:tablero && npm run test:salas && npm run test:enlace && npm run test:pwa && npm run test:reconexion"
+    "test:all": "npm test && npm run test:ui && npm run test:online && npm run test:regresion && npm run test:niveles && npm run test:turn && npm run test:app && npm run test:vibracion && npm run test:blackjack && npm run test:ruleta && npm run test:reloj && npm run test:invitacion && npm run test:casino && npm run test:parchis && npm run test:tablero && npm run test:salas && npm run test:enlace && npm run test:pwa && npm run test:reconexion"
   },
   "devDependencies": {
     "peer": "1.0.2",
