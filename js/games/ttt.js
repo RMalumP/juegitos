@@ -15,7 +15,10 @@
       return { actualizar: function (est, puede) {
         celdas.forEach(function (b, i) {
           var v = est ? est.tab[i] : 0;
-          b.textContent = v === 1 ? '❌' : v === 2 ? '⭕' : '';
+          if (b.dataset.v !== String(v)) {                                  // marcas dibujadas en SVG: mismo tamaño y trazo en cualquier dispositivo
+            b.dataset.v = v;
+            b.innerHTML = v === 1 ? '<svg viewBox="0 0 100 100" aria-label="Equis"><path class="tx" d="M20 20 L80 80 M80 20 L20 80"/></svg>' : v === 2 ? '<svg viewBox="0 0 100 100" aria-label="Círculo"><circle class="to" cx="50" cy="50" r="31"/></svg>' : '';
+          }
           b.className = 'tttCelda' + (v === 1 ? ' x' : v === 2 ? ' o' : '') + (est && i === est.ultimo ? ' ult' : '') + (est && est.linea.indexOf(i) >= 0 ? ' gana' : '');
           b.disabled = !puede || !!v;
         });
