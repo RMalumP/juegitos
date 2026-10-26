@@ -8,6 +8,18 @@
   var cv=document.getElementById("pongC"),ctx=cv.getContext("2d");
   var W=cv.width,H=cv.height;
   var PAD=14,PW=8,PH=64,BALL=9,WIN_SCORE=7,MAXV=7.2;
+  /* nivel de la CPU (1-10): velocidad de la pala, margen de error al apuntar y velocidad de la bola */
+  var MAXLVL=10,level=1,cpuErr=0,cpuSpd=4.6,cpuLook=4,serveSp=3.4;
+  try{var sl=parseInt(localStorage.getItem("pongLevel"),10);if(sl>=1&&sl<=MAXLVL)level=sl;}catch(e){}
+  function cpuParams(){
+    var t=(level-1)/(MAXLVL-1);
+    cpuSpd=2.6+3.0*t;          /* 2.6 .. 5.6 (la pala del jugador va a 5.4) */
+    cpuLook=1+3*t;             /* cuánto anticipa la trayectoria */
+    serveSp=3.0+1.2*t;         /* saque 3.0 .. 4.2 */
+    MAXV=6+0.25*(level-1);     /* 6.0 .. 8.25 */
+    if(mode!=="cpu"){cpuSpd=4.6;cpuLook=4;serveSp=3.4;MAXV=7.2;}
+  }
+  function rollErr(){var t=(level-1)/(MAXLVL-1);cpuErr=(Math.random()*2-1)*(1-t)*PH*0.45;}
   var mode="cpu",orient="h";
   var p1y,p2y,bx,by,bvx,bvy,s1,s2;
   var running=false,paused=false,over=false,raf=null;
@@ -19,13 +31,13 @@
   function serve(dir){
     bx=W/2;by=H/2;
     var ang=Math.random()*0.7-0.35;
-    var sp=3.4;
+    var sp=serveSp;
     if(!dir)dir=Math.random()<0.5?-1:1;
     bvx=dir*sp*Math.cos(ang);
     bvy=sp*Math.sin(ang);
   }
   function reset(){
-    p1y=H/2;p2y=H/2;touchP1=null;touchP2=null;pointers={};
+    cpuParams();rollErr();p1y=H/2;p2y=H/2;touchP1=null;touchP2=null;pointers={};
     serve();
   }
   function updateScore(){
@@ -50,8 +62,8 @@
       if(key.p2d)p2y+=sp;
       if(touchP2!=null)p2y+=Math.max(-tm,Math.min(tm,touchP2-p2y));
     }else{
-      var cspd=4.6,d=by+ -p2y + (bvx>0?bvy*4:0);
-      p2y+=Math.max(-cspd,Math.min(cspd,d));
+      var aim=bvx>0?by+bvy*cpuLook+cpuErr:(level>5?by:H/2),d=aim-p2y;
+      p2y+=Math.max(-cpuSpd,Math.min(cpuSpd,d));
     }
     p1y=clampPad(p1y);p2y=clampPad(p2y);
     /* pelota */
@@ -59,7 +71,7 @@
     if(by<BALL/2){by=BALL/2;bvy=-bvy;vibrate(6);}
     if(by>H-BALL/2){by=H-BALL/2;bvy=-bvy;vibrate(6);}
     if(bvx<0&&bx-BALL/2<PAD+PW&&bx>PAD&&Math.abs(by-p1y)<PH/2+BALL/2){
-      bx=PAD+PW+BALL/2;bvx=-bvx*1.05;bvy+=(by-p1y)/(PH/2)*1.6;vibrate(12);
+      bx=PAD+PW+BALL/2;bvx=-bvx*1.05;bvy+=(by-p1y)/(PH/2)*1.6;rollErr();vibrate(12);
     }
     if(bvx>0&&bx+BALL/2>W-PAD-PW&&bx<W-PAD&&Math.abs(by-p2y)<PH/2+BALL/2){
       bx=W-PAD-PW-BALL/2;bvx=-bvx*1.05;bvy+=(by-p2y)/(PH/2)*1.6;vibrate(12);
@@ -72,12 +84,20 @@
   function point(dir){
     vibrate([0,40,40,40]);
     if(s1>=WIN_SCORE||s2>=WIN_SCORE)endGame();
-    else{p1y=H/2;p2y=H/2;touchP1=null;touchP2=null;serve(dir);}
+    else{p1y=H/2;p2y=H/2;touchP1=null;touchP2=null;rollErr();serve(dir);}
   }
   function endGame(){
     over=true;
     var who=s1>s2?(mode==="cpu"?"¡Ganaste!":"Gana Jugador 1"):(mode==="cpu"?"Gana la CPU":"Gana Jugador 2");
-    document.getElementById("pongFinal").textContent=who+"  ·  "+s1+" : "+s2;
+    var extra="",btn="▶ JUGAR DE NUEVO";
+    if(mode==="cpu"){
+      if(s1>s2&&level<MAXLVL){level++;saveLevel();extra="  ·  Nivel "+level;btn="▶ SIGUIENTE NIVEL";}
+      else if(s1>s2)extra="  ·  ¡Nivel máximo superado!";
+      else extra="  ·  Nivel "+level;
+      markLevels();
+    }
+    document.getElementById("pongFinal").textContent=who+"  ·  "+s1+" : "+s2+extra;
+    document.getElementById("pong-restartBtn").textContent=btn;
     document.getElementById("pongGameOver").classList.add("show");
   }
 
@@ -119,7 +139,7 @@
   function startPlay(){
     document.getElementById("pongStartScreen").style.display="none";
     document.getElementById("pongGameOver").classList.remove("show");
-    newGame();running=true;paused=false;
+    markLevels();newGame();running=true;paused=false;
     last=0;if(raf)cancelAnimationFrame(raf);raf=requestAnimationFrame(loop);
   }
   function resume(){
@@ -140,9 +160,16 @@
       var opt=b.dataset.opt,val=b.dataset.val;
       document.querySelectorAll('#pongOpts .pongOpt[data-opt="'+opt+'"]').forEach(function(o){o.classList.remove("sel");});
       b.classList.add("sel");
-      if(opt==="mode")mode=val;else orient=val;
+      if(opt==="mode"){mode=val;markLevels();}else if(opt==="level"){level=+val;saveLevel();}else orient=val;
     });
   });
+  function saveLevel(){try{localStorage.setItem("pongLevel",level);}catch(e){}}
+  function markLevels(){
+    var row=document.getElementById("pongLevelRow");if(row)row.style.display=mode==="cpu"?"flex":"none";
+    document.querySelectorAll('#pongOpts .pongOpt[data-opt="level"]').forEach(function(o){o.classList.toggle("sel",+o.dataset.val===level);});
+    var h=document.querySelector("#pongHeader span");if(h)h.textContent=mode==="cpu"?"PONG · NIVEL "+level:"PONG";
+  }
+  markLevels();
 
   /* ---- táctil: arrastrar para mover la pala ---- */
   function locate(e){

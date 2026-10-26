@@ -34,3 +34,5 @@
 .pongRemapBtn.confirm{background:#333;border-color:#fff}
 .pongRemapBtn.confirm:active{color:#000;background:#fff}
 .pongRemapBtn:active{background:#333}
+#pongLevelRow{max-width:290px;margin:0 auto}
+.pongLvl{padding:5px 0;width:34px;text-align:center}
