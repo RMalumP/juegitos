@@ -41,13 +41,18 @@
   function deshacer() { if (!prev || over) return; grid = prev.grid; score = prev.score; prev = null; nueva = null; $('g48Over').classList.remove('show'); pintar(); }
 
   /* teclado: solo con la ventana visible */
-  var TECLAS = { ArrowLeft: 0, KeyA: 0, ArrowUp: 1, KeyW: 1, ArrowRight: 2, KeyD: 2, ArrowDown: 3, KeyS: 3 };
+  var DIR = { izq: 0, arr: 1, der: 2, aba: 3 };
+  var TK = window.Teclas.crear({ id: 'g2048', ventana: 'winG2048', titulo: '2048', acciones: [
+    { id: 'izq', etiqueta: 'Izquierda', def: 'ArrowLeft', alt: ['KeyA'] }, { id: 'arr', etiqueta: 'Arriba', def: 'ArrowUp', alt: ['KeyW'] },
+    { id: 'der', etiqueta: 'Derecha', def: 'ArrowRight', alt: ['KeyD'] }, { id: 'aba', etiqueta: 'Abajo', def: 'ArrowDown', alt: ['KeyS'] },
+    { id: 'deshacer', etiqueta: 'Deshacer', def: 'KeyZ' }, { id: 'ok', etiqueta: 'Aceptar (fin de partida)', def: 'Enter' }] });
   document.addEventListener('keydown', function (e) {
     var w = $('winG2048'); if (!w || w.classList.contains('hidden')) return;
     var t = e.target; if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
-    if (e.code in TECLAS) { e.preventDefault(); if (!e.repeat) mover(TECLAS[e.code]); }
-    else if (e.code === 'KeyZ' && !e.repeat) deshacer();
-    else if (e.code === 'Enter' && !e.repeat && $('g48Over').classList.contains('show')) { e.preventDefault(); if (ganado && !over) $('g48Cont').click(); else $('g48Again').click(); }
+    var a = TK.accion(e.code); if (!a) return;
+    if (a in DIR) { e.preventDefault(); if (!e.repeat) mover(DIR[a]); }
+    else if (a === 'deshacer' && !e.repeat) deshacer();
+    else if (a === 'ok' && !e.repeat && $('g48Over').classList.contains('show')) { e.preventDefault(); if (ganado && !over) $('g48Cont').click(); else $('g48Again').click(); }
   });
   /* deslizar con el dedo (o el ratón) */
   var p0 = null, tz = $('g48BoardWrap');

@@ -21,6 +21,7 @@
     "test:enlace": "node tests/ui-enlace-y-barra.js",
     "test:niveles": "node tests/ui-niveles.js",
     "test:tetris": "node tests/ui-tetris-repeticion.js",
+    "test:teclas": "node tests/ui-teclas.js",
     "test:hundir": "node tests/ui-hundir.js",
     "test:hundir-online": "node tests/ui-hundir-online.js",
     "test:2048": "node tests/ui-g2048.js",

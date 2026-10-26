@@ -69,10 +69,13 @@
   function arrancar() { cancelAnimationFrame(raf); last = 0; raf = requestAnimationFrame(bucle); }
   var area = $('flapCanvasWrap');
   area.addEventListener('pointerdown', function (e) { if (e.target.closest && e.target.closest('#flapOver')) return; e.preventDefault(); aletear(); });
+  var TK = window.Teclas.crear({ id: 'flap', ventana: 'winFlap', titulo: 'Flappy', acciones: [
+    { id: 'aletear', etiqueta: 'Aletear', def: 'Space', alt: ['ArrowUp', 'KeyW'] }, { id: 'reiniciar', etiqueta: 'Reiniciar (al morir)', def: 'Enter' }] });
   document.addEventListener('keydown', function (e) {
     var w = $('winFlap'); if (!w || w.classList.contains('hidden')) return;
-    if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') { e.preventDefault(); if (!e.repeat) { if (fase === 'muerto') return; aletear(); } }
-    else if (e.code === 'Enter' && !e.repeat && fase === 'muerto') reiniciar();
+    var a = TK.accion(e.code); if (!a) return;
+    if (a === 'aletear') { e.preventDefault(); if (!e.repeat) { if (fase === 'muerto') return; aletear(); } }
+    else if (a === 'reiniciar' && !e.repeat && fase === 'muerto') reiniciar();
   });
   document.querySelectorAll('.flapDif').forEach(function (b) { b.addEventListener('click', function (e) { e.stopPropagation(); dif = +b.dataset.d; try { localStorage.setItem('flapDif', dif); } catch (er) { /* nada */ } reiniciar(); }); });
   $('flap-again').addEventListener('click', reiniciar); $('flapNewGame').addEventListener('click', reiniciar);

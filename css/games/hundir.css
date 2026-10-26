@@ -47,3 +47,4 @@
 .hunBe{display:flex;align-items:center;gap:5px;font-size:12px}.hunBeL{display:inline-block;min-width:4.2em;letter-spacing:1px;color:#9fd0ff;font-size:10px;text-align:right}.hunBe b{min-width:1.2em;text-align:center}
 .hunOpt:disabled,.hunBig:disabled{opacity:.4;cursor:default}
 #hunMenu,#hunFin{justify-content:safe center}
+.hunC.cursor{outline:3px solid #ffe08a;outline-offset:-3px;z-index:1}

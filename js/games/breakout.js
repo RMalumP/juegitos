@@ -170,15 +170,20 @@
   cv.style.touchAction = 'none';
   cv.addEventListener('pointerdown', function (e) { if (!running) return; e.preventDefault(); try { cv.setPointerCapture(e.pointerId); } catch (_) { /* nada */ } if (paused) { pausar(false); return; } objetivoX = xDe(e); lanzar(); });
   cv.addEventListener('pointermove', function (e) { if (running && (e.buttons || e.pointerType === 'touch' || e.pointerType === 'mouse')) objetivoX = xDe(e); });
+  var TK = window.Teclas.crear({ id: 'brk', ventana: 'winBrk', titulo: 'Breakout', acciones: [
+    { id: 'izq', etiqueta: 'Izquierda', def: 'ArrowLeft', alt: ['KeyA'] }, { id: 'der', etiqueta: 'Derecha', def: 'ArrowRight', alt: ['KeyD'] },
+    { id: 'lanzar', etiqueta: 'Lanzar / reanudar', def: 'Space' }, { id: 'pausa', etiqueta: 'Pausa', def: 'KeyP' }, { id: 'nueva', etiqueta: 'Nueva partida (al terminar)', def: 'Enter' }] });
+  window.brkTeclas = TK;
   document.addEventListener('keydown', function (e) {
     var w = $('winBrk'); if (!w || w.classList.contains('hidden')) return;
-    if (e.code === 'ArrowLeft' || e.code === 'KeyA') { teclas.l = true; e.preventDefault(); }
-    else if (e.code === 'ArrowRight' || e.code === 'KeyD') { teclas.r = true; e.preventDefault(); }
-    else if (e.code === 'Space') { e.preventDefault(); if (running && !e.repeat) { if (paused) pausar(false); else lanzar(); } }
-    else if (e.code === 'KeyP' && !e.repeat) pausar(!paused);
-    else if (e.code === 'Enter' && !e.repeat) { if (!running) nueva(); }
+    var a = TK.accion(e.code); if (!a) return;
+    if (a === 'izq') { teclas.l = true; e.preventDefault(); }
+    else if (a === 'der') { teclas.r = true; e.preventDefault(); }
+    else if (a === 'lanzar') { e.preventDefault(); if (running && !e.repeat) { if (paused) pausar(false); else lanzar(); } }
+    else if (a === 'pausa' && !e.repeat) pausar(!paused);
+    else if (a === 'nueva' && !e.repeat) { if (!running) nueva(); }
   });
-  document.addEventListener('keyup', function (e) { if (e.code === 'ArrowLeft' || e.code === 'KeyA') teclas.l = false; else if (e.code === 'ArrowRight' || e.code === 'KeyD') teclas.r = false; });
+  document.addEventListener('keyup', function (e) { var a = TK.accion(e.code); if (a === 'izq') teclas.l = false; else if (a === 'der') teclas.r = false; });
   window.addEventListener('blur', function () { teclas.l = teclas.r = false; });
   document.addEventListener('visibilitychange', function () { if (document.hidden) pausar(true); });
   $('brk-startBtn').addEventListener('click', nueva); $('brk-restartBtn').addEventListener('click', function () { $('brkOver').classList.remove('show'); window.brkStartNew(); });
