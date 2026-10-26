@@ -89,6 +89,7 @@ const ARCHIVOS = [
   'js/pwa.js',
   'js/save-load.js',
   'js/escala.js',
+  'js/atras.js',
   'js/opciones.js',
   'js/teclas.js',
   'js/vibracion.js',

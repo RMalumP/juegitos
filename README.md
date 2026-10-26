@@ -2,7 +2,7 @@
 
 Escritorio estilo Windows XP con juegos clásicos (Buscaminas, Tetris, Ajedrez, Parchís, Póquer, Hundir la flota, 2048, Breakout, Conecta 4, Memoria, Simon, Flappy, Wordle…)
 
-**Hundir la flota** admite tableros de 6×6 a 15×15 y flotas a medida (plantillas Clásica, Rápida, Grande y Armada, o un editor de barcos de 1 a 6 casillas) contra la CPU, con 2 jugadores en un móvil y online. **Wordle**: «Del día» no es aleatoria (la palabra sale de la fecha del dispositivo y cambia a medianoche; es la misma para todos); «Libre» elige una palabra al azar cada vez y no cuenta para las estadísticas., **Bingo** local y online, y la app **Sala online** para jugar con amigos cada uno desde su móvil. Es una PWA instalable y funciona sin conexión (el online necesita https y que los móviles se encuentren por internet una vez).
+**Hundir la flota** admite tableros de 6×6 a 15×15 y flotas a medida (plantillas Clásica, Rápida, Grande y Armada, o un editor de barcos de 1 a 6 casillas) contra la CPU, con 2 jugadores en un móvil y online. **Teclas reasignables** («⌨ Reasignar» en el menú de la ventana) en Breakout, 2048, Flappy y Hundir (que además se juega entero con teclado: cursor, colocar/disparar, girar con R). En Hundir los barcos pegados se distinguen por contorno y tono. **Botón «atrás» del móvil**: minimiza el juego abierto, cierra el menú de inicio o vuelve al juego desde la pantalla de conexión; sin nada que cerrar, sale de la web. **Wordle**: «Del día» no es aleatoria (la palabra sale de la fecha del dispositivo y cambia a medianoche; es la misma para todos); «Libre» elige una palabra al azar cada vez y no cuenta para las estadísticas., **Bingo** local y online, y la app **Sala online** para jugar con amigos cada uno desde su móvil. Es una PWA instalable y funciona sin conexión (el online necesita https y que los móviles se encuentren por internet una vez).
 
 ## Bingo
 
@@ -84,6 +84,8 @@ js/pwa.js                     instalación (botón «Instalar app»), actualizac
 js/version.js                 versión de la app (única fuente)
 js/vibracion.js               vibración común (interruptor 📳)
 js/opciones.js                ⚙ Opciones: detecta móvil/ordenador, control táctil (auto/activado/desactivado) y repetición de Tetris (DAS, ARR, SDF)
+js/teclas.js                 reasignación de teclas común (Breakout, 2048, Flappy, Hundir)
+js/atras.js                  botón «atrás» del móvil: cierra la capa superior (modal, menú de inicio, conexión, ventana)
 js/escala.js                 tamaño en ordenador: la interfaz se agranda según la altura de la pantalla (--ui); ventanas verticales (columna), anchas y completas (data-forma)
 js/pasar-movil.js            «pasa el móvil»: tapa a pantalla completa para jugar varios en un mismo móvil
 js/online/hundir-engine.js    Hundir la flota: reglas, árbitro e IA (sin DOM, con tests)
@@ -113,6 +115,8 @@ Si cambias archivos de la aplicación: sube `APP_VERSION` (y `APP_FECHA`) en `js
 | `npm run test:online` | Bolero (con cartón propio) + 3 jugadores en navegadores distintos usando el icono Multijugador: cartones numerados, comprobar, cantos y dos partidas completas |
 | `npm run test:niveles` | niveles y dificultades de los juegos de arcade: Snake (4 dificultades), Invaders/Pac-Man/Frogger/Asteroids/Tetris (15 niveles) y Pong (10 niveles de CPU) |
 | `npm run test:tetris` | control de Tetris: toque corto = 1 casilla, DAS/ARR, última dirección, caída, guardar, lock delay, pausa, gestos táctiles y Opciones (escritorio con botones plegados y sin gestos / móvil con ambos) |
+| `npm run test:teclas` | teclas reasignables (defecto, reasignar, intercambio, restablecer, recarga) y Hundir jugado solo con teclado |
+| `npm run test:atras` | botón «atrás» del móvil: minimiza juegos, cierra menú/modales, vuelve desde Conectar y sale sin capas |
 | `npm run test:hundir` | Hundir la flota: colocación manual, partida contra la CPU y 2 jugadores en un móvil con la tapa «pasa el móvil» |
 | `npm run test:hundir-online` | Hundir la flota online con 2 navegadores: reglas, colocación secreta, validación del anfitrión, privacidad, recarga, partida completa, rendición y revancha |
 | `npm run test:2048` | 2048: jugadas con teclado y ratón, deshacer, tamaños 4×4/5×5/6×6, victoria y récord por tamaño |
