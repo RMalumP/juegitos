@@ -2,7 +2,7 @@
    Mientras haya algo que cerrar, el historial lleva UNA entrada extra: «atrás» la consume y cierra la capa superior
      modal abierto → menú de inicio («¿Qué quieres jugar?») → ventana de conexión (vuelve al juego) → ventana de juego (se minimiza).
    Cuando no queda nada que cerrar, «atrás» sale de la web app como siempre (sin confirmación).
-   Chrome ignora las entradas de historial creadas sin gesto del usuario: la primera se crea en la primera interacción. */
+   Chrome ignora las entradas de historial creadas sin gesto del usuario: la primera se crea en la primera interacción (al soltar el dedo o la tecla: con activación del usuario). */
 (function () {
   'use strict';
   var empujada = false, ignorar = 0, interactuado = false, pendiente = false;
@@ -64,10 +64,13 @@
 
   function primera() {
     if (interactuado) return; interactuado = true;
-    document.removeEventListener('pointerdown', primera, true); document.removeEventListener('keydown', primera, true);
+    document.removeEventListener('pointerup', primera, true); document.removeEventListener('click', primera, true); document.removeEventListener('keydown', primera, true);
     sincronizar();
   }
-  document.addEventListener('pointerdown', primera, true);
+  /* En pantallas táctiles la activación del usuario llega al SOLTAR el dedo (pointerdown no cuenta): una entrada creada antes
+     la ignora Chrome al pulsar «atrás» y la web se cierra entera. */
+  document.addEventListener('pointerup', primera, true);
+  document.addEventListener('click', primera, true);
   document.addEventListener('keydown', primera, true);
 
   function observar() {
