@@ -51,13 +51,14 @@
       q('.duInfo').textContent = U.modo === 'cpu' ? 'CPU · ' + ['', 'Fácil', 'Normal', 'Difícil'][U.nivel] : U.modo === 'local' ? '2 jugadores' : U.modo === 'online' ? '🌐 ' + (window.Sala && window.Sala.sala || 'online') : '';
       ctl.actualizar(U.est, puede());
       if (U.est && U.est.fase === 'fin' && !U.fin) mostrarFin();
-      guardarPartida();
     }
-    /* partida a medias (contra la CPU o 2 jugadores en un móvil; la online no se guarda) */
+    /* partida a medias (contra la CPU o 2 jugadores en un móvil; la online no se guarda): la guarda el botón «Guardar» */
     function guardarPartida() {
-      if (!window.Partida || U.modo === 'online') return;
-      if ((U.modo !== 'cpu' && U.modo !== 'local') || !U.est || U.est.fase !== 'jugando') { window.Partida.borrar(id); return; }
+      if (!window.Partida) return;
+      if (U.modo === 'online') { window.Partida.aviso('Una partida online no se puede guardar'); return; }
+      if ((U.modo !== 'cpu' && U.modo !== 'local') || !U.est || U.est.fase !== 'jugando') { window.Partida.aviso('No hay ninguna partida en curso'); return; }
       window.Partida.guardar(id, { modo: U.modo, nivel: U.nivel, est: M.copiar(U.est), nombres: U.nombres, starter: U.starter });
+      window.Partida.aviso('💾 Partida guardada');
     }
     function restaurar() {
       var d = window.Partida && window.Partida.cargar(id);
@@ -121,9 +122,9 @@
     var nuevaPartida = $(id + 'NewGame');
     if (nuevaPartida) nuevaPartida.addEventListener('click', function () {
       if (U.modo === 'online') { if (window.Sala) window.Sala.toast('En línea: el anfitrión puede volver al lobby con «↩ Lobby» y cualquiera puede salir de la sala.'); return; }
-      if (window.Partida) window.Partida.borrar(id);
       menu();
     });
+    var btnGuardar = $(id + 'Save'); if (btnGuardar) btnGuardar.addEventListener('click', guardarPartida);
 
     /* interfaz para el adaptador online */
     online[id] = {

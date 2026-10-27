@@ -31,13 +31,13 @@
     if (jug === 2) { tur.textContent = est.fase === 'fin' ? '' : '👤 Turno del jugador ' + (est.turno + 1) + ' · ' + est.puntos[0] + ' – ' + est.puntos[1]; } else tur.textContent = 'Parejas: ' + est.halladas.filter(Boolean).length / 2 + ' / ' + est.cartas.length / 2;
     document.querySelectorAll('.memTam').forEach(function (e) { e.classList.toggle('sel', e.dataset.t === tam); });
     document.querySelectorAll('.memJug').forEach(function (e) { e.classList.toggle('sel', +e.dataset.j === jug); });
-    guardarPartida();
   }
-  /* partida a medias: se guarda tras cada jugada y se retoma al abrir el juego */
+  /* partida a medias: el botón «Guardar» la guarda y se retoma al abrir el juego */
   function guardarPartida() {
     if (!window.Partida || !est) return;
-    if (est.fase === 'fin') { window.Partida.borrar('memoria'); return; }
+    if (est.fase === 'fin') { window.Partida.aviso('La partida ya ha terminado'); return; }
     window.Partida.guardar('memoria', { tam: tam, jug: jug, est: est, seg: t0 ? (Date.now() - t0) / 1000 : seg });
+    window.Partida.aviso('💾 Partida guardada');
   }
   function restaurar() {
     var d = window.Partida && window.Partida.cargar('memoria');
@@ -73,6 +73,7 @@
   }
   document.querySelectorAll('.memTam').forEach(function (b) { b.addEventListener('click', function () { tam = b.dataset.t; try { localStorage.setItem('memTam', tam); } catch (e) { /* nada */ } nueva(); }); });
   document.querySelectorAll('.memJug').forEach(function (b) { b.addEventListener('click', function () { jug = +b.dataset.j; try { localStorage.setItem('memJug', jug); } catch (e) { /* nada */ } nueva(); }); });
+  $('memSave').addEventListener('click', guardarPartida);
   $('memNewGame').addEventListener('click', nueva); $('mem-again').addEventListener('click', nueva);
   window.initMem = function () { if (!est && !restaurar()) nueva(); };
   window.memStartNew = nueva;
