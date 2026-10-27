@@ -66,6 +66,12 @@
   tz.addEventListener('pointerup', function (e) { soltar(e, false); });
   tz.addEventListener('pointercancel', function (e) { soltar(e, true); });
 
+  /* botones en pantalla (como la cruceta del Snake) */
+  document.querySelectorAll('.g48CtrlBtn').forEach(function (b) {
+    b.addEventListener('pointerdown', function (e) { e.preventDefault(); b.classList.add('pressed'); mover(+b.dataset.d); });
+    ['pointerup', 'pointerleave', 'pointercancel'].forEach(function (ev) { b.addEventListener(ev, function () { b.classList.remove('pressed'); }); });
+  });
+
   document.querySelectorAll('.g48Sz').forEach(function (b) { b.addEventListener('click', function () { n = +b.dataset.n; try { localStorage.setItem('g2048Size', n); } catch (e) { /* nada */ } nuevoJuego(); }); });
   $('g48NewGame').addEventListener('click', nuevoJuego); $('g48Again').addEventListener('click', nuevoJuego);
   $('g48Undo').addEventListener('click', deshacer);
