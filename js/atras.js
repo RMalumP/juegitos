@@ -7,6 +7,25 @@
   'use strict';
   var empujada = false, ignorar = 0, interactuado = false, pendiente = false, guardiaHasta = 0;
   var $ = function (id) { return document.getElementById(id); };
+  /* DIAGNÓSTICO TEMPORAL (quitar cuando se resuelva lo de «atrás» en la app instalada): guarda los últimos eventos y los muestra al reabrir. */
+  var t0 = Date.now();
+  function log(m) {
+    try { var l = JSON.parse(localStorage.getItem('atrasLog') || '[]'); l.push(((Date.now() - t0) / 1000).toFixed(1) + 's ' + m); localStorage.setItem('atrasLog', JSON.stringify(l.slice(-14))); } catch (e) { /* nada */ }
+  }
+  try {
+    var prev = JSON.parse(localStorage.getItem('atrasLog') || '[]');
+    if (prev.length) {
+      localStorage.removeItem('atrasLog');
+      document.addEventListener('DOMContentLoaded', function () {
+        var d = document.createElement('div');
+        d.style.cssText = 'position:fixed;left:4px;right:4px;top:4px;z-index:99999;background:#000d;color:#9f9;font:11px monospace;padding:8px;white-space:pre-wrap;border-radius:6px';
+        d.textContent = 'LOG ATRÁS (toca para cerrar)\n' + prev.join('\n'); d.onclick = function () { d.remove(); };
+        document.body.appendChild(d);
+      });
+    }
+  } catch (e) { /* nada */ }
+  ['pagehide', 'visibilitychange', 'freeze'].forEach(function (ev) { window.addEventListener(ev, function () { log(ev + ' vis=' + document.visibilityState); }); });
+
   var visible = function (el) { return !!el && getComputedStyle(el).display !== 'none'; };
 
   function modales() {
@@ -50,7 +69,7 @@
       setTimeout(sincronizar, guardiaHasta - Date.now() + 20); return;
     }
     if (hay && !empujada && interactuado) {
-      try { history.pushState({ atras: 1 }, '', location.href); empujada = true; } catch (e) { /* nada */ }
+      try { history.pushState({ atras: 1 }, '', location.href); empujada = true; log('push len=' + history.length + ' capa=' + (capa() || {}).tipo); } catch (e) { /* nada */ }
     } else if (!hay && empujada) {
       empujada = false; ignorar = 1; history.back();
     }
@@ -58,6 +77,7 @@
   function programar() { if (pendiente) return; pendiente = true; setTimeout(function () { pendiente = false; sincronizar(); }, 0); }
 
   window.addEventListener('popstate', function () {
+    log('popstate emp=' + empujada + ' ign=' + ignorar + ' len=' + history.length + ' capa=' + ((capa() || {}).tipo || '-'));
     if (ignorar > 0) { ignorar--; sincronizar(); return; }
     if (!empujada) return;                                       // un «atrás» ajeno a nuestra entrada: nada que hacer
     empujada = false;
