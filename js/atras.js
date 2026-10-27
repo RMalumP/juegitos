@@ -5,7 +5,7 @@
    Chrome ignora las entradas de historial creadas sin gesto del usuario: la primera se crea en la primera interacción (al soltar el dedo o la tecla: con activación del usuario). */
 (function () {
   'use strict';
-  var empujada = false, ignorar = 0, interactuado = false, pendiente = false;
+  var empujada = false, ignorar = 0, interactuado = false, pendiente = false, guardiaHasta = 0;
   var $ = function (id) { return document.getElementById(id); };
   var visible = function (el) { return !!el && getComputedStyle(el).display !== 'none'; };
 
@@ -46,6 +46,9 @@
   function sincronizar() {
     if (ignorar > 0) return;                                     // hay un history.back() nuestro pendiente
     var hay = !!capa();
+    if (!hay && empujada && Date.now() < guardiaHasta) {            // entrada de reserva: se suelta cuando pasa el tiempo de guardia
+      setTimeout(sincronizar, guardiaHasta - Date.now() + 20); return;
+    }
     if (hay && !empujada && interactuado) {
       try { history.pushState({ atras: 1 }, '', location.href); empujada = true; } catch (e) { /* nada */ }
     } else if (!hay && empujada) {
@@ -59,6 +62,11 @@
     if (!empujada) return;                                       // un «atrás» ajeno a nuestra entrada: nada que hacer
     empujada = false;
     cerrar();
+    /* Reserva: en la app instalada el sistema podía cerrar toda la app justo tras cerrar el juego. Si no queda ninguna capa,
+       se deja una entrada de historial ~1,5 s para que un «atrás» sobrante la consuma en vez de salir de la web app. */
+    if (interactuado && !capa()) {
+      try { history.pushState({ atras: 1 }, '', location.href); empujada = true; guardiaHasta = Date.now() + 1500; } catch (e) { /* nada */ }
+    }
     sincronizar();                                               // si aún queda otra capa, se vuelve a empujar la entrada
   });
 
