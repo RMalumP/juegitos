@@ -17,3 +17,10 @@
 #g48OverB{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
 #g48OverB button{background:#8f7a66;color:#f9f6f2;border:none;border-radius:4px;padding:9px 14px;font-weight:700;cursor:pointer}
 #g48Hint{font-size:11px;color:#9a8f85;text-align:center}
+#g48Controls{flex-shrink:0;display:grid;grid-template-rows:48px 48px;grid-template-columns:60px 60px 60px;justify-content:center;gap:6px}
+#g48Controls.ctHidden{display:none}
+.g48CtrlBtn{display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;touch-action:none;user-select:none;color:#f9f6f2;background:#8f7a66;border:2px solid #776e65;border-radius:4px}
+.g48CtrlBtn:active,.g48CtrlBtn.pressed{background:#f67c5f}
+#g48BtnUp{grid-area:1/2}#g48BtnLeft{grid-area:2/1}#g48BtnDown{grid-area:2/2}#g48BtnRight{grid-area:2/3}
+.g48CtrlToggle{color:#776e65;background:#bbada0;border-color:#8f7a66}
+.g48CtrlToggle:active{color:#f9f6f2;background:#8f7a66}
