@@ -5,7 +5,8 @@
    Chrome ignora las entradas de historial creadas sin gesto del usuario: la primera se crea en la primera interacción (al soltar el dedo o la tecla: con activación del usuario). */
 (function () {
   'use strict';
-  var empujada = false, ignorar = 0, interactuado = false, pendiente = false, guardiaHasta = 0;
+  var empujada = false, ignorar = 0, interactuado = false, pendiente = false, base = false;
+  var instalada = (function () { try { return ['standalone', 'fullscreen', 'minimal-ui'].some(function (m) { return window.matchMedia('(display-mode: ' + m + ')').matches; }) || window.navigator.standalone === true; } catch (e) { return false; } })();
   var $ = function (id) { return document.getElementById(id); };
   /* DIAGNÓSTICO TEMPORAL (quitar cuando se resuelva lo de «atrás» en la app instalada): guarda los últimos eventos y los muestra al reabrir. */
   var t0 = Date.now();
@@ -65,33 +66,40 @@
   function sincronizar() {
     if (ignorar > 0) return;                                     // hay un history.back() nuestro pendiente
     var hay = !!capa();
-    if (!hay && empujada && Date.now() < guardiaHasta) {            // entrada de reserva: se suelta cuando pasa el tiempo de guardia
-      setTimeout(sincronizar, guardiaHasta - Date.now() + 20); return;
-    }
     if (hay && !empujada && interactuado) {
-      try { history.pushState({ atras: 1 }, '', location.href); empujada = true; log('push len=' + history.length + ' capa=' + (capa() || {}).tipo); } catch (e) { /* nada */ }
+      try {
+        if (instalada && !base) { history.pushState({ atrasBase: 1 }, '', location.href); base = true; }
+        history.pushState({ atras: 1 }, '', location.href); empujada = true; log('push len=' + history.length + ' capa=' + (capa() || {}).tipo);
+      } catch (e) { /* nada */ }
     } else if (!hay && empujada) {
       empujada = false; ignorar = 1; history.back();
     }
   }
   function programar() { if (pendiente) return; pendiente = true; setTimeout(function () { pendiente = false; sincronizar(); }, 0); }
 
-  window.addEventListener('popstate', function () {
-    log('popstate emp=' + empujada + ' ign=' + ignorar + ' len=' + history.length + ' capa=' + ((capa() || {}).tipo || '-'));
+  window.addEventListener('popstate', function (ev) {
+    var st = ev.state || {};
+    log('popstate emp=' + empujada + ' ign=' + ignorar + ' len=' + history.length + ' st=' + (st.atrasBase !== undefined ? 'base' + st.atrasBase : st.atras ? 'capa' : '-') + ' capa=' + ((capa() || {}).tipo || '-'));
+    if (st.atrasBase === 0) base = false;                        // se llegó a la primera entrada: la reserva se vuelve a crear al abrir otra capa
     if (ignorar > 0) { ignorar--; sincronizar(); return; }
     if (!empujada) return;                                       // un «atrás» ajeno a nuestra entrada: nada que hacer
     empujada = false;
     cerrar();
-    /* Reserva: en la app instalada el sistema podía cerrar toda la app justo tras cerrar el juego. Si no queda ninguna capa,
-       se deja una entrada de historial ~1,5 s para que un «atrás» sobrante la consuma en vez de salir de la web app. */
-    if (interactuado && !capa()) {
-      try { history.pushState({ atras: 1 }, '', location.href); empujada = true; guardiaHasta = Date.now() + 1500; } catch (e) { /* nada */ }
-    }
     sincronizar();                                               // si aún queda otra capa, se vuelve a empujar la entrada
   });
 
   function primera() {
     if (interactuado) return; interactuado = true;
+    /* App instalada: se deja siempre UNA entrada de historial por debajo de las capas, así al cerrar un juego con «atrás» el
+       sistema aún ve historial hacia atrás y no cierra la app a continuación (con «atrás» sin capas se sale como siempre). */
+    if (instalada) {
+      try {
+        var st = history.state;
+        if (st && st.atrasBase === 1) base = true;
+        else { if (!(st && st.atrasBase === 0)) history.replaceState(Object.assign({}, st, { atrasBase: 0 }), '', location.href); history.pushState({ atrasBase: 1 }, '', location.href); base = true; }
+        log('base len=' + history.length);
+      } catch (e) { /* nada */ }
+    }
     document.removeEventListener('pointerup', primera, true); document.removeEventListener('click', primera, true); document.removeEventListener('keydown', primera, true);
     sincronizar();
   }
