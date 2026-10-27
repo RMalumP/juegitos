@@ -90,6 +90,7 @@ const ARCHIVOS = [
   'js/save-load.js',
   'js/escala.js',
   'js/atras.js',
+  'js/partida.js',
   'js/opciones.js',
   'js/teclas.js',
   'js/vibracion.js',

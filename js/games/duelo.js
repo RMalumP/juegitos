@@ -51,6 +51,22 @@
       q('.duInfo').textContent = U.modo === 'cpu' ? 'CPU · ' + ['', 'Fácil', 'Normal', 'Difícil'][U.nivel] : U.modo === 'local' ? '2 jugadores' : U.modo === 'online' ? '🌐 ' + (window.Sala && window.Sala.sala || 'online') : '';
       ctl.actualizar(U.est, puede());
       if (U.est && U.est.fase === 'fin' && !U.fin) mostrarFin();
+      guardarPartida();
+    }
+    /* partida a medias (contra la CPU o 2 jugadores en un móvil; la online no se guarda) */
+    function guardarPartida() {
+      if (!window.Partida || U.modo === 'online') return;
+      if ((U.modo !== 'cpu' && U.modo !== 'local') || !U.est || U.est.fase !== 'jugando') { window.Partida.borrar(id); return; }
+      window.Partida.guardar(id, { modo: U.modo, nivel: U.nivel, est: M.copiar(U.est), nombres: U.nombres, starter: U.starter });
+    }
+    function restaurar() {
+      var d = window.Partida && window.Partida.cargar(id);
+      if (!d || (d.modo !== 'cpu' && d.modo !== 'local') || !d.est || d.est.fase !== 'jugando' || !Array.isArray(d.est.tab)) return false;
+      clearTimeout(U.timer); U.modo = d.modo; U.online = null; U.fin = false; U.nivel = d.nivel >= 1 && d.nivel <= 3 ? d.nivel : U.nivel;
+      U.nombres = Array.isArray(d.nombres) ? d.nombres : cfg.nombres.slice(); U.starter = d.starter === 0 ? 0 : 1; U.est = d.est;
+      q('.duMenu').style.display = 'none'; q('.duFin').style.display = 'none'; pintar();
+      if (U.modo === 'cpu' && U.est.turno === 1) turnoCPU();
+      return true;
     }
     function mostrarFin() {
       U.fin = true; clearTimeout(U.timer);
@@ -105,6 +121,7 @@
     var nuevaPartida = $(id + 'NewGame');
     if (nuevaPartida) nuevaPartida.addEventListener('click', function () {
       if (U.modo === 'online') { if (window.Sala) window.Sala.toast('En línea: el anfitrión puede volver al lobby con «↩ Lobby» y cualquiera puede salir de la sala.'); return; }
+      if (window.Partida) window.Partida.borrar(id);
       menu();
     });
 
@@ -122,7 +139,7 @@
       salir: function () { if (U.modo === 'online') menu(); },
       activo: function () { return U.modo === 'online'; }
     };
-    window['init' + cfg.Name] = function () { if (!U.modo) menu(); };
+    window['init' + cfg.Name] = function () { if (!U.modo && !restaurar()) menu(); };
     window[id + 'StartNew'] = menu;
     window['pause' + cfg.Name] = function () { /* la partida espera */ };
     window[id + 'Estado'] = function () { return { modo: U.modo, p: U.p, est: U.est && M.copiar(U.est), nivel: U.nivel }; };

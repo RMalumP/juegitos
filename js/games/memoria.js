@@ -31,6 +31,22 @@
     if (jug === 2) { tur.textContent = est.fase === 'fin' ? '' : '👤 Turno del jugador ' + (est.turno + 1) + ' · ' + est.puntos[0] + ' – ' + est.puntos[1]; } else tur.textContent = 'Parejas: ' + est.halladas.filter(Boolean).length / 2 + ' / ' + est.cartas.length / 2;
     document.querySelectorAll('.memTam').forEach(function (e) { e.classList.toggle('sel', e.dataset.t === tam); });
     document.querySelectorAll('.memJug').forEach(function (e) { e.classList.toggle('sel', +e.dataset.j === jug); });
+    guardarPartida();
+  }
+  /* partida a medias: se guarda tras cada jugada y se retoma al abrir el juego */
+  function guardarPartida() {
+    if (!window.Partida || !est) return;
+    if (est.fase === 'fin') { window.Partida.borrar('memoria'); return; }
+    window.Partida.guardar('memoria', { tam: tam, jug: jug, est: est, seg: t0 ? (Date.now() - t0) / 1000 : seg });
+  }
+  function restaurar() {
+    var d = window.Partida && window.Partida.cargar('memoria');
+    if (!d || !TAM[d.tam] || !d.est || d.est.fase !== 'jugando' || !Array.isArray(d.est.cartas) || d.est.cartas.length !== TAM[d.tam][0] * TAM[d.tam][1]) return false;
+    clearTimeout(rtimer); clearInterval(tTimer);
+    tam = d.tam; jug = d.jug === 2 ? 2 : 1; est = d.est; est.abiertas = []; seg = +d.seg || 0; t0 = 0;
+    if (seg > 0) { t0 = Date.now() - seg * 1000; tTimer = setInterval(function () { seg = (Date.now() - t0) / 1000; $('memTiempo').textContent = fmt(seg); }, 250); }
+    $('memOver').classList.remove('show'); pintar();
+    return true;
   }
   function nueva() {
     clearTimeout(rtimer); clearInterval(tTimer);
@@ -58,7 +74,7 @@
   document.querySelectorAll('.memTam').forEach(function (b) { b.addEventListener('click', function () { tam = b.dataset.t; try { localStorage.setItem('memTam', tam); } catch (e) { /* nada */ } nueva(); }); });
   document.querySelectorAll('.memJug').forEach(function (b) { b.addEventListener('click', function () { jug = +b.dataset.j; try { localStorage.setItem('memJug', jug); } catch (e) { /* nada */ } nueva(); }); });
   $('memNewGame').addEventListener('click', nueva); $('mem-again').addEventListener('click', nueva);
-  window.initMem = function () { if (!est) nueva(); };
+  window.initMem = function () { if (!est && !restaurar()) nueva(); };
   window.memStartNew = nueva;
   window.pauseMem = function () { /* el cronómetro sigue solo mientras haya una partida iniciada */ };
   window.memEstado = function () { return est && JSON.parse(JSON.stringify(est)); };

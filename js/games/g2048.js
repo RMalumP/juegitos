@@ -19,6 +19,22 @@
     $('g48Score').textContent = score; $('g48Best').textContent = best; $('g48Max').textContent = E.maximo(grid);
     document.querySelectorAll('.g48Sz').forEach(function (e) { e.classList.toggle('sel', +e.dataset.n === n); });
     $('g48Undo').style.opacity = prev ? 1 : 0.4;
+    guardarPartida();
+  }
+  /* partida a medias: se guarda tras cada cambio y se retoma al abrir el juego */
+  function guardarPartida() {
+    if (!window.Partida || !grid) return;
+    if (over) { window.Partida.borrar('g2048'); return; }
+    window.Partida.guardar('g2048', { n: n, grid: grid, score: score, prev: prev, ganado: ganado });
+  }
+  function restaurar() {
+    var d = window.Partida && window.Partida.cargar('g2048');
+    if (!d || !(d.n >= 4 && d.n <= 6) || !Array.isArray(d.grid) || d.grid.length !== d.n) return false;
+    var bien = function (g) { return Array.isArray(g) && g.length === d.n && g.every(function (f) { return Array.isArray(f) && f.length === d.n && f.every(function (v) { return typeof v === 'number' && v >= 0; }); }); };
+    if (!bien(d.grid) || (d.prev && !bien(d.prev.grid)) || !E.puedeMover(d.grid)) return false;
+    n = d.n; best = lsBest(); grid = E.copiar(d.grid); score = +d.score || 0; prev = d.prev ? { grid: E.copiar(d.prev.grid), score: +d.prev.score || 0 } : null;
+    over = false; ganado = !!d.ganado; seguir = ganado; nueva = null; $('g48Over').classList.remove('show'); pintar();
+    return true;
   }
   function nuevoJuego() {
     best = lsBest(); grid = E.nuevoJuego(n); score = 0; prev = null; over = false; ganado = false; seguir = false; nueva = null;
@@ -82,7 +98,7 @@
   $('g48NewGame').addEventListener('click', nuevoJuego); $('g48Again').addEventListener('click', nuevoJuego);
   $('g48Undo').addEventListener('click', deshacer);
   $('g48Cont').addEventListener('click', function () { seguir = true; $('g48Over').classList.remove('show'); });
-  window.initG2048 = function () { if (!grid) nuevoJuego(); };
+  window.initG2048 = function () { if (!grid && !restaurar()) nuevoJuego(); };
   window.g2048StartNew = nuevoJuego;
   window.pauseG2048 = function () { /* sin reloj: la partida espera */ };
   window.g2048Estado = function () { return { n: n, grid: E.copiar(grid), score: score, best: best, over: over, ganado: ganado }; };
