@@ -91,6 +91,7 @@ const ARCHIVOS = [
   'js/escala.js',
   'js/atras.js',
   'js/partida.js',
+  'js/taskbar.js',
   'js/opciones.js',
   'js/teclas.js',
   'js/vibracion.js',

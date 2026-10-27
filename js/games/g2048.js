@@ -19,13 +19,13 @@
     $('g48Score').textContent = score; $('g48Best').textContent = best; $('g48Max').textContent = E.maximo(grid);
     document.querySelectorAll('.g48Sz').forEach(function (e) { e.classList.toggle('sel', +e.dataset.n === n); });
     $('g48Undo').style.opacity = prev ? 1 : 0.4;
-    guardarPartida();
   }
-  /* partida a medias: se guarda tras cada cambio y se retoma al abrir el juego */
+  /* partida a medias: el botón «Guardar» la guarda y se retoma al abrir el juego */
   function guardarPartida() {
     if (!window.Partida || !grid) return;
-    if (over) { window.Partida.borrar('g2048'); return; }
+    if (over) { window.Partida.aviso('La partida ya ha terminado'); return; }
     window.Partida.guardar('g2048', { n: n, grid: grid, score: score, prev: prev, ganado: ganado });
+    window.Partida.aviso('💾 Partida guardada');
   }
   function restaurar() {
     var d = window.Partida && window.Partida.cargar('g2048');
@@ -97,6 +97,7 @@
   document.querySelectorAll('.g48Sz').forEach(function (b) { b.addEventListener('click', function () { n = +b.dataset.n; try { localStorage.setItem('g2048Size', n); } catch (e) { /* nada */ } nuevoJuego(); }); });
   $('g48NewGame').addEventListener('click', nuevoJuego); $('g48Again').addEventListener('click', nuevoJuego);
   $('g48Undo').addEventListener('click', deshacer);
+  $('g48Save').addEventListener('click', guardarPartida);
   $('g48Cont').addEventListener('click', function () { seguir = true; $('g48Over').classList.remove('show'); });
   window.initG2048 = function () { if (!grid && !restaurar()) nuevoJuego(); };
   window.g2048StartNew = nuevoJuego;

@@ -8,24 +8,6 @@
   var empujada = false, ignorar = 0, interactuado = false, pendiente = false, base = false;
   var instalada = (function () { try { return ['standalone', 'fullscreen', 'minimal-ui'].some(function (m) { return window.matchMedia('(display-mode: ' + m + ')').matches; }) || window.navigator.standalone === true; } catch (e) { return false; } })();
   var $ = function (id) { return document.getElementById(id); };
-  /* DIAGNÓSTICO TEMPORAL (quitar cuando se resuelva lo de «atrás» en la app instalada): guarda los últimos eventos y los muestra al reabrir. */
-  var t0 = Date.now();
-  function log(m) {
-    try { var l = JSON.parse(localStorage.getItem('atrasLog') || '[]'); l.push(((Date.now() - t0) / 1000).toFixed(1) + 's ' + m); localStorage.setItem('atrasLog', JSON.stringify(l.slice(-14))); } catch (e) { /* nada */ }
-  }
-  try {
-    var prev = JSON.parse(localStorage.getItem('atrasLog') || '[]');
-    if (prev.length) {
-      localStorage.removeItem('atrasLog');
-      document.addEventListener('DOMContentLoaded', function () {
-        var d = document.createElement('div');
-        d.style.cssText = 'position:fixed;left:4px;right:4px;top:4px;z-index:99999;background:#000d;color:#9f9;font:11px monospace;padding:8px;white-space:pre-wrap;border-radius:6px';
-        d.textContent = 'LOG ATRÁS (toca para cerrar)\n' + prev.join('\n'); d.onclick = function () { d.remove(); };
-        document.body.appendChild(d);
-      });
-    }
-  } catch (e) { /* nada */ }
-  ['pagehide', 'visibilitychange', 'freeze'].forEach(function (ev) { window.addEventListener(ev, function () { log(ev + ' vis=' + document.visibilityState); }); });
 
   var visible = function (el) { return !!el && getComputedStyle(el).display !== 'none'; };
 
@@ -69,7 +51,7 @@
     if (hay && !empujada && interactuado) {
       try {
         if (instalada && !base) { history.pushState({ atrasBase: 1 }, '', location.href); base = true; }
-        history.pushState({ atras: 1 }, '', location.href); empujada = true; log('push len=' + history.length + ' capa=' + (capa() || {}).tipo);
+        history.pushState({ atras: 1 }, '', location.href); empujada = true;
       } catch (e) { /* nada */ }
     } else if (!hay && empujada) {
       empujada = false; ignorar = 1; history.back();
@@ -79,7 +61,6 @@
 
   window.addEventListener('popstate', function (ev) {
     var st = ev.state || {};
-    log('popstate emp=' + empujada + ' ign=' + ignorar + ' len=' + history.length + ' st=' + (st.atrasBase !== undefined ? 'base' + st.atrasBase : st.atras ? 'capa' : '-') + ' capa=' + ((capa() || {}).tipo || '-'));
     if (st.atrasBase === 0) base = false;                        // se llegó a la primera entrada: la reserva se vuelve a crear al abrir otra capa
     if (ignorar > 0) { ignorar--; sincronizar(); return; }
     if (!empujada) return;                                       // un «atrás» ajeno a nuestra entrada: nada que hacer
@@ -97,7 +78,6 @@
         var st = history.state;
         if (st && st.atrasBase === 1) base = true;
         else { if (!(st && st.atrasBase === 0)) history.replaceState(Object.assign({}, st, { atrasBase: 0 }), '', location.href); history.pushState({ atrasBase: 1 }, '', location.href); base = true; }
-        log('base len=' + history.length);
       } catch (e) { /* nada */ }
     }
     document.removeEventListener('pointerup', primera, true); document.removeEventListener('click', primera, true); document.removeEventListener('keydown', primera, true);
