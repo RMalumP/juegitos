@@ -47,6 +47,7 @@ Cada juego con online tiene un botón **🌐 Conectar** en su barra de menú que
 | Blackjack | 2–6 | **el juego original**: 6 barajas, dividir (hasta 4 manos), doblar, blackjack 3:2, la banca pide hasta 17; la carta oculta de la banca nunca llega a los invitados |
 | Dominó | 2–4 (+ hasta 2 CPU) | el anfitrión es el árbitro y juega por las CPU; cada uno recibe solo su mano; opciones: 0–2 CPU (sin pasar de 4), 1 mano / a 50 / a 100 y, con 4, por parejas (con 2 personas y 2 CPU, juntas o rivales) |
 | Ahorcado | 2–6 | en cada ronda uno escribe la palabra y los demás la adivinan por turnos (acertar repite turno, fallar lo pasa). La palabra solo la tiene el anfitrión: los demás reciben los huecos hasta el final. Puntos: 1 por letra, 2 más a quien la completa y 3 a quien la escribió si los ahorca |
+| Simon | 2–6 | todos ven la misma secuencia a la vez y la repiten; quien falla o no contesta a tiempo queda eliminado y gana el último en pie. El anfitrión comprueba cada respuesta y elige la velocidad |
 | Póquer | 2–6 | Texas Hold'em con ciegas, subidas, all-in y botes secundarios; las cartas privadas llegan solo a su dueño |
 
 Las reglas del bingo y del póquer están en `js/bingo/engine.js` y `js/online/casino-engine.js` (sin DOM, con tests). Ajedrez, Damas, Parchís, **Ruleta y Blackjack reutilizan los motores originales** (sin modificar `core.js`: se enganchan por sus nombres globales). Las fichas del casino son virtuales.
@@ -109,6 +110,8 @@ js/online/c4-engine.js        Conecta 4: reglas, árbitro e IA (sin DOM, con tes
 js/online/ttt-engine.js       Tres en raya: reglas, árbitro e IA perfecta (sin DOM, con tests)
 js/games/duelo.js             interfaz común de los juegos de 2 jugadores por turnos (menú CPU / 2 en un móvil / online)
 js/online/j-duelo.js          Conecta 4 y Tres en raya online (el anfitrión valida cada jugada)
+js/online/simon-engine.js     Simon multijugador: rondas por eliminación (sin DOM, con tests)
+js/online/j-simon.js          Simon online (2 a 6 a la vez; el anfitrión comprueba las respuestas y pone el plazo)
 js/online/domino-engine.js    Dominó: reglas (pozo, tranque, parejas, puntos), árbitro e IA (sin DOM, con tests)
 js/games/domino.js            Dominó: mesa en serpiente, local de 2 a 4 (personas y CPU, «pasa el móvil») e interfaz online
 js/online/j-domino.js         Dominó online (el anfitrión es el árbitro, reparte las manos en privado y juega por las CPU)
@@ -149,6 +152,7 @@ Si cambias archivos de la aplicación: sube `APP_VERSION` (y `APP_FECHA`) en `js
 | `npm run test:duelo-online` | Conecta 4 y Tres en raya online con 2 navegadores: turnos, jugadas ilegales ignoradas, victoria, recarga y revancha |
 | `npm run test:domino` | Dominó local: contra 3 CPU por parejas hasta el final, guardar y recuperar, sin scroll horizontal y 2 personas + CPU en un móvil con «pasa el móvil» |
 | `npm run test:domino-online` | Dominó online: 2 personas + 2 CPU por parejas, manos privadas, jugadas fuera de turno ignoradas, recarga del invitado, final y lobby; luego 3 personas sin CPU |
+| `npm run test:simon` | Simon multijugador: 3 en un móvil con «pasa el móvil» (eliminación, ganador, otra vez) y online con 3 navegadores (velocidad, plazo, respuestas ignoradas, recarga y revancha) |
 | `npm run test:fase4` | Memoria (parejas y 2 jugadores), Simon (bot), Flappy (bot) y Wordle (palabras, colores, estadísticas y recarga) |
 | `npm run test:escritorio` | ordenador (1920×1080 y 1366×768): factor --ui, menú de inicio grande, juegos verticales que no se ensanchan, las 28 ventanas caben y el puntero funciona con el zoom; móvil sin cambios |
 | `npm run test:enlace` | entrar por enlace solo con el nombre, símbolo con la barra plegada y que los iconos del escritorio no se solapen |
