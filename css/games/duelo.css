@@ -1,0 +1,31 @@
+/* Juegos de duelo (Conecta 4, Tres en raya) — css/games/duelo.css */
+.duWrap{flex:1;min-height:0;display:flex;flex-direction:column;position:relative;background:#101a2e;color:#dbe7ff;font-family:Arial,sans-serif;overflow:hidden}
+.duHeader{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 10px;border-bottom:1px solid #26385f;font-size:12px;letter-spacing:2px;color:#8fb3ff;flex-shrink:0}
+.duInfo{font-size:11px;letter-spacing:0;color:#9ab}
+.duBody{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:10px}
+.duStatus{min-height:1.6em;font-size:clamp(14px,4vw,18px);font-weight:700;color:#ffe08a;text-align:center}
+.duBoard{display:flex;justify-content:center;align-items:flex-start;width:100%}
+.duMenu,.duFin{position:absolute;inset:0;z-index:20;background:#101a2ef2;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:16px;text-align:center;overflow-y:auto}
+.duMenu{display:flex}.duFin{display:none}
+.duMenu h1,.duFin h1{font-size:clamp(20px,6.4vw,30px);letter-spacing:3px;color:#fff}
+.duSub{color:#9db4e0;font-size:12px;line-height:1.5;max-width:300px}
+.duBig,.duOpt{font-family:inherit;color:#fff;background:#1b2e52;border:2px solid #3c5a99;border-radius:6px;padding:7px 12px;cursor:pointer;font-size:12px}
+.duBig{font-size:clamp(13px,3.6vw,16px);padding:10px 18px;min-width:min(86%,280px)}
+.duBig:hover:not(:disabled),.duOpt:hover{background:#27427a}.duBig:disabled{opacity:.5;cursor:default}
+.duRow{display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:center;font-size:11px;color:#9ab}
+.duOpt{padding:4px 9px;font-size:11px}.duOpt.sel{background:#fff;color:#101a2e;border-color:#fff}
+/* Conecta 4 */
+.c4Tab{display:grid;grid-template-columns:repeat(7,1fr);grid-template-rows:repeat(6,1fr);gap:4px;padding:8px;background:#1d4fd8;border-radius:10px;width:min(100%,400px,calc((100vh - 230px) * 7 / 6));box-sizing:border-box}
+.c4Celda{aspect-ratio:1;border-radius:50%;border:none;background:#0b1b4d;padding:0;cursor:pointer;position:relative}
+.c4Celda:disabled{cursor:default}
+.c4Celda.r{background:#e53935}.c4Celda.y{background:#fdd835}
+.c4Celda.ult::after{content:"";position:absolute;inset:30%;border-radius:50%;border:3px solid #ffffffcc}
+.c4Celda.gana{box-shadow:0 0 0 3px #fff,0 0 14px 4px #fff}
+.c4Tab:not(.off) .c4Celda:not(:disabled):hover{filter:brightness(1.4)}
+/* Tres en raya */
+.tttTab{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(3,minmax(0,1fr));gap:6px;width:min(100%,320px,calc(100vh - 230px));aspect-ratio:1}
+.tttCelda{aspect-ratio:1;background:#1b2e52;border:2px solid #3c5a99;border-radius:8px;padding:0;min-height:0;min-width:0;overflow:hidden;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#fff}
+.tttCelda svg{width:68%;height:68%;display:block;fill:none;stroke-linecap:round;stroke-width:13}
+.tttCelda .tx{stroke:#ff6b5a}.tttCelda .to{stroke:#5bc0ff}
+.tttCelda:disabled{cursor:default}.tttCelda:not(:disabled):hover{background:#27427a}
+.tttCelda.ult{border-color:#ffe08a}.tttCelda.gana{background:#2e8b57;border-color:#fff}

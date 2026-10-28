@@ -1,0 +1,17 @@
+/* Simon — ventana #winSim */
+#simWrap{flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:10px;background:#15151f;color:#eee;font-family:Arial,sans-serif;position:relative;overflow:hidden}
+#simHeader{display:flex;gap:8px;width:min(100%,380px)}
+.simBox{flex:1;background:#242436;border-radius:6px;padding:4px 8px;text-align:center}.simLab{font-size:9px;letter-spacing:1px;color:#9a9ab8}.simVal{font-size:clamp(16px,5vw,22px);font-weight:700}
+#simEstado{min-height:1.4em;font-size:14px;color:#ffe08a;font-weight:700}
+#simPads{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:min(100%,360px,calc(100vh - 300px));aspect-ratio:1;padding:10px;background:#000;border-radius:50%;box-sizing:border-box}
+#simPads.bloq .simPad{cursor:default}
+.simPad{border:none;padding:0;cursor:pointer;touch-action:manipulation;opacity:.55;transition:opacity .05s,filter .05s}
+.simPad[data-i="0"]{background:#27ae60;border-radius:100% 0 0 0}.simPad[data-i="1"]{background:#e74c3c;border-radius:0 100% 0 0}
+.simPad[data-i="2"]{background:#f1c40f;border-radius:0 0 0 100%}.simPad[data-i="3"]{background:#2980b9;border-radius:0 0 100% 0}
+.simPad.on{opacity:1;filter:brightness(1.5) drop-shadow(0 0 14px #fff)}
+#simVels{display:flex;gap:6px;align-items:center;font-size:11px}
+.simVel{background:#242436;color:#eee;border:2px solid #4a4a6a;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:11px}.simVel.sel{background:#fff;color:#15151f;border-color:#fff}
+#simStart,#simOver{position:absolute;inset:0;z-index:10;background:#15151ff2;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:14px;text-align:center}
+#simStart{display:flex}#simOver{display:none}#simOver.show{display:flex}
+#simStart h1,#simOver h1{font-size:clamp(20px,7vw,32px);letter-spacing:3px}#simStart .sub,#simOver .sub{color:#aab;font-size:12px;line-height:1.5}
+#simGo,#simAgain{background:#fff;color:#15151f;border:none;border-radius:5px;padding:11px 24px;font-weight:700;cursor:pointer;font-size:14px}

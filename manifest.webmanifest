@@ -1,17 +1,24 @@
 {
-  "name": "Juegos Windows XP",
-  "short_name": "Juegitos",
-  "description": "15 juegos clásicos con estética de Windows XP: Buscaminas, Tetris, Pac-Man, Ajedrez, Sudoku, Póquer y más.",
+  "name": "Juegos XP · Bingo online",
+  "short_name": "Juegos XP",
+  "description": "Escritorio estilo Windows XP con juegos clásicos y bingo online para jugar con amigos, cada uno desde su móvil.",
   "lang": "es",
+  "id": "./",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "orientation": "portrait",
+  "orientation": "any",
   "background_color": "#008080",
   "theme_color": "#245edb",
+  "categories": ["games", "entertainment"],
   "icons": [
-    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
-    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    { "src": "icons/xp-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/xp-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/xp-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/xp.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ],
+  "shortcuts": [
+    { "name": "Bingo", "short_name": "Bingo", "url": "./?abrir=bingo", "icons": [{ "src": "icons/xp-192.png", "sizes": "192x192" }] },
+    { "name": "Sala online", "short_name": "Sala", "url": "./?abrir=sala", "icons": [{ "src": "icons/xp-192.png", "sizes": "192x192" }] }
   ]
 }

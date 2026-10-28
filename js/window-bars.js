@@ -1,0 +1,2 @@
+/* window-bars.js: ocultar/mostrar barra de título de cada ventana — Juegos XP. Código original sin cambios (solo separado en archivos). */
+(function(){function o(e){var a=e.querySelector(".winTitle");if(a){var c=a.querySelector(".wbtn.hidebar"),t=e.querySelector(".winReopen");c&&(c.addEventListener("click",function(i){i.stopPropagation(),e.classList.add("barHidden"),t&&t.classList.add("show")}),t&&t.addEventListener("click",function(i){i.stopPropagation(),e.classList.remove("barHidden"),t.classList.remove("show")}))}}document.querySelectorAll(".win").forEach(o)})();

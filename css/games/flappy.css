@@ -1,0 +1,11 @@
+/* Flappy — ventana #winFlap */
+#flapWrap{flex:1;min-height:0;display:flex;flex-direction:column;background:#222;color:#fff;font-family:Arial,sans-serif;position:relative;overflow:hidden}
+#flapHeader{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:5px 10px;font-size:12px;letter-spacing:1px;flex-shrink:0;background:#333}
+#flapHeader b{font-size:16px}
+#flapDifs{display:flex;gap:4px;align-items:center}
+.flapDif{background:#444;color:#fff;border:2px solid #666;border-radius:4px;padding:3px 8px;cursor:pointer;font-size:11px}.flapDif.sel{background:#fff;color:#222;border-color:#fff}
+#flapCanvasWrap{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;position:relative;touch-action:none}
+#flapC{height:100%;max-width:100%;aspect-ratio:288/460;width:auto;display:block;touch-action:none;image-rendering:auto}
+#flapOver{display:none;position:absolute;inset:0;z-index:10;background:#000000b0;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;padding:14px}
+#flapOver.show{display:flex}#flapOver h1{font-size:clamp(22px,7vw,32px);letter-spacing:3px}#flapOver .sub{color:#ddd;font-size:13px}
+#flap-again{background:#fff;color:#222;border:none;border-radius:5px;padding:10px 22px;font-weight:700;cursor:pointer}
