@@ -20,8 +20,10 @@ const { entorno, wait, ok, fin } = require('./helpers');
     const pg0 = await nuevo('pestanas');
     await pg0.evaluate(() => window.openChessTab(0)); await pg0.waitForFunction(() => document.getElementById('chessFrame').contentWindow.getActiveTab);
     const tabs = await pg0.frameLocator('#chessFrame').locator('.tabs').locator('.tab-btn').allInnerTexts();
-    ok(JSON.stringify(tabs.map(t => t.trim())) === JSON.stringify(['♟ Ajedrez', '⏱ Reloj', '⛀ Damas', '🌐 Conectar', '🎨 Personalizado']), 'Ajedrez/Damas: «🌐 Conectar» está entre Damas y Personalizado (' + tabs.join(' | ') + ')');
-    ok(await pg0.frameLocator('#chessFrame').locator('.conectar-box #tabConectar').count() === 1 && await pg0.locator('#winChess .menuBar').count() === 0, 'Ajedrez/Damas: el botón está dentro de un recuadro y ya no hay «Conectar» en la barra de menú');
+    ok(JSON.stringify(tabs.map(t => t.trim())) === JSON.stringify(['♟ Ajedrez', '⏱ Reloj', '⛀ Damas', '🎨 Personalizado']), 'Ajedrez/Damas: las pestañas son Ajedrez, Reloj, Damas y Personalizado (' + tabs.join(' | ') + ')');
+    const caja = await pg0.frameLocator('#chessFrame').locator('.title-bar .title-actions').first().locator('button').evaluateAll(bs => bs.map(b => b.id || b.title));
+    ok(caja[0] === 'tabConectar' && /Diseño/.test(caja[1]) && await pg0.locator('#winChess .menuBar').count() === 0, 'Ajedrez/Damas: «🌐» (Conectar) va a la izquierda del botón de diseño del tablero (' + caja.join(' | ') + ')');
+    ok(await pg0.frameLocator('#chessFrame').locator('.split-btn .split-half').count() === 2, 'Ajedrez/Damas: guardar y cargar archivo forman un solo círculo partido');
     await pg0.context().close();
   }
 
