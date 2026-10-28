@@ -1,0 +1,72 @@
+/* Juego de la Oca — css/games/oca.css */
+.ocWrap{flex:1;min-height:0;display:flex;flex-direction:column;position:relative;background:radial-gradient(ellipse at 50% 35%,#2e7d4f,#14502f 80%);color:#fff8e6;font-family:Arial,sans-serif;overflow:hidden}
+.ocHeader{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:5px 10px;background:#0f3d24;border-bottom:1px solid #3c9a64;font-size:12px;letter-spacing:2px;color:#ffe9a8;flex-shrink:0}
+.ocInfo{font-size:11px;letter-spacing:0;color:#cfe8d6;text-align:right}
+.ocJugs{display:flex;flex-wrap:wrap;gap:4px;justify-content:center;padding:5px 5px 2px;flex-shrink:0}
+.ocJug{display:flex;align-items:center;gap:4px;background:#0006;border:2px solid #ffffff22;border-radius:8px;padding:2px 7px;font-size:11px;min-width:0;max-width:48%}
+.ocJug i,.ocAs i,.ocQuien i,.ocHist li i,.ocPuesto i{width:10px;height:10px;border-radius:50%;background:var(--col);border:1px solid #0008;display:inline-block;flex-shrink:0}
+.ocJug.turno{border-color:var(--col);box-shadow:0 0 8px var(--col)}
+.ocJug.gana{border-color:#ffd54f;background:#5a4300aa}
+.ocJN{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:8em;font-weight:700}
+.ocJug b{background:#fff3c4;color:#4a3200;border-radius:7px;padding:0 5px;font-size:11px}
+.ocJE{white-space:nowrap;color:#ffd0a0}
+.ocZona{flex:1;min-height:120px;display:flex;align-items:center;justify-content:center;padding:3px;overflow:hidden}
+/* tablero: 7 × 9 casillas en espiral + una fila para la salida */
+.ocTablero{--u:40px;position:relative;display:grid;grid-template-columns:repeat(7,1fr);grid-template-rows:repeat(10,1fr);background:#5d3a1a;border:3px solid #3b230c;border-radius:6px;box-shadow:0 4px 14px #0008;box-sizing:content-box}
+.ocC{position:relative;background:#fbf1d3;border:1px solid #b08850;display:flex;align-items:center;justify-content:center;overflow:hidden;min-width:0;min-height:0}
+.ocC.par{background:#f4e3b5}
+.ocN{position:absolute;left:2px;top:1px;font-size:calc(var(--u) * .24);font-weight:700;color:#6b4a1c;line-height:1}
+.ocI{font-size:calc(var(--u) * .48);line-height:1;filter:drop-shadow(0 1px 0 #0003)}
+.ocI.oca svg{width:calc(var(--u) * .62);height:calc(var(--u) * .62);display:block}
+.ocC.t-oca{background:#bfe3f7}.ocC.t-oca.par{background:#a9d7f1}
+.ocC.t-puente,.ocC.t-dados{background:#ffe08a}
+.ocC.t-posada{background:#ffc9a1}.ocC.t-pozo{background:#b6c7d6}.ocC.t-laberinto{background:#c9b3e6}
+.ocC.t-carcel{background:#bdbdbd}.ocC.t-calavera{background:#7b1f1f}.ocC.t-calavera .ocN{color:#ffd}
+.ocC.t-jardin{background:radial-gradient(circle,#fff6b0,#f5c542);}
+.ocC.t-jardin .ocI{font-size:calc(var(--u) * .62)}
+.ocSalida{background:#2b5d3b;border-color:#163b23;justify-content:flex-start;gap:6px;padding-left:8px}
+.ocSalTxt{font-size:calc(var(--u) * .26);font-weight:700;letter-spacing:2px;color:#d9f2df}
+.ocFicha{position:absolute;width:calc(var(--u) * .4);height:calc(var(--u) * .4);margin:calc(var(--u) * -.2) 0 0 calc(var(--u) * -.2);border-radius:50%;border:2px solid #222;box-shadow:0 2px 3px #0009,inset 0 -3px 4px #0004,inset 0 2px 3px #fff8;transition:left .13s ease-out,top .13s ease-out;z-index:3;font-size:calc(var(--u) * .2);display:flex;align-items:center;justify-content:center;line-height:1;pointer-events:none}
+.ocFicha.salta{transition:left .38s cubic-bezier(.3,1.4,.6,1),top .38s cubic-bezier(.3,1.4,.6,1);transform:scale(1.25);z-index:4}
+.ocFicha.turno{animation:ocLate .9s infinite alternate}
+.ocFicha.meta{transform:scale(1.35);box-shadow:0 0 10px #ffd54f}
+@keyframes ocLate{to{box-shadow:0 0 0 3px #fff,0 0 10px #fff}}
+.ocPie{flex-shrink:0;background:#0f3d24dd;border-top:1px solid #3c9a64;padding:4px 8px 8px;display:flex;flex-direction:column;align-items:center;gap:4px}
+.ocUlt{font-size:clamp(11px,3.2vw,13px);text-align:center;line-height:1.35;min-height:2.6em;max-width:520px;color:#fff8e6}
+.ocUlt em{display:block;color:#ffe08a;font-size:.92em}
+.ocQuien{font-weight:700;color:#fff;white-space:nowrap}.ocQuien i{margin-right:3px;vertical-align:-1px}
+.ocPasa{display:block;color:#ffd0a0;font-size:.92em}
+.ocFila{display:flex;align-items:center;gap:10px}
+.ocDados{display:flex;gap:6px}
+.ocDado{width:34px;height:34px;background:linear-gradient(145deg,#fff,#e9e3d3);border:1px solid #6b6450;border-radius:7px;box-shadow:1px 2px 0 #0006;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);padding:4px;box-sizing:border-box}
+.ocDado i{display:block;margin:12%;border-radius:50%}.ocDado i.p{background:#b71c1c}
+.ocDados.ya .ocDado{animation:ocCae .25s ease-out}
+@keyframes ocCae{from{transform:rotate(-25deg) scale(1.2)}to{transform:none}}
+.ocTirar{font:700 clamp(14px,4vw,17px) Arial,sans-serif;color:#3a2600;background:linear-gradient(#ffe48a,#f5b52e);border:2px solid #fff3c4;border-radius:8px;padding:9px 16px;cursor:pointer;box-shadow:0 2px 0 #7a5200}
+.ocTirar:disabled{filter:grayscale(.8) brightness(.7);cursor:default}
+.ocTirar:not(:disabled):hover{filter:brightness(1.08)}
+.ocVerHist{font-size:18px;background:#0005;border:1px solid #ffffff44;border-radius:7px;padding:6px 8px;cursor:pointer;color:#fff}
+.ocEstado{min-height:1.3em;font-size:clamp(12px,3.6vw,15px);font-weight:700;color:#ffe08a;text-align:center;border-bottom:3px solid var(--col,transparent);padding-bottom:1px}
+.ocHist{position:absolute;left:6px;right:6px;bottom:6px;max-height:60%;z-index:15;display:none;flex-direction:column;background:#0b3320f2;border:1px solid #3c9a64;border-radius:8px;padding:6px 8px;box-shadow:0 4px 14px #000a}
+.ocHistCab{display:flex;justify-content:space-between;align-items:center;font-size:13px;margin-bottom:4px}
+.ocHist ol{list-style:none;margin:0;padding:0;overflow-y:auto;font-size:12px;line-height:1.35}
+.ocHist li{padding:3px 0;border-bottom:1px solid #ffffff14}.ocHist li i{margin-right:4px;vertical-align:-1px}
+.ocMenu,.ocFin{position:absolute;inset:0;z-index:20;background:#0b3320f4;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:14px;text-align:center;overflow-y:auto}
+.ocMenu{display:flex}.ocFin{display:none}
+.ocMenu h1,.ocFin h1{font-size:clamp(19px,6vw,28px);letter-spacing:2px;color:#fff;margin:0;display:flex;align-items:center;gap:6px;justify-content:center}
+.ocMenu h1 svg{width:1.2em;height:1.2em}
+.ocSub{color:#cfe8d6;font-size:12px;line-height:1.45;max-width:340px}
+.ocAsientos{display:flex;flex-direction:column;gap:4px}
+.ocRow{display:flex;align-items:center;gap:5px;flex-wrap:wrap;justify-content:center;font-size:11px;color:#cfe8d6}
+.ocAs{min-width:5.5em;text-align:right;display:inline-flex;align-items:center;gap:4px;justify-content:flex-end}
+.ocBig,.ocOpt{font-family:inherit;color:#fff;background:#14532f;border:2px solid #3f9d66;border-radius:6px;padding:6px 10px;cursor:pointer;font-size:11px}
+.ocBig{font-size:clamp(13px,3.6vw,16px);padding:9px 16px;min-width:min(86%,280px)}
+.ocBig:hover:not(:disabled),.ocOpt:hover{background:#1d6e40}.ocBig:disabled{opacity:.55;cursor:default}
+.ocOpt.sel{background:#fff;color:#0b3320;border-color:#fff}
+.ocReglas{display:none;max-width:380px;text-align:left;font-size:12px;line-height:1.4;color:#e8f5ec;background:#0005;border-radius:8px;padding:4px 10px}
+.ocReglas.on{display:block}.ocReglas ul{margin:4px 0;padding-left:18px}.ocReglas b{color:#ffe08a}
+.ocPuestos{display:flex;flex-direction:column;gap:4px;width:min(100%,360px)}
+.ocPuesto{display:flex;align-items:center;gap:7px;background:#0005;border-radius:6px;padding:5px 8px;font-size:12px;text-align:left}
+.ocPuesto b{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ocPuesto.gana{outline:2px solid #ffd54f}
+.ocBtns{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;align-items:center;margin-top:4px}
