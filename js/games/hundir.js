@@ -34,7 +34,7 @@
       for (c = 0; c < N; c++) {
         var b = document.createElement('button'); b.type = 'button'; b.className = 'hunC'; b.dataset.i = r * N + c;
         b.setAttribute('aria-label', LETRAS[r] + (c + 1));
-        if (alClic) b.addEventListener('click', (function (i) { return function () { alClic(i); }; })(r * N + c));
+        if (alClic) b.addEventListener('click', (function (i) { return function () { if (sinClic) { sinClic = false; return; } alClic(i); }; })(r * N + c));
         if (alPasar) { b.addEventListener('pointerenter', (function (i) { return function () { alPasar(i); }; })(r * N + c)); }
         cont.appendChild(b); lista.push(b);
       }
@@ -240,12 +240,60 @@
     // tocar un barco ya colocado lo recoge
     for (var k = 0; k < U.draft.length; k++) if (U.draft[k] && HE.celdas(U.draft[k], N).indexOf(i) >= 0) { U.sel = k; var sb = U.draft[k]; U.h = !!sb.h; U.draft[k] = null; U.msg = ''; ancla = sb.r * N + sb.c; K.i = ancla; pintar(); previsualizar(ancla); return; }
     if (U.sel == null || U.sel < 0 || U.draft[U.sel]) { var libre = U.draft.findIndex(function (x) { return !x; }); if (libre < 0) return; U.sel = libre; }
+    colocarEn(i);
+  }
+  function colocarEn(i) {                                     // pone el barco seleccionado con su ancla en i; false si no cabe
     var b = barcoEn(i).barco;
-    if (!HE.cabeEn(b, resto(U.sel), opcionesRegla().tocar, N)) { U.msg = '⚠ Ahí no cabe' + (opcionesRegla().tocar ? '' : ' (los barcos no pueden tocarse)') + '.'; vib(30); pintar(); return; }
+    if (!HE.cabeEn(b, resto(U.sel), opcionesRegla().tocar, N)) { U.msg = '⚠ Ahí no cabe' + (opcionesRegla().tocar ? '' : ' (los barcos no pueden tocarse)') + '.'; vib(30); pintar(); return false; }
     U.draft[U.sel] = b; U.msg = '';
     var sig = U.draft.findIndex(function (x) { return !x; }); U.sel = sig < 0 ? -1 : sig;
-    pintar();
+    pintar(); return true;
   }
+
+  /* ---------- arrastrar barcos (dedo o ratón mantenido) ---------- */
+  var arr = null, sinClic = false;                            // arr: { id, x, y, activo, k, dr, dc, origen } mientras hay un gesto sobre el tablero propio
+  function celdaBajo(x, y) { var e = document.elementFromPoint(x, y), b = e && e.closest && e.closest('#hunOwn .hunC'); return b ? +b.dataset.i : -1; }
+  function barcoPuestoEn(i) { for (var k = 0; k < U.draft.length; k++) if (U.draft[k] && HE.celdas(U.draft[k], N).indexOf(i) >= 0) return k; return -1; }
+  function anclaArrastre(i, a) {                              // mantiene el punto del barco que se agarró bajo el dedo
+    a = a || arr; if (!a || a.dr == null) return i;
+    var r = Math.floor(i / N) - a.dr, c = i % N - a.dc;
+    return Math.max(0, r) * N + Math.max(0, c);
+  }
+  function arrastreEmpieza() {
+    if (arr.k >= 0) {                                         // agarra un barco ya colocado: se recoge y se lleva con el puntero
+      var sb = U.draft[arr.k]; arr.origen = sb; U.sel = arr.k; U.h = !!sb.h; U.draft[arr.k] = null; U.msg = '';
+      arr.dr = sb.h ? 0 : arr.r0 - sb.r; arr.dc = sb.h ? arr.c0 - sb.c : 0;
+      pintar();
+    } else if (U.sel == null || U.sel < 0 || U.draft[U.sel]) {
+      var libre = U.draft.findIndex(function (x) { return !x; }); if (libre < 0) { arr = null; return; } U.sel = libre; pintar();
+    }
+    arr.activo = true;
+  }
+  $('hunOwn').addEventListener('pointerdown', function (e) {
+    if (!enColocacion() || (e.pointerType === 'mouse' && e.button !== 0) || !e.isPrimary) return;
+    var t = e.target.closest && e.target.closest('.hunC'); if (!t) return;
+    var i = +t.dataset.i, k = barcoPuestoEn(i);
+    arr = { id: e.pointerId, x: e.clientX, y: e.clientY, activo: false, k: k, r0: Math.floor(i / N), c0: i % N, dr: null, dc: null, origen: null };
+  });
+  document.addEventListener('pointermove', function (e) {
+    if (!arr || e.pointerId !== arr.id) return;
+    if (!arr.activo) { if (Math.hypot(e.clientX - arr.x, e.clientY - arr.y) < 8) return; arrastreEmpieza(); if (!arr) return; }
+    var i = celdaBajo(e.clientX, e.clientY);
+    if (i >= 0) previsualizar(anclaArrastre(i)); else previsualizar(-1);
+    e.preventDefault();
+  });
+  function arrastreFin(e, cancelar) {
+    if (!arr || e.pointerId !== arr.id) return;
+    var a = arr; arr = null;
+    if (!a.activo) return;                                    // fue un toque: lo resuelve el clic de siempre
+    sinClic = true; setTimeout(function () { sinClic = false; }, 0);
+    var i = cancelar ? -1 : celdaBajo(e.clientX, e.clientY);
+    previsualizar(-1);
+    if (i >= 0) { if (colocarEn(anclaArrastre(i, a))) return; }
+    if (a.origen && U.draft[U.sel] == null) { U.draft[U.sel] = a.origen; var sig = U.draft.findIndex(function (x) { return !x; }); U.sel = sig < 0 ? -1 : sig; U.msg = i >= 0 ? U.msg : ''; pintar(); }
+  }
+  document.addEventListener('pointerup', function (e) { arrastreFin(e, false); });
+  document.addEventListener('pointercancel', function (e) { arrastreFin(e, true); });
   function girar() { U.h = !U.h; var a = K.on ? K.i : ancla; pintar(); if (a >= 0 && enColocacion()) previsualizar(a); }
   function aleatorio() { U.draft = HE.flotaAleatoria(null, opcionesRegla().tocar, U.cfg); U.sel = -1; U.msg = ''; pintar(); }
   function listo() {

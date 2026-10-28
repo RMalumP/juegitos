@@ -55,3 +55,5 @@
 .hunC.barco:not(.toc):not(.hund).sc2{background:#5f7d8c}.hunC.barco:not(.toc):not(.hund).sc3{background:#938c78}
 .hunC.rev.sc0{background:#5d6d7e}.hunC.rev.sc1{background:#7d8d9e}.hunC.rev.sc2{background:#4a5c6a}.hunC.rev.sc3{background:#6e6a5c}
 .hunC.hund.sc1{background:#8c2a1c}.hunC.hund.sc2{background:#511009}.hunC.hund.sc3{background:#7a3a22}
+
+#hunOwnBox.grande .hunGrid{touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}

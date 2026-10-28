@@ -48,6 +48,23 @@ async function dispararPrimero(pg) {
   ok(e.draft[1] && e.draft[1].h === false && e.draft[1].r + 4 <= 10, 'colocar: un barco vertical se ajusta al tablero');
   await celda(0, 3).click();
   ok((await est(pg)).draft[0] === null, 'colocar: tocar un barco puesto lo recoge');
+  // arrastrar: el barco recogido sigue al puntero y se coloca al soltar
+  await celda(0, 3).click();                                            // vuelve a poner el portaaviones (A4, horizontal)
+  const centro = async (r, c) => { const b = await celda(r, c).boundingBox(); return { x: b.x + b.width / 2, y: b.y + b.height / 2 }; };
+  await boton(pg, 'Borrar').click();
+  await celda(0, 3).click();
+  let a = await centro(0, 4), z = await centro(4, 4);
+  await pg.mouse.move(a.x, a.y); await pg.mouse.down(); await pg.mouse.move((a.x + z.x) / 2, (a.y + z.y) / 2, { steps: 4 });
+  ok((await est(pg)).draft[0] === null && await pg.locator('#hunOwn .prevOk').count() === 5, 'arrastrar: el barco se recoge y la vista previa lo sigue');
+  await pg.mouse.move(z.x, z.y, { steps: 4 }); await pg.mouse.up(); await wait(50);
+  e = await est(pg);
+  ok(e.draft[0] && e.draft[0].r === 4 && e.draft[0].c === 3, 'arrastrar: al soltar queda donde se agarró (misma casilla del barco bajo el dedo)');
+  a = await centro(4, 4);
+  await pg.mouse.move(a.x, a.y); await pg.mouse.down(); await pg.mouse.move(a.x + 3, a.y, { steps: 2 }); await pg.mouse.move(a.x, a.y - 400, { steps: 4 }); await pg.mouse.up(); await wait(50);
+  e = await est(pg);
+  ok(e.draft[0] && e.draft[0].r === 4 && e.draft[0].c === 3, 'arrastrar: soltar fuera del tablero devuelve el barco a su sitio');
+  await celda(4, 3).click();                                            // un toque simple sigue recogiendo
+  ok((await est(pg)).draft[0] === null, 'arrastrar: un toque simple sigue recogiendo el barco');
   ok(await boton(pg, 'Listo').isDisabled(), 'colocar: «Listo» está desactivado con la flota incompleta');
   await boton(pg, 'Borrar').click(); ok((await est(pg)).draft.every(x => !x), 'colocar: «Borrar» vacía el tablero');
 
