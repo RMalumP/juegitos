@@ -30,3 +30,8 @@
 #taskbar{min-width:0}
 #taskChips{flex:1 1 0;min-width:0;display:flex;align-items:center;gap:4px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
 #taskChips::-webkit-scrollbar{display:none}
+/* foco visible al navegar con teclado (borde punteado, como en Windows XP) — js/a11y.js */
+[role="button"]:focus-visible{outline:1px dotted #fff;outline-offset:2px}
+.wbtn[role="button"]:focus-visible,.choiceBtn[role="button"]:focus-visible,.sudNumBtn[role="button"]:focus-visible{outline-color:#000}
+/* se puede ampliar con dos dedos, pero sin el zoom por doble toque, que molesta al jugar (los mandos ya tienen touch-action:none) */
+html{touch-action:manipulation}

@@ -55,6 +55,10 @@ El icono **📡 Multijugador** del escritorio (junto a Guardar y Cargar, no en e
 
 **Partidas a medias.** Cada juego con partida larga tiene un botón **💾 Guardar** (en la barra de menú de la ventana; en Sudoku, entre los botones de abajo): 2048, Sudoku, Memoria, Conecta 4, 3 en raya (contra la CPU o 2 jugadores en un móvil), Buscaminas y Solitario. La partida se guarda en el móvil (`partida_<juego>` en `localStorage`, vía `js/partida.js`) y se recupera sola al abrir ese juego tras volver a abrir la app. En **Ajedrez y Damas**, el 💾 hace lo mismo para todo el tablero (ajedrez, damas y personalizado, con relojes), y **⬇️ / ⬆️** guardan y cargan la partida en un archivo `.json` (si hay una partida iniciada, pregunta antes de sobrescribirla). Todo entra también en *Guardar/Cargar datos*.
 
+**Contra la máquina en Ajedrez y Damas.** El selector **🤖 Rival** de cada tablero elige 2 jugadores o la máquina (fácil, normal o difícil) y con qué color juegas. En una partida online siempre juegan las dos personas. Los relojes se pausan al minimizar, cambiar de juego o de pestaña.
+
+**Récords y pausas.** Tetris, Invaders y Pac-Man guardan la mejor puntuación; Buscaminas (por tamaño y minas) y Sudoku (por dificultad), el mejor tiempo. Al cambiar de pestaña o bloquear el móvil se pausa el juego visible, y el cronómetro del Sudoku sigue al volver. El Sudoku «experto» se genera al instante y siempre con 24 pistas. Se puede ampliar la página con dos dedos (sin zoom por doble toque).
+
 Cómo funciona (adaptado de «La aldea se duerme» y «El Impostor»):
 
 - WebRTC punto a punto con **PeerJS, STUN y TURN**. Sin Firebase. Las credenciales TURN no están en el repositorio: se piden al Worker de Cloudflare de «El Impostor» (`TURN_PROXY_URL` en `js/online/transport-peer.js`; solo responde a `https://rmalump.github.io`). Si el Worker no responde, la sala funciona igual solo con STUN y se avisa.
@@ -85,6 +89,8 @@ js/online/qrcode.js           generador de QR (MIT)
 js/pwa.js                     instalación (botón «Instalar app»), actualizaciones, versión en créditos y accesos directos (?abrir=bingo | ?abrir=sala)
 js/version.js                 versión de la app (única fuente)
 js/vibracion.js               vibración común (interruptor 📳)
+js/records.js                 récords (Tetris, Invaders, Pac-Man por puntos; Buscaminas y Sudoku por tiempo)
+js/a11y.js                    accesibilidad: rol de botón, tabulador y Enter/Espacio en los botones <div>
 js/opciones.js                ⚙ Opciones: detecta móvil/ordenador, control táctil (auto/activado/desactivado) y repetición de Tetris (DAS, ARR, SDF)
 js/teclas.js                 reasignación de teclas común (Breakout, 2048, Flappy, Hundir)
 js/atras.js                  botón «atrás» del móvil: cierra la capa superior (modal, menú de inicio, conexión, ventana)

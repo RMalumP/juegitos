@@ -74,6 +74,8 @@ const ARCHIVOS = [
   'js/games/sudoku.js',
   'js/games/tetris.js',
   'js/iframe-games.js',
+  'js/records.js',
+  'js/a11y.js',
   'js/lazy-loader.js',
   'js/online/casino-engine.js',
   'js/online/j-blackjack.js',
