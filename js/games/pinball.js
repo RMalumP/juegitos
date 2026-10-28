@@ -265,7 +265,7 @@
   }
 
   /* ---------- dibujo ---------- */
-  var capa = document.createElement('canvas');
+  var capa = document.createElement('canvas'), capaR = document.createElement('canvas');
   function trazo(c, m) { c.beginPath(); c.moveTo(m.ax, m.ay); c.lineTo(m.bx, m.by); c.stroke(); }
   function poli(c, pts) { c.beginPath(); c.moveTo(pts[0][0], pts[0][1]); for (var i = 1; i < pts.length; i++) c.lineTo(pts[i][0], pts[i][1]); }
   function cohete(c, x, y, ang) {                               // cohete rosa de la zona de la rampa
@@ -276,16 +276,79 @@
     c.fillStyle = '#ffd23f'; c.beginPath(); c.moveTo(-14, -4); c.lineTo(-24, 0); c.lineTo(-14, 4); c.fill();
     c.restore();
   }
-  function pintarRampa(c, r, ancho) {                          // banda elevada con rayas
-    c.lineCap = 'round'; c.lineJoin = 'round';
-    c.strokeStyle = 'rgba(0,0,0,.45)'; c.lineWidth = ancho + 6; poli(c, r.ruta.map(function (p) { return [p[0] + 3, p[1] + 4]; })); c.stroke();
-    c.strokeStyle = r.color; c.lineWidth = ancho + 4; poli(c, r.ruta); c.stroke();
-    c.strokeStyle = r.id === 'rampa' ? '#c9b2ff' : '#7a1012'; c.lineWidth = ancho - 4; poli(c, r.ruta); c.stroke();
-    c.setLineDash([3, 6]); c.strokeStyle = r.id === 'rampa' ? '#6d45b8' : '#e8c070'; c.lineWidth = ancho - 8; poli(c, r.ruta); c.stroke(); c.setLineDash([]);
+  /* Rampas elevadas: el recorrido se suaviza (Catmull-Rom) y se dibuja como una pieza ancha con sombra, soportes, paredes y piso con volumen */
+  function suavizar(pts) {
+    var out = [];
+    for (var i = 0; i < pts.length - 1; i++) {
+      var p0 = pts[Math.max(0, i - 1)], p1 = pts[i], p2 = pts[i + 1], p3 = pts[Math.min(pts.length - 1, i + 2)];
+      var n = Math.max(2, Math.ceil(Math.hypot(p2[0] - p1[0], p2[1] - p1[1]) / 3));
+      for (var k = 0; k < n; k++) {
+        var t = k / n, t2 = t * t, t3 = t2 * t;
+        out.push([0.5 * (2 * p1[0] + (-p0[0] + p2[0]) * t + (2 * p0[0] - 5 * p1[0] + 4 * p2[0] - p3[0]) * t2 + (-p0[0] + 3 * p1[0] - 3 * p2[0] + p3[0]) * t3),
+          0.5 * (2 * p1[1] + (-p0[1] + p2[1]) * t + (2 * p0[1] - 5 * p1[1] + 4 * p2[1] - p3[1]) * t2 + (-p0[1] + 3 * p1[1] - 3 * p2[1] + p3[1]) * t3)]);
+      }
+    }
+    out.push(pts[pts.length - 1]);
+    return out;
+  }
+  function cinta(c, pts, anchoDe, f, dx, dy) {                  // polígono de la cinta a una fracción f del ancho
+    var izq = [], der = [];
+    for (var i = 0; i < pts.length; i++) {
+      var a = pts[Math.max(0, i - 1)], b = pts[Math.min(pts.length - 1, i + 1)], l = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
+      var nx = -(b[1] - a[1]) / l, ny = (b[0] - a[0]) / l, w = anchoDe(i / (pts.length - 1)) * f / 2, o = dx ? dx(i / (pts.length - 1)) : 0;
+      izq.push([pts[i][0] + nx * w + o, pts[i][1] + ny * w + (dy ? dy(i / (pts.length - 1)) : 0)]);
+      der.push([pts[i][0] - nx * w + o, pts[i][1] - ny * w + (dy ? dy(i / (pts.length - 1)) : 0)]);
+    }
+    poli(c, izq.concat(der.reverse())); c.closePath();
+    return { izq: izq, der: der.reverse() };
+  }
+  function pintarRampa(c, r, est) {
+    var pts = suavizar(r.ruta), alto = function (t) { return Math.sin(Math.PI * Math.min(1, t * 1.25)) * est.alto; };
+    var sx = function (t) { return alto(t) * 0.45; }, sy = function (t) { return alto(t) * 0.75; };
+    c.fillStyle = 'rgba(0,0,10,.45)'; cinta(c, pts, est.ancho, 1.05, sx, sy); c.fill();          // sombra sobre la mesa
+    c.fillStyle = '#8a8a9a';                                    // soportes
+    for (var t = 0.18; t < 0.95; t += 0.22) {
+      var i = Math.round(t * (pts.length - 1)), p = pts[i];
+      c.fillRect(p[0] - 2, p[1], 4, sy(t) + 2); c.fillStyle = '#5a5a68'; c.fillRect(p[0] + 1, p[1], 1, sy(t) + 2); c.fillStyle = '#8a8a9a';
+    }
+    c.fillStyle = est.pared; cinta(c, pts, est.ancho, 1, null, function () { return 3; }); c.fill();   // cara inferior de la pared
+    c.fillStyle = est.borde; cinta(c, pts, est.ancho, 1); c.fill();
+    var fp = est.fPiso || 0.74;
+    c.fillStyle = est.piso; cinta(c, pts, est.ancho, fp); c.fill();
+    c.fillStyle = est.luz; cinta(c, pts, est.ancho, fp * 0.5); c.fill();
+    if (est.brillo) { c.fillStyle = est.brillo; cinta(c, pts, est.ancho, 0.12, function () { return -2; }, function () { return -2; }); c.fill(); }
+    var bordes = cinta(c, pts, est.ancho, 1);                   // remate claro de las paredes
+    c.strokeStyle = est.remate; c.lineWidth = 1.5;
+    poli(c, bordes.izq); c.stroke(); poli(c, bordes.der); c.stroke();
+    var bi = cinta(c, pts, est.ancho, fp);                    // arista interior oscura
+    c.strokeStyle = 'rgba(0,0,0,.35)'; c.lineWidth = 1; poli(c, bi.izq); c.stroke(); poli(c, bi.der); c.stroke();
+    var a0 = Math.atan2(pts[3][1] - pts[0][1], pts[3][0] - pts[0][0]), w0 = est.ancho(0) / 2 + 4;   // boca de entrada abierta
+    c.save(); c.translate(pts[0][0], pts[0][1]); c.rotate(a0);
+    c.fillStyle = est.borde; c.beginPath(); c.moveTo(4, -w0 + 2); c.lineTo(-8, -w0 - 2); c.lineTo(-8, w0 + 2); c.lineTo(4, w0 - 2); c.closePath(); c.fill();
+    c.fillStyle = 'rgba(10,5,30,.75)'; c.beginPath(); c.ellipse(-2, 0, 4, w0 - 6, 0, 0, Math.PI * 2); c.fill();
+    c.strokeStyle = est.labio; c.lineWidth = 3; c.beginPath(); c.moveTo(-8, -w0 - 2); c.lineTo(-8, w0 + 2); c.stroke();
+    c.restore();
+    return pts;
   }
   function flecha(c, x, y, ang, color) {
     c.save(); c.translate(x, y); c.rotate(ang); c.fillStyle = color;
     c.beginPath(); c.moveTo(7, 0); c.lineTo(-5, -5); c.lineTo(-5, 5); c.closePath(); c.fill(); c.restore();
+  }
+  function prepararRampas() {
+    capaR.width = W * dpr; capaR.height = H * dpr;
+    var c = capaR.getContext('2d'); c.setTransform(dpr, 0, 0, dpr, 0, 0); c.lineJoin = 'round'; c.lineCap = 'round';
+    var orb = pintarRampa(c, rampas[1], { ancho: function (t) { return t < 0.06 ? 30 - t * 100 : 24; }, alto: 14, fPiso: 0.52,
+      pared: '#4a0608', borde: '#c8262a', piso: '#5e5e6c', luz: '#8a8a98', brillo: null, remate: '#ff8a70', labio: '#ffd23f' });
+    c.fillStyle = '#ffd23f';                                    // luces doradas por el centro de la órbita
+    for (var i = 4; i < orb.length - 2; i += 4) { c.beginPath(); c.arc(orb[i][0], orb[i][1], 2, 0, Math.PI * 2); c.fill(); }
+    var ram = pintarRampa(c, rampas[0], { ancho: function (t) { return t < 0.1 ? 34 - t * 80 : 26 - t * 6; }, alto: 22,
+      pared: '#2a1060', borde: '#6a40c0', piso: '#9a72e0', luz: '#c4a8ff', brillo: 'rgba(255,255,255,.55)', remate: '#e8dcff', labio: '#ffffff' });
+    c.lineCap = 'butt';                                         // bandas amarillas de la rampa morada
+    [0.14, 0.26, 0.38, 0.52, 0.66, 0.8].forEach(function (f) {
+      var i = Math.round(f * (ram.length - 1)), p0 = ram[i], p1 = ram[i + 1], a = Math.atan2(p1[1] - p0[1], p1[0] - p0[0]), w = 12 - f * 3;
+      c.strokeStyle = '#a07a00'; c.lineWidth = 6; c.beginPath(); c.moveTo(p0[0] - Math.sin(a) * w, p0[1] + Math.cos(a) * w); c.lineTo(p0[0] + Math.sin(a) * w, p0[1] - Math.cos(a) * w); c.stroke();
+      c.strokeStyle = '#ffd23f'; c.lineWidth = 4; c.stroke();
+    });
   }
   function prepararFondo() {
     capa.width = W * dpr; capa.height = H * dpr;
@@ -373,15 +436,6 @@
     c.fillStyle = '#f2d23a';                                    // luces amarillas decorativas
     [[96, 250], [110, 236], [45, 430], [CX * 2 - 45, 430], [22.5, 430], [CX * 2 - 22.5, 430], [138, 92], [228, 92]].forEach(function (p) { c.beginPath(); c.arc(p[0], p[1], 3, 0, Math.PI * 2); c.fill(); });
     flecha(c, 136, 274, -2.0, '#7fd0ff'); flecha(c, 286, 290, -1.6, '#7fd0ff'); flecha(c, 150, 228, -2.4, '#7fd0ff');
-    pintarRampa(c, rampas[1], 14);
-    pintarRampa(c, rampas[0], 16);
-    c.strokeStyle = '#ffd23f'; c.lineWidth = 4; c.lineCap = 'butt';   // bandas amarillas de la rampa morada
-    [0.08, 0.2, 0.32, 0.5, 0.68].forEach(function (f) {
-      var d = rampas[0].largo * f, p0 = puntoRampa(rampas[0], d), p1 = puntoRampa(rampas[0], d + 2), a = Math.atan2(p1[1] - p0[1], p1[0] - p0[0]);
-      c.beginPath(); c.moveTo(p0[0] - Math.sin(a) * 10, p0[1] + Math.cos(a) * 10); c.lineTo(p0[0] + Math.sin(a) * 10, p0[1] - Math.cos(a) * 10); c.stroke();
-    });
-    c.lineCap = 'round';
-    c.fillStyle = '#f4f4fa'; c.fillRect(110, 262, 22, 4);          // boca blanca de la rampa
     cohete(c, 82, 232, -1.25);
     var ge = c.createLinearGradient(agujero.x - 26, 0, agujero.x + 26, 0);   // embudo gris del agujero negro
     ge.addColorStop(0, '#5a5a6a'); ge.addColorStop(0.5, '#c8c8d4'); ge.addColorStop(1, '#4a4a58');
@@ -465,12 +519,10 @@
     for (var z = 1; z <= 8; z++) ctx.lineTo(z % 2 ? 330 : 342, my + 4 + (H - my - 4) * z / 8);
     ctx.stroke();
     ctx.fillStyle = cargando ? '#ff9a3a' : '#e0e0f0'; ctx.fillRect(CARRIL + 3, my, 350 - CARRIL - 6, 5);
-    if (bolaAct) {
-      var b = bolaAct;
-      if (b.capt > 0) { ctx.globalAlpha = 0.35 + 0.3 * Math.sin(tick * 0.4); dibujarBola(b); ctx.globalAlpha = 1; }
-      else if (b.rampa) { ctx.save(); ctx.translate(b.x, b.y); ctx.scale(1.15, 1.15); ctx.translate(-b.x, -b.y); dibujarBola(b); ctx.restore(); }
-      else dibujarBola(b);
-    }
+    var b = bolaAct;                                           // la bola pasa por debajo de las rampas salvo cuando va por ellas
+    if (b && !b.rampa) { if (b.capt > 0) { ctx.globalAlpha = 0.35 + 0.3 * Math.sin(tick * 0.4); dibujarBola(b); ctx.globalAlpha = 1; } else dibujarBola(b); }
+    ctx.drawImage(capaR, 0, 0, W, H);
+    if (b && b.rampa) { ctx.save(); ctx.translate(b.x, b.y); ctx.scale(1.2, 1.2); ctx.translate(-b.x, -b.y); dibujarBola(b); ctx.restore(); }
     if (running && !paused && enLanzador() && !cargando && tick % 60 < 40) {
       texto('MANTÉN ESPACIO', CX, 568, 11, '#ffe14a'); texto('o la mitad derecha', CX, 582, 10, '#ffe14a');
     }
@@ -480,7 +532,7 @@
   function prepararLienzo() {
     var d = Math.min(2, window.devicePixelRatio || 1);
     if (d === dpr && capa.listo) return;
-    dpr = d; capa.listo = true; cv.width = W * dpr; cv.height = H * dpr; prepararFondo(); dibujar();
+    dpr = d; capa.listo = true; cv.width = W * dpr; cv.height = H * dpr; prepararFondo(); prepararRampas(); dibujar();
   }
   var acc = 0, last = 0;
   function bucle(t) {
