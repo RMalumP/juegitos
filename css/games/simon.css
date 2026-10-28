@@ -15,3 +15,14 @@
 #simStart{display:flex}#simOver{display:none}#simOver.show{display:flex}
 #simStart h1,#simOver h1{font-size:clamp(20px,7vw,32px);letter-spacing:3px}#simStart .sub,#simOver .sub{color:#aab;font-size:12px;line-height:1.5}
 #simGo,#simAgain{background:#fff;color:#15151f;border:none;border-radius:5px;padding:11px 24px;font-weight:700;cursor:pointer;font-size:14px}
+/* Varios jugadores: menú de modos, nombres y fila de jugadores */
+#simModos,#simLocal{display:flex;flex-direction:column;align-items:stretch;gap:8px;width:min(100%,260px)}#simLocal{display:none}
+#simLocalBtn,#simOnlineBtn,#simLocalGo{background:#242436;color:#eee;border:2px solid #4a4a6a;border-radius:5px;padding:10px 16px;font-weight:700;cursor:pointer;font-size:13px}#simLocalGo{background:#fff;color:#15151f;border-color:#fff}
+#simLocalVolver{background:none;border:none;color:#aab;cursor:pointer;font-size:12px;padding:6px}
+#simNum{display:flex;gap:6px;justify-content:center}.simN{background:#242436;color:#eee;border:2px solid #4a4a6a;border-radius:4px;width:44px;padding:6px 0;font-weight:700;cursor:pointer}.simN.sel{background:#fff;color:#15151f;border-color:#fff}
+#simNombres{display:flex;flex-direction:column;gap:6px}#simNombres input{background:#242436;color:#fff;border:1px solid #4a4a6a;border-radius:4px;padding:8px;font-size:16px;min-width:0}
+#simJug{display:none;flex-wrap:wrap;gap:4px;justify-content:center;width:min(100%,380px)}
+.simJ{background:#242436;border-radius:10px;padding:2px 8px;font-size:12px;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}.simJ b{color:#ffe08a}.simJ.yo{outline:2px solid #ffe08a}.simJ.fuera{opacity:.45;text-decoration:line-through}
+#simWrap.simMulti #simPads{width:min(100%,340px,calc(100vh - 340px))}
+.simVel:disabled{opacity:.5;cursor:default}
+#simAgain:disabled{opacity:.6;cursor:default}
