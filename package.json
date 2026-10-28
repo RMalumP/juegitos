@@ -1,0 +1,14 @@
+{
+  "name": "juegitos",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "check": "node build.mjs --check",
+    "format": "prettier --write src"
+  },
+  "devDependencies": {
+    "esbuild": "0.24.0",
+    "prettier": "3.3.3"
+  }
+}
