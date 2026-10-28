@@ -1,4 +1,4 @@
-/* js/teclas.js — reasignación de teclas común (Breakout, 2048, Flappy, Hundir).
+/* js/teclas.js — reasignación de teclas común (Breakout, Pinball, 2048, Flappy, Hundir).
    Teclas.crear({ id, ventana:'winBrk', acciones:[{ id, etiqueta, def, alt:[...] }] }) devuelve
      T.accion(code)   → id de la acción de esa tecla (o null; null también con el modal abierto)
      T.codigo(accion) → código de la tecla principal actual
