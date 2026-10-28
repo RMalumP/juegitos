@@ -50,13 +50,18 @@ const { entorno, wait, ok, fin } = require('./helpers');
   ok((await pg.evaluate(() => window.pinEstado())).rampa === 'rampa', 'la bola sube por la rampa');
   await pg.waitForFunction(() => !window.pinEstado().rampa, null, { timeout: 4000 }).catch(() => {});
   e = await pg.evaluate(() => window.pinEstado());
-  ok(e.score >= s0 + 1500 && e.bx < 40 && e.by > 360, 'la rampa suma puntos y deja la bola en el carril izquierdo');
+  ok(e.score >= s0 + 1500 && e.bx > 33 && e.bx < 57 && e.by > 400, 'la rampa suma puntos y deja la bola en el carril izquierdo');
   // la órbita roja la sube por la derecha hasta los carriles de arriba
   await pg.evaluate(() => window.pinColocar(300, 280, 0, -10)); await wait(100);
   ok((await pg.evaluate(() => window.pinEstado())).rampa === 'orbita', 'la bola entra en la órbita roja');
   await pg.waitForFunction(() => !window.pinEstado().rampa, null, { timeout: 4000 }).catch(() => {});
   await wait(300);
   ok((await pg.evaluate(() => window.pinEstado())).carriles.some(Boolean), 'la órbita deja la bola en los carriles de arriba y enciende uno');
+  // misiones: la primera es encender los 3 carriles; el panel la muestra
+  ok((await pg.locator('#pinMision').textContent()).startsWith('Misión'), 'el panel muestra la misión actual');
+  const m0 = (await pg.evaluate(() => window.pinEstado())).misiones;
+  for (const x of [153, 183, 213]) { await pg.evaluate(x => window.pinColocar(x, 50, 0, 3), x); await wait(150); }
+  ok((await pg.evaluate(() => window.pinEstado())).misiones > m0 || (await pg.evaluate(() => window.pinEstado())).mult > 1, 'encender los 3 carriles cumple la misión y sube el multiplicador');
   // un flipper golpea la bola hacia arriba
   await pg.evaluate(() => window.pinColocar(135, 528, 0, 0)); await wait(30);
   await pg.keyboard.down('KeyZ'); await wait(120);

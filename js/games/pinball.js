@@ -1,7 +1,7 @@
 /* pinball.js — Juegos XP: Pinball espacial al estilo del pinball de escritorio de Windows XP (gráficos y sonidos propios, dibujados en canvas).
    Mesa vertical con barandillas rojas, 2 flippers blancos, lanzador con muelle, 4 bumpers grandes y 3 pequeños en la zona morada,
    slingshots, 3 carriles superiores (multiplicador), 3 dianas abatibles, agujero negro, rampa morada (devuelve la bola al flipper izquierdo),
-   carril rojo de órbita (sube por la derecha y deja la bola en los carriles de arriba) y el círculo central de 16 luces (hiperespacio).
+   carril rojo de órbita (sube por la derecha y deja la bola en los carriles de arriba) y el círculo central de 24 luces (hiperespacio), órbita gris, objetivo verde, asteroides, calles de entrada y salida con salva bolas y misiones.
    Rangos de Cadete a Almirante (al llegar a Capitán, bola extra). 3 bolas; récord con saveRecord('pinball').
    Teclado: Z / ← flipper izquierdo, M / → derecho, Espacio / ↓ lanzador (mantén para cargar), P pausa, Intro nueva partida.
    Táctil: mitad izquierda o derecha de la mesa = flipper; con la bola en el lanzador, la mitad derecha carga el muelle (suelta para lanzar).
@@ -23,33 +23,37 @@
     for (var p in o) m[p] = o[p];
     muros.push(m); return m;
   }
-  function arco(cx, cy, r, a0, a1, n) {                       // arco hecho de segmentos; devuelve sus puntos
+  function arco(cx, cy, r, a0, a1, n, t) {                    // arco hecho de segmentos; devuelve sus puntos
     var pts = [];
     for (var i = 0; i <= n; i++) { var a = a0 + (a1 - a0) * i / n; pts.push([cx + r * Math.cos(a), cy + r * Math.sin(a)]); }
-    for (var j = 1; j < pts.length; j++) muro(pts[j - 1][0], pts[j - 1][1], pts[j][0], pts[j][1], { t: 'b' });
+    for (var j = 1; j < pts.length; j++) muro(pts[j - 1][0], pts[j - 1][1], pts[j][0], pts[j][1], { t: t || 'b' });
     return pts;
   }
-  var contorno = [[12, 446], [12, 100]]                       // borde exterior (barandilla roja) de abajo a la izquierda hasta el lanzador
+  var contorno = [[12, 612], [12, 100]]                       // borde exterior (barandilla roja) de abajo a la izquierda hasta el lanzador
     .concat(arco(92, 100, 80, Math.PI, Math.PI * 1.5, 12).slice(1))
     .concat(arco(262, 108, 88, Math.PI * 1.5, Math.PI * 2, 14)).concat([[350, 612]]);
-  muro(12, 446, 12, 100, { t: 'b' }); muro(92, 20, 262, 20, { t: 'b' });
+  muro(12, 612, 12, 100, { t: 'b' }); muro(92, 20, 262, 20, { t: 'b' });
+  var orbitaGris = [[34, 168]].concat(arco(92, 100, 58, Math.PI, Math.PI * 1.5, 10, 'g'));   // órbita gris de arriba a la izquierda
+  muro(34, 168, 34, 100, { t: 'g' }); muro(12, 196, 36, 222, { t: 'b' });                    // y desviador a su salida
   muro(350, 108, 350, 612, { t: 'b' }); muro(CARRIL, 150, CARRIL, 612, { t: 'b' });
-  muro(12, 446, 104, 518, { t: 'b' }); muro(CARRIL, 446, 230, 518, { t: 'b' });        // guías hacia los flippers
-  var slings = [0, 1].map(function (lado) {                    // slingshots: la cara interior da una patada
+  var slings = [0, 1].map(function (lado) {                    // calles de salida (fuera) y de entrada (hacia el flipper) y slingshots
     var X = function (x) { return lado ? 2 * CX - x : x; };
-    muro(X(40), 392, X(40), 446, { t: 'g' }); muro(X(40), 446, X(92), 482, { t: 'g' });
-    return muro(X(92), 482, X(40), 392, { e: 0.5, k: 3, t: 's', flash: 0, lado: lado });
+    muro(X(33), 440, X(33), 486, { t: 'g', r: 2 }); muro(X(33), 486, X(104), 518, { t: 'b' });
+    muro(X(57), 400, X(57), 452, { t: 'g' }); muro(X(57), 452, X(100), 488, { t: 'g' });
+    return muro(X(100), 488, X(57), 400, { e: 0.5, k: 3, t: 's', flash: 0, lado: lado });
   });
+  var CALLE_Y = 466, calles = [0, 0, 0, 0];                    // luces de las calles: salida izq., entrada izq., entrada der., salida der.
   [138, 168, 198, 228].forEach(function (x) { muro(x, 44, x, 76, { r: 3, e: 0.4, t: 'g' }); });   // separadores de los carriles
   var puerta = { ax: CARRIL, ay: 150, bx: 350, by: 128, r: 1.5, e: 0.3, k: 0 };          // la bola no vuelve al carril del lanzador
-  var bumpers = [{ x: 62, y: 96, r: 14 }, { x: 160, y: 140, r: 16 }, { x: 214, y: 134, r: 16 }, { x: 188, y: 186, r: 16 },
-    { x: 40, y: 300, r: 10, p: 1 }, { x: 76, y: 316, r: 10, p: 1 }, { x: 46, y: 346, r: 10, p: 1 }].map(function (b) { b.flash = 0; return b; });
+  var bumpers = [{ x: 80, y: 120, r: 13 }, { x: 160, y: 140, r: 16 }, { x: 214, y: 134, r: 16 }, { x: 188, y: 186, r: 16 },
+    { x: 68, y: 294, r: 10, p: 1 }, { x: 100, y: 318, r: 10, p: 1 }, { x: 72, y: 340, r: 10, p: 1 }].map(function (b) { b.flash = 0; return b; });
   var dianas = [0, 1, 2].map(function (i) { return { ax: 316, ay: 296 + i * 24, bx: 316, by: 314 + i * 24, r: 3, e: 0.4, k: 0, abajo: false }; });
   var agujero = { x: 132, y: 204 };
+  var verde = { x: 120, y: 102, r: 7, flash: 0 };             // objetivo verde redondo
   /* rampas: si la bola entra por la boca subiendo, la llevan por su recorrido y la sueltan al final */
   var rampas = [
     { id: 'rampa', x: 120, y: 256, r: 13, pts: 1500, color: '#8a5cd6', aviso: 'RAMPA',
-      ruta: [[120, 256], [104, 212], [86, 172], [62, 146], [36, 156], [22, 196], [22, 262], [24, 330], [26, 382]], sal: [0, 2] },
+      ruta: [[120, 256], [108, 214], [92, 186], [70, 178], [52, 194], [44, 230], [40, 290], [40, 350], [44, 400], [45, 424]], sal: [0, 2] },
     { id: 'orbita', x: 300, y: 264, r: 14, pts: 2000, color: '#c8262a', aviso: 'ÓRBITA',
       ruta: [[300, 264], [306, 196], [300, 126], [282, 76], [250, 40], [214, 28], [183, 32]], sal: [-0.5, 2] }
   ];
@@ -66,9 +70,11 @@
   }
   function flipper(x, rest, up) { return { x: x, y: 532, ang: rest, rest: rest, up: up, w: 0, on: false, L: 50 }; }
   var fl = flipper(108, 0.5, -0.45), fr = flipper(2 * CX - 108, Math.PI - 0.5, Math.PI + 0.45);
-  var LUCES = 16;
+  var LUCES = 24;
+  var rocas = [{ x: 252, y: 204, r: 8 }, { x: 272, y: 228, r: 7 }, { x: 246, y: 236, r: 6 }];   // asteroides
 
   /* ---------- estado ---------- */
+  var salva = 0;                                               // salva bolas (redespliegue) los primeros 8 s de cada bola
   var score = 0, bola = 1, extra = 0, mult = 1, misiones = 0, rango = 0, best = 0, luces = 0;
   var lit = [false, false, false], bolaAct = null, espera = 0, reponerDianas = 0, carga = 0, cargando = false;
   var running = false, paused = false, over = false, raf = null, aviso = '', avisoT = 0, tick = 0;
@@ -109,29 +115,40 @@
   function hud() { $('pin-scoreEl').textContent = score; $('pin-bolaEl').textContent = bola + (extra ? '+' + extra : ''); $('pin-multEl').textContent = '×' + mult; }
   function sumar(n) { score += n; hud(); }
   function avisar(t, dur) { aviso = t; avisoT = dur || 90; }
-  function mision(texto) {
-    misiones++; var nuevo = Math.min(RANGOS.length - 1, Math.floor(misiones / 2));
+  /* misiones: solo cuenta la misión actual; cada 2 cumplidas se sube de rango */
+  var MISIONES = [{ id: 'carriles', t: 'Enciende los 3 carriles de arriba' }, { id: 'rampa', t: 'Sube por la rampa morada' },
+    { id: 'dianas', t: 'Tumba las 3 dianas amarillas' }, { id: 'orbita', t: 'Recorre la órbita roja' }, { id: 'verde', t: 'Golpea el objetivo verde' },
+    { id: 'agujero', t: 'Entra en el agujero negro' }, { id: 'hiper', t: 'Enciende las 24 luces del hiperespacio' }];
+  var actual = 0, textoPanel = '';
+  function panel() {
+    var t = !running && !over ? 'Pulsa iniciar' : over ? 'Fin de la partida' : !bolaAct || enLanzador() ? 'Esperando despliegue' : 'Misión: ' + MISIONES[actual].t;
+    if (t !== textoPanel) { textoPanel = t; $('pinMision').textContent = t; }
+  }
+  function mision(texto, id) {
+    if (MISIONES[actual].id !== id) { avisar(texto, 60); return; }
+    misiones++; actual = (actual + 1) % MISIONES.length; sumar(5000 * (rango + 1)); panel();
+    var nuevo = Math.min(RANGOS.length - 1, Math.floor(misiones / 2));
     if (nuevo > rango) {
       rango = nuevo; sumar(10000 * rango); SON.premio(); vib([0, 40, 40, 40]);
       if (rango === 3) { extra++; hud(); avisar('¡' + RANGOS[rango] + '! BOLA EXTRA', 140); } else avisar('¡ASCENSO! ' + RANGOS[rango], 120);
-    } else avisar(texto);
+    } else { SON.premio(); avisar('MISIÓN CUMPLIDA', 100); }
   }
-  function encenderLuz(n) {                                    // círculo central: 16 luces = hiperespacio
+  function encenderLuz(n) {                                    // círculo central: 24 luces = hiperespacio
     luces += n;
-    if (luces >= LUCES) { luces = 0; sumar(5000 * mult); SON.premio(); mision('HIPERESPACIO'); }
+    if (luces >= LUCES) { luces = 0; sumar(5000 * mult); SON.premio(); mision('HIPERESPACIO', 'hiper'); }
   }
   function encenderCarril(i) {
     if (lit[i]) { sumar(100); return; }
     lit[i] = true; sumar(500 * mult); SON.carril();
     if (lit[0] && lit[1] && lit[2]) {
       lit = [false, false, false]; sumar(2000 * mult); SON.premio();
-      if (mult < 5) mult++; hud(); mision('MULTIPLICADOR ×' + mult);
+      if (mult < 5) mult++; hud(); mision('MULTIPLICADOR ×' + mult, 'carriles');
     }
   }
   function rotarCarriles(dir) { lit = dir < 0 ? [lit[1], lit[2], lit[0]] : [lit[2], lit[0], lit[1]]; }
   function tumbarDiana(d) {
     d.abajo = true; sumar(750 * mult); SON.diana(); vib(10); encenderLuz(1);
-    if (dianas.every(function (x) { return x.abajo; })) { sumar(5000 * mult); SON.premio(); reponerDianas = 60; mision('DIANAS COMPLETAS'); }
+    if (dianas.every(function (x) { return x.abajo; })) { sumar(5000 * mult); SON.premio(); reponerDianas = 60; mision('DIANAS COMPLETAS', 'dianas'); }
   }
 
   /* ---------- física ---------- */
@@ -164,7 +181,7 @@
     b.vy += G / SUB; b.vx *= 0.9998; b.vy *= 0.9998;
     var yAnt = b.y;
     b.x += b.vx / SUB; b.y += b.vy / SUB;
-    if (b.enCarril && b.x < CARRIL - 4) b.enCarril = false;
+    if (b.enCarril && b.x < CARRIL - 4) { b.enCarril = false; if (!b.desplegada) { b.desplegada = true; salva = 480; } }
     for (var i = 0; i < muros.length; i++) {
       var m = muros[i], imp = contraMuro(b, m);
       if (imp > 2.5 && m.t === 's') { m.flash = 8; sumar(50); SON.sling(); vib(6); }
@@ -175,18 +192,24 @@
     bumpers.forEach(function (u) {
       if (choque(b, u.x, u.y, u.r, 0.5, 0, 0, u.p ? 4 : 5) > 0) { u.flash = 10; sumar((u.p ? 150 : 100) * mult); SON.bumper(); vib(8); encenderLuz(u.p ? 0 : 1); }
     });
+    if (choque(b, verde.x, verde.y, verde.r, 0.6, 0, 0, 0) > 1) { verde.flash = 20; sumar(1000 * mult); SON.carril(); vib(10); encenderLuz(1); mision('OBJETIVO VERDE', 'verde'); }
+    rocas.forEach(function (o) { if (choque(b, o.x, o.y, o.r, 0.5, 0, 0, 0) > 1.5) { sumar(200 * mult); SON.diana(); } });
     contraFlipper(b, fl); contraFlipper(b, fr);
+    if ((b.y - CALLE_Y) * (yAnt - CALLE_Y) <= 0 && b.vy > 0 && !b.enCarril) {
+      var k2 = b.x < 33 ? 0 : b.x < 57 ? 1 : b.x > 2 * CX - 33 ? 3 : b.x > 2 * CX - 57 ? 2 : -1;
+      if (k2 >= 0) { calles[k2] = 30; sumar((k2 === 0 || k2 === 3 ? 500 : 300) * mult); SON.carril(); encenderLuz(1); }
+    }
     if ((b.y - LANE_Y) * (yAnt - LANE_Y) <= 0) CARRILES.forEach(function (x, k) { if (Math.abs(b.x - x) < 14) encenderCarril(k); });
     if (b.noHole > 0) b.noHole--;
     else if (Math.hypot(b.x - agujero.x, b.y - agujero.y) < 10) {
-      b.capt = 70; b.x = agujero.x; b.y = agujero.y; b.vx = b.vy = 0; sumar(2500 * mult); SON.agujero(); vib([0, 20, 40, 20]); encenderLuz(3); mision('AGUJERO NEGRO');
+      b.capt = 70; b.x = agujero.x; b.y = agujero.y; b.vx = b.vy = 0; sumar(2500 * mult); SON.agujero(); vib([0, 20, 40, 20]); encenderLuz(3); mision('AGUJERO NEGRO', 'agujero');
       return;
     }
     if (b.noRampa > 0) b.noRampa--;
     else rampas.forEach(function (r) {
       if (!b.rampa && b.vy < -2.5 && Math.hypot(b.x - r.x, b.y - r.y) < r.r) {
         b.rampa = r; b.dist = 0; b.velRampa = Math.max(5, Math.min(9, Math.hypot(b.vx, b.vy) * 0.6));
-        sumar(r.pts * mult); SON.rampa(); vib(15); encenderLuz(2); avisar(r.aviso, 60);
+        sumar(r.pts * mult); SON.rampa(); vib(15); encenderLuz(2); mision(r.aviso, r.id);
       }
     });
     var s = Math.hypot(b.vx, b.vy); if (s > VMAX) { b.vx *= VMAX / s; b.vy *= VMAX / s; }
@@ -202,6 +225,7 @@
     var b = bolaAct; b.y = Math.min(b.y, MUELLE - R - 2); b.vy = -(8 + 12 * c); b.vx = 0; SON.lanzar(); vib(15);
   }
   function perderBola() {
+    if (salva > 0) { salva = 0; bolaAct = null; espera = 40; avisar('REDESPLIEGUE', 100); SON.expulsar(); vib(40); return; }
     bolaAct = null; SON.perder(); vib(120); lit = [false, false, false]; mult = 1;
     if (extra > 0) { extra--; avisar('BOLA EXTRA', 100); }
     else if (bola >= 3) return finPartida();
@@ -215,7 +239,11 @@
     if (cargando) carga = Math.min(1, carga + 1 / 50);
     bumpers.forEach(function (u) { if (u.flash > 0) u.flash--; });
     slings.forEach(function (s) { if (s.flash > 0) s.flash--; });
+    if (verde.flash > 0) verde.flash--;
     if (avisoT > 0) avisoT--;
+    if (tick % 10 === 0) panel();
+    if (salva > 0 && bolaAct && !bolaAct.enCarril) salva--;
+    for (var q = 0; q < 4; q++) if (calles[q] > 0) calles[q]--;
     if (reponerDianas > 0 && --reponerDianas === 0) dianas.forEach(function (d) { d.abajo = false; });
     if (!bolaAct) { fl.ang += fl.w; fr.ang += fr.w; if (espera > 0 && --espera === 0) nuevaBola(); return; }
     var b = bolaAct;
@@ -233,13 +261,21 @@
     var rec = typeof saveRecord === 'function' ? saveRecord('pinball', score) : { best: Math.max(best, score), isNew: score > best };
     best = rec.best || 0;
     $('pinOverS').innerHTML = 'Puntos: <b>' + score + '</b><br>Rango: ' + RANGOS[rango] + '<br>' + (rec.isNew ? '🏆 ¡Nuevo récord!' : 'Récord: ' + best);
-    $('pinOver').classList.add('show'); dibujar();
+    $('pinOver').classList.add('show'); panel(); dibujar();
   }
 
   /* ---------- dibujo ---------- */
   var capa = document.createElement('canvas');
   function trazo(c, m) { c.beginPath(); c.moveTo(m.ax, m.ay); c.lineTo(m.bx, m.by); c.stroke(); }
   function poli(c, pts) { c.beginPath(); c.moveTo(pts[0][0], pts[0][1]); for (var i = 1; i < pts.length; i++) c.lineTo(pts[i][0], pts[i][1]); }
+  function cohete(c, x, y, ang) {                               // cohete rosa de la zona de la rampa
+    c.save(); c.translate(x, y); c.rotate(ang);
+    c.fillStyle = '#e04aa8'; c.beginPath(); c.moveTo(22, 0); c.quadraticCurveTo(10, -9, -14, -7); c.lineTo(-14, 7); c.quadraticCurveTo(10, 9, 22, 0); c.fill();
+    c.fillStyle = '#ff9ad8'; c.beginPath(); c.moveTo(-6, -7); c.lineTo(-18, -15); c.lineTo(-12, -6); c.fill(); c.beginPath(); c.moveTo(-6, 7); c.lineTo(-18, 15); c.lineTo(-12, 6); c.fill();
+    c.fillStyle = '#7fd0ff'; c.beginPath(); c.arc(8, 0, 3.5, 0, Math.PI * 2); c.fill();
+    c.fillStyle = '#ffd23f'; c.beginPath(); c.moveTo(-14, -4); c.lineTo(-24, 0); c.lineTo(-14, 4); c.fill();
+    c.restore();
+  }
   function pintarRampa(c, r, ancho) {                          // banda elevada con rayas
     c.lineCap = 'round'; c.lineJoin = 'round';
     c.strokeStyle = 'rgba(0,0,0,.45)'; c.lineWidth = ancho + 6; poli(c, r.ruta.map(function (p) { return [p[0] + 3, p[1] + 4]; })); c.stroke();
@@ -255,7 +291,7 @@
     capa.width = W * dpr; capa.height = H * dpr;
     var c = capa.getContext('2d'); c.setTransform(dpr, 0, 0, dpr, 0, 0);
     c.fillStyle = '#2a0f3c'; c.fillRect(0, 0, W, H);           // fuera de la mesa
-    var mesa = contorno.concat([[CARRIL, 612], [CARRIL, 446], [230, 518], [234, 612], [100, 612], [104, 518]]);
+    var mesa = contorno.concat([[CARRIL, 612]]);
     var g = c.createRadialGradient(CX, 330, 30, CX, 330, 360); g.addColorStop(0, '#23307a'); g.addColorStop(0.6, '#161d55'); g.addColorStop(1, '#0b0f33');
     c.save(); poli(c, mesa); c.closePath(); c.fillStyle = g; c.fill(); c.clip();
     var s = 7; function rnd() { s = (s * 16807) % 2147483647; return s / 2147483647; }
@@ -265,13 +301,28 @@
       for (var k = 0; k < 7; k++) { a += (rnd() - 0.5) * 1.4; x += Math.cos(a) * 16; y += Math.sin(a) * 16; c.lineTo(x, y); }
       c.stroke();
     }
+    [[292, 56, 20], [304, 214, 16]].forEach(function (p) {     // planetas rojo oscuro
+      var gp = c.createRadialGradient(p[0] - p[2] * 0.4, p[1] - p[2] * 0.4, 2, p[0], p[1], p[2]);
+      gp.addColorStop(0, '#c86a6a'); gp.addColorStop(0.5, '#6e1f2a'); gp.addColorStop(1, '#2a0a14');
+      c.fillStyle = gp; c.beginPath(); c.arc(p[0], p[1], p[2], 0, Math.PI * 2); c.fill();
+    });
+    c.fillStyle = '#b81e24';                                    // franja roja con flechas azules hacia la órbita
+    poli(c, [[222, 352], [282, 262], [304, 254], [298, 280], [244, 360]]); c.closePath(); c.fill();
+    c.strokeStyle = '#ff6a50'; c.lineWidth = 1.5; c.stroke();
+    for (var fa = 0; fa < 4; fa++) flecha(c, 240 + fa * 13, 334 - fa * 20, -1.0, fa === 3 ? '#cfefff' : '#3fa8ff');
     var pc = c.createRadialGradient(CX, 380, 4, CX, 380, 58);  // círculo central (pozo de gravedad)
     pc.addColorStop(0, '#4fd2e0'); pc.addColorStop(0.45, '#1d6f9c'); pc.addColorStop(1, '#0c1f55');
-    c.fillStyle = 'rgba(40,60,140,.55)'; c.beginPath(); c.arc(CX, 380, 66, 0, Math.PI * 2); c.fill();
+    c.fillStyle = 'rgba(40,60,140,.55)'; c.beginPath(); c.arc(CX, 380, 68, 0, Math.PI * 2); c.fill();
+    c.strokeStyle = 'rgba(120,170,255,.5)'; c.lineWidth = 1.5; c.stroke();
     c.fillStyle = pc; c.beginPath(); c.arc(CX, 380, 46, 0, Math.PI * 2); c.fill();
     c.fillStyle = '#5e3aa8';                                    // zona morada de la izquierda
-    c.beginPath(); c.moveTo(12, 268); c.quadraticCurveTo(70, 252, 104, 286); c.quadraticCurveTo(112, 340, 84, 372); c.quadraticCurveTo(46, 388, 12, 380); c.closePath(); c.fill();
-    c.strokeStyle = '#9b7be0'; c.lineWidth = 2; c.stroke();
+    c.beginPath(); c.moveTo(44, 262); c.quadraticCurveTo(100, 250, 124, 290); c.quadraticCurveTo(128, 330, 104, 352);
+    c.quadraticCurveTo(84, 372, 70, 396); c.quadraticCurveTo(54, 400, 50, 380); c.quadraticCurveTo(40, 320, 44, 262); c.closePath(); c.fill();
+    c.strokeStyle = '#a98be8'; c.lineWidth = 2; c.stroke();
+    c.strokeStyle = 'rgba(190,160,255,.35)'; c.lineWidth = 4;   // rayas claras de la zona morada
+    for (var zr = 0; zr < 4; zr++) { c.beginPath(); c.arc(30, 300, 34 + zr * 14, -0.6, 0.9); c.stroke(); }
+    c.fillStyle = '#f4f4fa';                                    // 3 calles blancas sobre la zona morada
+    [64, 80, 96].forEach(function (x) { c.fillRect(x - 3, 266, 6, 12); });
     c.fillStyle = '#4b2a8c';                                    // estrella morada entre los flippers
     for (var p = 0; p < 7; p++) {
       var ang = Math.PI * (1.15 + 0.7 * p / 6), lx = CX + Math.cos(ang) * 120, ly = 612 + Math.sin(ang) * 120;
@@ -282,17 +333,25 @@
     c.fillStyle = gl; c.fillRect(CARRIL, 150, 350 - CARRIL, H - 150);
     c.fillStyle = '#f2d23a'; for (var yb = 210; yb < 560; yb += 90) c.fillRect(CARRIL + 2, yb, 350 - CARRIL - 4, 7);
     c.restore();
-    c.fillStyle = '#9b1b1f';                                    // esquinas rojas de abajo
-    poli(c, [[12, 446], [104, 518], [100, 612], [12, 612]]); c.closePath(); c.fill();
-    poli(c, [[CARRIL, 446], [230, 518], [234, 612], [CARRIL, 612]]); c.closePath(); c.fill();
-    c.fillStyle = '#c2332f'; poli(c, [[12, 470], [80, 532], [80, 612], [12, 612]]); c.closePath(); c.fill();
-    poli(c, [[CARRIL, 470], [254, 532], [254, 612], [CARRIL, 612]]); c.closePath(); c.fill();
+    [0, 1].forEach(function (lado) {                           // parte de abajo: esquinas rojas, aletas naranjas, calles
+      var X = function (x) { return lado ? 2 * CX - x : x; };
+      c.fillStyle = '#9b1b1f'; poli(c, [[X(35), 488], [X(104), 520], [X(104), 612], [X(35), 612]]); c.closePath(); c.fill();
+      c.fillStyle = '#c2332f'; poli(c, [[X(35), 512], [X(84), 534], [X(84), 612], [X(35), 612]]); c.closePath(); c.fill();
+      c.strokeStyle = '#5a0a0c'; c.lineWidth = 2; poli(c, [[X(35), 512], [X(84), 534], [X(84), 612]]); c.stroke();
+      c.save(); c.translate(X(70), 494); c.rotate(lado ? -0.42 : 0.42);       // aleta naranja (criatura) sobre la guía
+      var ga = c.createLinearGradient(-30, 0, 30, 0); ga.addColorStop(0, '#6a2a0a'); ga.addColorStop(0.6, '#d0702a'); ga.addColorStop(1, '#f0a050');
+      c.fillStyle = ga; c.beginPath(); c.ellipse(0, -4, 30, 7, 0, 0, Math.PI * 2); c.fill();
+      c.fillStyle = '#3a1404'; c.beginPath(); c.arc(lado ? -22 : 22, -5, 2.5, 0, Math.PI * 2); c.fill(); c.restore();
+      c.fillStyle = '#ffd23f'; c.beginPath(); c.moveTo(X(16), 520); c.lineTo(X(30), 520); c.lineTo(X(23), 534); c.closePath(); c.fill();   // flecha de la calle de salida
+      c.fillStyle = '#f4f4fa'; [X(22.5), X(45)].forEach(function (x) { c.fillRect(x - 3, CALLE_Y - 8, 6, 16); });
+    });
+    c.save(); c.translate(120, 410); c.rotate(0.6); c.fillStyle = '#d42a2a'; c.fillRect(-9, -2.5, 18, 5); c.fillRect(-2.5, -9, 5, 18); c.restore();   // equis roja
     slings.forEach(function (m, lado) {                        // slingshots: triángulo rojo con luz azul
       var X = function (x) { return lado ? 2 * CX - x : x; };
-      c.fillStyle = '#2b1030'; poli(c, [[X(40), 392], [X(40), 446], [X(92), 482]]); c.closePath(); c.fill();
+      c.fillStyle = '#2b1030'; poli(c, [[X(57), 400], [X(57), 452], [X(100), 488]]); c.closePath(); c.fill();
       c.strokeStyle = '#c8262a'; c.lineWidth = 4; c.lineJoin = 'round'; c.stroke();
-      var lz = c.createRadialGradient(X(56), 440, 1, X(56), 440, 12); lz.addColorStop(0, '#e8f6ff'); lz.addColorStop(1, 'rgba(90,160,255,0)');
-      c.fillStyle = lz; c.beginPath(); c.arc(X(56), 440, 12, 0, Math.PI * 2); c.fill();
+      var lz = c.createRadialGradient(X(70), 448, 1, X(70), 448, 11); lz.addColorStop(0, '#e8f6ff'); lz.addColorStop(1, 'rgba(90,160,255,0)');
+      c.fillStyle = lz; c.beginPath(); c.arc(X(70), 448, 11, 0, Math.PI * 2); c.fill();
     });
     c.lineCap = 'round'; c.lineJoin = 'round';                 // barandillas
     c.strokeStyle = '#5a0a0c'; c.lineWidth = 9; poli(c, contorno); c.stroke();
@@ -304,13 +363,38 @@
     });
     c.strokeStyle = '#ff7b5c'; c.lineWidth = 1.2; muros.forEach(function (m) { if (m.t === 'b') trazo(c, m); });
     c.strokeStyle = '#d0d0dc'; c.lineWidth = 3; trazo(c, puerta);
+    c.strokeStyle = '#4a4a58'; c.lineWidth = 8; poli(c, orbitaGris); c.stroke();     // barandilla gris de la órbita izquierda
+    c.strokeStyle = '#b8b8c8'; c.lineWidth = 5; poli(c, orbitaGris); c.stroke();
+    c.strokeStyle = '#ffffff'; c.lineWidth = 1; poli(c, orbitaGris); c.stroke();
+    c.fillStyle = '#e02a2a'; orbitaGris.forEach(function (p, i) { if (i % 3 === 1) { c.beginPath(); c.arc(p[0], p[1], 3, 0, Math.PI * 2); c.fill(); } });
+    [138, 168, 198, 228].forEach(function (x) {                // postes rojos y blancos de los carriles
+      c.fillStyle = '#ffffff'; c.fillRect(x - 3, 52, 6, 22); c.fillStyle = '#d42a2a'; c.fillRect(x - 3, 44, 6, 8); c.fillRect(x - 3, 74, 6, 4);
+    });
     c.fillStyle = '#f2d23a';                                    // luces amarillas decorativas
-    [[96, 250], [110, 236], [278, 300], [270, 316], [262, 332], [60, 420], [274, 420], [138, 92], [228, 92]].forEach(function (p) { c.beginPath(); c.arc(p[0], p[1], 3, 0, Math.PI * 2); c.fill(); });
+    [[96, 250], [110, 236], [45, 430], [CX * 2 - 45, 430], [22.5, 430], [CX * 2 - 22.5, 430], [138, 92], [228, 92]].forEach(function (p) { c.beginPath(); c.arc(p[0], p[1], 3, 0, Math.PI * 2); c.fill(); });
     flecha(c, 136, 274, -2.0, '#7fd0ff'); flecha(c, 286, 290, -1.6, '#7fd0ff'); flecha(c, 150, 228, -2.4, '#7fd0ff');
     pintarRampa(c, rampas[1], 14);
     pintarRampa(c, rampas[0], 16);
-    c.fillStyle = '#05050f'; c.strokeStyle = '#7a7a90'; c.lineWidth = 3;   // embudo del agujero negro
+    c.strokeStyle = '#ffd23f'; c.lineWidth = 4; c.lineCap = 'butt';   // bandas amarillas de la rampa morada
+    [0.08, 0.2, 0.32, 0.5, 0.68].forEach(function (f) {
+      var d = rampas[0].largo * f, p0 = puntoRampa(rampas[0], d), p1 = puntoRampa(rampas[0], d + 2), a = Math.atan2(p1[1] - p0[1], p1[0] - p0[0]);
+      c.beginPath(); c.moveTo(p0[0] - Math.sin(a) * 10, p0[1] + Math.cos(a) * 10); c.lineTo(p0[0] + Math.sin(a) * 10, p0[1] - Math.cos(a) * 10); c.stroke();
+    });
+    c.lineCap = 'round';
+    c.fillStyle = '#f4f4fa'; c.fillRect(110, 262, 22, 4);          // boca blanca de la rampa
+    cohete(c, 82, 232, -1.25);
+    var ge = c.createLinearGradient(agujero.x - 26, 0, agujero.x + 26, 0);   // embudo gris del agujero negro
+    ge.addColorStop(0, '#5a5a6a'); ge.addColorStop(0.5, '#c8c8d4'); ge.addColorStop(1, '#4a4a58');
+    c.fillStyle = ge; c.beginPath(); c.moveTo(agujero.x - 26, agujero.y - 26); c.lineTo(agujero.x + 22, agujero.y - 30);
+    c.lineTo(agujero.x + 12, agujero.y + 4); c.lineTo(agujero.x - 12, agujero.y + 6); c.closePath(); c.fill();
+    c.fillStyle = '#05050f'; c.strokeStyle = '#7a7a90'; c.lineWidth = 3;
     c.beginPath(); c.arc(agujero.x, agujero.y, 13, 0, Math.PI * 2); c.fill(); c.stroke();
+    rocas.forEach(function (o) {                               // asteroides marrones con cráteres
+      var gr = c.createRadialGradient(o.x - o.r * 0.4, o.y - o.r * 0.4, 1, o.x, o.y, o.r + 2);
+      gr.addColorStop(0, '#b08868'); gr.addColorStop(1, '#4a3022'); c.fillStyle = gr;
+      c.beginPath(); for (var i = 0; i < 9; i++) { var a = i * Math.PI * 2 / 9, rr = (o.r + 1.5) * (i % 2 ? 0.85 : 1.05); c[i ? 'lineTo' : 'moveTo'](o.x + Math.cos(a) * rr, o.y + Math.sin(a) * rr); }
+      c.closePath(); c.fill(); c.fillStyle = 'rgba(40,20,10,.6)'; c.beginPath(); c.arc(o.x + 2, o.y - 1, o.r * 0.25, 0, Math.PI * 2); c.fill();
+    });
   }
   function texto(t, x, y, tam, color) { ctx.font = 'bold ' + tam + 'px Courier New'; ctx.fillStyle = color; ctx.fillText(t, x, y); }
   function dibujarBumper(u) {
@@ -349,14 +433,16 @@
     ctx.drawImage(capa, 0, 0, W, H);
     ctx.textAlign = 'center';
     for (var i = 0; i < LUCES; i++) {                         // anillo de 16 luces azules
-      var a = -Math.PI / 2 + i * Math.PI * 2 / LUCES; luz(CX + Math.cos(a) * 56, 380 + Math.sin(a) * 56, 4.5, i < luces, '#8fd0ff', '#24406e');
+      var a = -Math.PI / 2 + i * Math.PI * 2 / LUCES; luz(CX + Math.cos(a) * 58, 380 + Math.sin(a) * 58, 4, i < luces, '#8fd0ff', '#2a4a86');
     }
-    for (var m = 1; m <= 5; m++) {                             // anillo interior amarillo: multiplicador
-      var am = -Math.PI / 2 + (m - 1) * Math.PI * 2 / 5; luz(CX + Math.cos(am) * 32, 380 + Math.sin(am) * 32, 4, mult >= m, '#ffe14a', '#5a5420');
+    for (var m = 0; m < 10; m++) {                             // anillo interior amarillo: multiplicador (2 luces por nivel)
+      var am = -Math.PI / 2 + m * Math.PI * 2 / 10; luz(CX + Math.cos(am) * 34, 380 + Math.sin(am) * 34, 3.5, m < mult * 2, '#ffe14a', '#5a5420');
     }
     luz(CX, 380, 4, tick % 40 < 20, '#ffe14a', '#5a5420');
     texto(RANGOS[rango], CX, 448, 10, 'rgba(200,230,255,.8)');
     CARRILES.forEach(function (x, k) { luz(x, 86, 4.5, lit[k], '#ffe14a', '#4a4630'); });
+    [22.5, 45, 2 * CX - 45, 2 * CX - 22.5].forEach(function (x, k) { luz(x, 440, 3.5, calles[k] > 0, '#ffe14a', '#5a5420'); });
+    if (salva > 0 && (salva > 120 || tick % 20 < 10)) texto('REDESPLIEGUE', CX, 597, 9, '#7fe0ff');
     var giro = tick * 0.08;                                    // agujero negro
     ctx.strokeStyle = 'rgba(190,120,255,.85)'; ctx.lineWidth = 1.5;
     for (var k = 0; k < 3; k++) { ctx.beginPath(); ctx.arc(agujero.x, agujero.y, 3 + k * 3, giro + k * 2, giro + k * 2 + 3.6); ctx.stroke(); }
@@ -365,6 +451,10 @@
       ctx.fillStyle = '#f2d23a'; ctx.strokeStyle = '#7a5a00'; ctx.lineWidth = 1; ctx.fillRect(d.ax - 4, d.ay, 7, d.by - d.ay); ctx.strokeRect(d.ax - 4, d.ay, 7, d.by - d.ay);
     });
     bumpers.forEach(dibujarBumper);
+    var gv = ctx.createRadialGradient(verde.x - 2, verde.y - 2, 1, verde.x, verde.y, verde.r + 3);   // objetivo verde
+    gv.addColorStop(0, verde.flash ? '#ffffff' : '#b6ff9a'); gv.addColorStop(0.6, '#2fae3a'); gv.addColorStop(1, '#0d4a18');
+    ctx.fillStyle = '#d8d8e0'; ctx.beginPath(); ctx.arc(verde.x, verde.y, verde.r + 3, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = gv; ctx.shadowColor = '#6f6'; ctx.shadowBlur = verde.flash ? 14 : 0; ctx.beginPath(); ctx.arc(verde.x, verde.y, verde.r, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0;
     slings.forEach(function (s) {
       ctx.strokeStyle = s.flash ? '#ffffff' : '#f0e6e6'; ctx.shadowColor = '#fff'; ctx.shadowBlur = s.flash ? 14 : 0; ctx.lineWidth = 3; ctx.lineCap = 'round'; trazo(ctx, s);
     });
@@ -401,11 +491,11 @@
 
   /* ---------- partida ---------- */
   function nueva() {
-    score = 0; bola = 1; extra = 0; mult = 1; misiones = 0; rango = 0; luces = 0; lit = [false, false, false]; espera = 0; reponerDianas = 0; carga = 0;
+    score = 0; bola = 1; extra = 0; mult = 1; misiones = 0; rango = 0; luces = 0; salva = 0; actual = 0; lit = [false, false, false]; espera = 0; reponerDianas = 0; carga = 0;
     dianas.forEach(function (d) { d.abajo = false; }); fl.ang = fl.rest; fr.ang = fr.rest; tick = 0; avisoT = 0;
     over = false; paused = false; $('pinStart').style.display = 'none'; $('pinOver').classList.remove('show');
     nuevaBola(); hud(); ac(); actualizarControles();
-    running = true; last = 0; acc = 0; cancelAnimationFrame(raf); raf = requestAnimationFrame(bucle);
+    running = true; panel(); last = 0; acc = 0; cancelAnimationFrame(raf); raf = requestAnimationFrame(bucle);
   }
   function pausar(p) {
     if (!running || over) return; paused = p;
@@ -417,16 +507,16 @@
   window.initPin = function () { prepararLienzo(); mostrarRecord(); if (!running) dibujar(); };
   window.pinStartNew = function () {
     running = false; over = false; paused = false; cancelAnimationFrame(raf); bolaAct = null;
-    $('pinOver').classList.remove('show'); $('pinStart').style.display = 'flex'; mostrarRecord(); dibujar();
+    $('pinOver').classList.remove('show'); $('pinStart').style.display = 'flex'; mostrarRecord(); panel(); dibujar();
   };
   /* solo pruebas */
   window.pinEstado = function () {
     var b = bolaAct;
     return { score: score, bola: bola, extra: extra, mult: mult, rango: rango, running: running, paused: paused, over: over, carga: carga,
       hayBola: !!b, bx: b ? b.x : null, by: b ? b.y : null, vy: b ? b.vy : null, enCarril: b ? b.enCarril : null, rampa: b && b.rampa ? b.rampa.id : null,
-      flipL: fl.ang, flipR: fr.ang, dianas: dianas.filter(function (d) { return d.abajo; }).length, carriles: lit.slice(), luces: luces, tick: tick };
+      flipL: fl.ang, flipR: fr.ang, dianas: dianas.filter(function (d) { return d.abajo; }).length, mision: MISIONES[actual].id, misiones: misiones, carriles: lit.slice(), luces: luces, tick: tick };
   };
-  window.pinColocar = function (x, y, vx, vy) { if (!bolaAct) nuevaBola(); var b = bolaAct; b.x = x; b.y = y; b.vx = vx; b.vy = vy; b.enCarril = x > CARRIL; b.capt = 0; b.rampa = null; b.noRampa = 0; };
+  window.pinColocar = function (x, y, vx, vy) { if (!bolaAct) nuevaBola(); var b = bolaAct; b.x = x; b.y = y; b.vx = vx; b.vy = vy; b.enCarril = x > CARRIL; b.capt = 0; b.rampa = null; b.noRampa = 0; salva = 0; };
 
   /* ---------- entrada ---------- */
   function actualizarControles() {
