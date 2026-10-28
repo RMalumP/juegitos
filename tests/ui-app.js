@@ -82,6 +82,10 @@ const { entorno, wait, ok, fin } = require('./helpers');
     await p2.evaluate(() => { const i = document.getElementById('iconMine'); i.click(); i.click(); }); await wait(400);
     const e = await p2.evaluate(() => ({ sc: document.body.scrollTop + document.documentElement.scrollTop, t: document.querySelector('#winMine .winTitle').getBoundingClientRect().top, tb: document.getElementById('taskbar').getBoundingClientRect().top }));
     ok(e.sc === 0 && e.t >= 0 && e.tb >= 859, 'con la barra de tareas plegada, abrir otro juego no sube la pantalla: se ve la cabecera y la barra sigue plegada');
+    await p2.locator('#btnCloseMine').click(); await wait(300);
+    ok(await p2.evaluate(() => document.getElementById('taskbar').classList.contains('tbHidden') && document.getElementById('tbReopen').classList.contains('show')), 'al cerrar un juego la barra de tareas plegada sigue plegada (solo vuelve con su botón ▲)');
+    await p2.locator('#tbReopen').click(); await wait(300);
+    ok(await p2.evaluate(() => !document.getElementById('taskbar').classList.contains('tbHidden')), 'el botón ▲ vuelve a mostrar la barra de tareas');
   }
   await env.cerrar(); fin();
 })().catch(e => { console.error(e); process.exit(1); });
