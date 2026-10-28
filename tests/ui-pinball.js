@@ -46,11 +46,18 @@ const { entorno, wait, ok, fin } = require('./helpers');
   ok((await pg.evaluate(() => window.pinEstado())).dianas >= 1, 'golpear una diana la tumba');
   // la rampa morada lleva la bola y la suelta junto al flipper izquierdo
   s0 = (await pg.evaluate(() => window.pinEstado())).score;
-  await pg.evaluate(() => window.pinColocar(126, 270, -2, -9)); await wait(100);
+  await pg.evaluate(() => window.pinColocar(136, 276, -2, -9)); await wait(100);
   ok((await pg.evaluate(() => window.pinEstado())).rampa === 'rampa', 'la bola sube por la rampa');
   await pg.waitForFunction(() => !window.pinEstado().rampa, null, { timeout: 4000 }).catch(() => {});
   e = await pg.evaluate(() => window.pinEstado());
-  ok(e.score >= s0 + 1500 && e.bx > 33 && e.bx < 57 && e.by > 400, 'la rampa suma puntos y deja la bola en el carril izquierdo');
+  ok(e.score >= s0 + 1500 && e.nivel === 1, 'la rampa suma puntos y deja la bola en la plataforma morada');
+  await pg.waitForFunction(() => window.pinEstado().nivel === 0, null, { timeout: 15000 }).catch(() => {});
+  e = await pg.evaluate(() => window.pinEstado());
+  ok(e.nivel === 0 && e.bx > 33 && e.bx < 57 && e.by > 400, 'la bola sale de la plataforma por el agujero hacia la calle de entrada izquierda');
+  // desde la mesa no se puede entrar en la plataforma
+  await pg.evaluate(() => window.pinColocar(150, 300, -8, 0)); await wait(400);
+  e = await pg.evaluate(() => window.pinEstado());
+  ok(e.nivel === 0 && !(e.bx < 120 && e.by > 250 && e.by < 390), 'desde la mesa la plataforma es un muro (' + Math.round(e.bx) + ',' + Math.round(e.by) + ')');
   // la órbita roja la sube por la derecha hasta los carriles de arriba
   await pg.evaluate(() => window.pinColocar(300, 280, 0, -10)); await wait(100);
   ok((await pg.evaluate(() => window.pinEstado())).rampa === 'orbita', 'la bola entra en la órbita roja');
