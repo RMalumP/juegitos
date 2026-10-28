@@ -123,135 +123,80 @@ function l(e, t, n, l) {
     s = Math.max(...n);
   o[e] = t.map(([e, t, n]) => [e, 14 + ((t - l) / (s - l)) * 112, n]);
 });
-const s = [
-    `Mine`,
-    `Ast`,
-    `Sud`,
-    `Parchis`,
-    `Sol`,
-    `Carta`,
-    `BJ`,
-    `Roul`,
-    `Poker`,
-    `Tetris`,
-    `Inv`,
-    `Snk`,
-    `Pac`,
-    `Chess`,
-  ],
-  c = {
-    Mine: !1,
-    Ast: !1,
-    Sud: !1,
-    Sol: !1,
-    Carta: !1,
-    BJ: !1,
-    Roul: !1,
-    Poker: !1,
-    Tetris: !1,
-    Inv: !1,
-    Snk: !1,
-    Pac: !1,
-    Chess: !1,
-    Parchis: !1,
+// ===== Registro de juegos y gestión de ventanas =====
+// Cada id corresponde a los elementos winX, chipX, iconX, sBtnX, btnMinX y
+// btnCloseX del HTML. `init` se llama la primera vez que se abre el juego;
+// `pause`/`resume`, al ocultarlo/mostrarlo. Añadir un juego = una línea aquí.
+const GAMES = {
+  Mine: { init: () => M() },
+  Ast: { init: () => initAst(), pause: () => pauseAst() },
+  Sud: {
+    init: () => initSud(),
+    pause: () => pauseSud(),
+    resume: () => resumeSud(),
   },
-  a = {
-    mine: `Mine`,
-    ast: `Ast`,
-    sud: `Sud`,
-    sol: `Sol`,
-    carta: `Carta`,
-    bj: `BJ`,
-    roul: `Roul`,
-    poker: `Poker`,
-    tetris: `Tetris`,
-    inv: `Inv`,
-    snk: `Snk`,
-    pac: `Pac`,
-    chess: `Chess`,
-    parchis: `Parchis`,
-  };
-function d(e) {
-  e === `Tetris` && typeof pauseTetris == `function`
-    ? pauseTetris()
-    : e === `Inv` && typeof pauseInv == `function`
-      ? pauseInv()
-      : e === `Snk` && typeof pauseSnk == `function`
-        ? pauseSnk()
-        : e === `Pac` && typeof pausePac == `function`
-          ? pausePac()
-          : e === `Sud` && typeof pauseSud == `function`
-            ? pauseSud()
-            : e === `Ast` && typeof pauseAst == `function`
-              ? pauseAst()
-              : e === `Chess` && pauseChessClocks();
+  Parchis: { init: () => initParchis() },
+  Sol: { init: () => te() },
+  Carta: { init: () => Ie() },
+  BJ: { init: () => Oe() },
+  Roul: { init: () => bt() },
+  Poker: { init: () => Vt() },
+  Tetris: { init: () => initTetris(), pause: () => pauseTetris() },
+  Inv: { init: () => initInv(), pause: () => pauseInv() },
+  Snk: { init: () => initSnk(), pause: () => pauseSnk() },
+  Pac: { init: () => initPac(), pause: () => pausePac() },
+  Chess: { init: () => initChess(), pause: () => pauseChessClocks() },
+};
+const GAME_IDS = Object.keys(GAMES),
+  gameStarted = {};
+// Las funciones públicas reciben el id en minúsculas ("tetris" -> "Tetris").
+const gameId = (key) => GAME_IDS.find((id) => id.toLowerCase() === key);
+const winEl = (id) => document.getElementById(`win` + id),
+  chipEl = (id) => document.getElementById(`chip` + id);
+function pauseWin(id) {
+  GAMES[id].pause?.();
 }
-// Lo contrario de d(): solo el Sudoku se reanuda solo (su cronómetro); los
-// juegos de acción muestran su pantalla de PAUSA con el botón "Continuar".
-function resumeWin(e) {
-  e === `Sud` && resumeSud();
+// Solo el Sudoku se reanuda solo (su cronómetro): los juegos de acción
+// muestran su pantalla de PAUSA con el botón "Continuar".
+function resumeWin(id) {
+  gameStarted[id] && GAMES[id].resume?.();
 }
-function openGame(e) {
-  let t = a[e];
-  s.forEach((e) => {
-    e !== t && d(e),
-      document.getElementById(`win` + e).classList.add(`hidden`),
-      document.getElementById(`chip` + e).classList.remove(`active`);
-  }),
-    document.getElementById(`win` + t).classList.remove(`hidden`),
-    c[t] && resumeWin(t),
-    document.getElementById(`chip` + t).classList.remove(`hidden`),
-    document.getElementById(`chip` + t).classList.add(`active`),
-    c[t] ||
-      ((c[t] = !0),
-      t === `Mine`
-        ? M()
-        : t === `Ast`
-          ? initAst()
-          : t === `Sud`
-            ? initSud()
-            : t === `Sol`
-              ? te()
-              : t === `Carta`
-                ? Ie()
-                : t === `BJ`
-                  ? Oe()
-                  : t === `Roul`
-                    ? bt()
-                    : t === `Poker`
-                      ? Vt()
-                      : t === `Tetris`
-                        ? initTetris()
-                        : t === `Inv`
-                          ? initInv()
-                          : t === `Snk`
-                            ? initSnk()
-                            : t === `Pac`
-                              ? initPac()
-                              : t === `Chess`
-                                ? initChess()
-                                : t === `Parchis` && initParchis());
+function openGame(key) {
+  let id = gameId(key);
+  GAME_IDS.forEach((other) => {
+    other !== id && pauseWin(other),
+      winEl(other).classList.add(`hidden`),
+      chipEl(other).classList.remove(`active`);
+  });
+  winEl(id).classList.remove(`hidden`);
+  resumeWin(id);
+  chipEl(id).classList.remove(`hidden`);
+  chipEl(id).classList.add(`active`);
+  if (!gameStarted[id]) {
+    gameStarted[id] = !0;
+    GAMES[id].init();
+  }
 }
-function i(e) {
-  let t = a[e];
-  d(t),
-    document.getElementById(`win` + t).classList.add(`hidden`),
-    document.getElementById(`chip` + t).classList.add(`hidden`),
+function closeGame(key) {
+  let id = gameId(key);
+  pauseWin(id),
+    winEl(id).classList.add(`hidden`),
+    chipEl(id).classList.add(`hidden`),
     y();
 }
-function r(e) {
-  let t = a[e];
-  d(t),
-    document.getElementById(`win` + t).classList.add(`hidden`),
-    document.getElementById(`chip` + t).classList.remove(`active`);
+function minimizeGame(key) {
+  let id = gameId(key);
+  pauseWin(id),
+    winEl(id).classList.add(`hidden`),
+    chipEl(id).classList.remove(`active`);
 }
-function u(e) {
-  let t = a[e],
-    n = document.getElementById(`win` + t),
-    o = document.getElementById(`chip` + t);
-  n.classList.contains(`hidden`)
-    ? (n.classList.remove(`hidden`), o.classList.add(`active`), resumeWin(t))
-    : (d(t), n.classList.add(`hidden`), o.classList.remove(`active`));
+function toggleGame(key) {
+  let id = gameId(key);
+  winEl(id).classList.contains(`hidden`)
+    ? (winEl(id).classList.remove(`hidden`),
+      chipEl(id).classList.add(`active`),
+      resumeWin(id))
+    : minimizeGame(key);
 }
 function m() {
   let e = /* @__PURE__ */ new Date();
@@ -260,41 +205,47 @@ function m() {
     `:` +
     String(e.getMinutes()).padStart(2, `0`);
 }
-s.forEach((e) => {
-  let t = e.toLowerCase();
-  document.getElementById(`chip` + e).onclick = () => u(t);
-  let n = document.getElementById(`btnClose` + e);
-  n && (n.onclick = () => i(t));
-  let o = document.getElementById(`btnMin` + e);
-  o && (o.onclick = () => r(t));
-  let l = document.getElementById(`icon` + e);
-  if (l) {
-    let e = 0;
-    l.addEventListener(`click`, function () {
-      this.parentNode
-        .querySelectorAll(`.deskIcon`)
-        .forEach((e) => e.classList.remove(`sel`)),
-        this.classList.add(`sel`);
-      let n = Date.now();
-      n - e < 400 && openGame(t), (e = n);
-    });
-  }
-  let s = document.getElementById(`sBtn` + e);
-  s &&
-    (s.onclick = () => {
-      (document.getElementById(`startScreen`).style.display = `none`),
-        (document.getElementById(`creditsBtn`).style.display = `none`),
-        openGame(t);
-    });
+// Doble toque/clic (400 ms) sobre un icono del escritorio; un toque lo selecciona.
+function onDeskIconDoubleTap(icon, open) {
+  let last = 0;
+  icon.addEventListener(`click`, function () {
+    this.parentNode
+      .querySelectorAll(`.deskIcon`)
+      .forEach((e) => e.classList.remove(`sel`)),
+      this.classList.add(`sel`);
+    let now = Date.now();
+    now - last < 400 && open(), (last = now);
+  });
+}
+// Botón de la pantalla de inicio "¿Qué quieres jugar?".
+function onStartChoice(btn, open) {
+  btn.onclick = () => {
+    (document.getElementById(`startScreen`).style.display = `none`),
+      (document.getElementById(`creditsBtn`).style.display = `none`),
+      open();
+  };
+}
+GAME_IDS.forEach((id) => {
+  let key = id.toLowerCase(),
+    open = () => openGame(key);
+  chipEl(id).onclick = () => toggleGame(key);
+  let close = document.getElementById(`btnClose` + id);
+  close && (close.onclick = () => closeGame(key));
+  let min = document.getElementById(`btnMin` + id);
+  min && (min.onclick = () => minimizeGame(key));
+  let icon = document.getElementById(`icon` + id);
+  icon && onDeskIconDoubleTap(icon, open);
+  let start = document.getElementById(`sBtn` + id);
+  start && onStartChoice(start, open);
 }),
   m(),
   setInterval(m, 15e3);
 // Al cambiar de pestaña, bloquear el móvil o pasar a otra app, se pausa el
 // juego visible (antes seguía corriendo y se perdían vidas o tiempo).
 document.addEventListener(`visibilitychange`, () => {
-  s.forEach((e) => {
-    document.getElementById(`win` + e).classList.contains(`hidden`) ||
-      (document.hidden ? d(e) : resumeWin(e));
+  GAME_IDS.forEach((id) => {
+    winEl(id).classList.contains(`hidden`) ||
+      (document.hidden ? pauseWin(id) : resumeWin(id));
   });
 });
 let p = !0;

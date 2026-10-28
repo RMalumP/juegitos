@@ -17,10 +17,9 @@ const SCRIPTS = [
   "js/invaders.js",
   "js/snake.js",
   "js/pacman.js",
-  "js/chess-loader.js",
+  "js/embedded-games.js",
   "js/asteroids.js",
   "js/window-bar.js",
-  "js/parchis-loader.js",
 ];
 
 // Juegos que viven en su propio documento dentro de un <iframe>.
