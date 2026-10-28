@@ -1,14 +1,43 @@
 {
   "name": "juegitos",
   "private": true,
-  "type": "module",
+  "description": "Juegos Windows XP: escritorio con juegos, bingo online y sala online (PWA)",
   "scripts": {
-    "build": "node build.mjs",
-    "check": "node build.mjs --check",
-    "format": "prettier --write src"
+    "test": "node --test tests/bingo-engine.test.js tests/casino-engine.test.js tests/hundir-engine.test.js tests/g2048-engine.test.js tests/duelo-engines.test.js tests/fase4-engines.test.js",
+    "test:ui": "node tests/ui-bingo-local.js",
+    "test:online": "node tests/ui-bingo-online.js",
+    "test:pwa": "node tests/pwa.js",
+    "test:turn": "node tests/turn.js",
+    "test:app": "node tests/ui-app.js",
+    "test:vibracion": "node tests/ui-vibracion.js",
+    "test:blackjack": "node tests/ui-blackjack.js",
+    "test:ruleta": "node tests/ui-ruleta.js",
+    "test:reloj": "node tests/ui-reloj.js",
+    "test:invitacion": "node tests/ui-invitacion.js",
+    "test:casino": "node tests/ui-casino.js",
+    "test:parchis": "node tests/ui-parchis-online.js",
+    "test:tablero": "node tests/ui-tablero.js",
+    "test:salas": "node tests/ui-salas-juegos.js",
+    "test:enlace": "node tests/ui-enlace-y-barra.js",
+    "test:niveles": "node tests/ui-niveles.js",
+    "test:tetris": "node tests/ui-tetris-repeticion.js",
+    "test:teclas": "node tests/ui-teclas.js",
+    "test:atras": "node tests/ui-atras.js",
+    "test:hundir": "node tests/ui-hundir.js",
+    "test:hundir-online": "node tests/ui-hundir-online.js",
+    "test:2048": "node tests/ui-g2048.js",
+    "test:breakout": "node tests/ui-breakout.js",
+    "test:duelo": "node tests/ui-duelo.js",
+    "test:duelo-online": "node tests/ui-duelo-online.js",
+    "test:fase4": "node tests/ui-fase4.js",
+    "test:escritorio": "node tests/ui-escritorio.js",
+    "test:regresion": "node tests/ui-regresion.js",
+    "test:mejoras": "node tests/ui-mejoras.js",
+    "test:reconexion": "node tests/ui-bingo-reconexion.js",
+    "test:all": "npm test && npm run test:ui && npm run test:online && npm run test:regresion && npm run test:mejoras && npm run test:niveles && npm run test:tetris && npm run test:teclas && npm run test:atras && npm run test:hundir && npm run test:hundir-online && npm run test:2048 && npm run test:breakout && npm run test:duelo && npm run test:duelo-online && npm run test:fase4 && npm run test:escritorio && npm run test:turn && npm run test:app && npm run test:vibracion && npm run test:blackjack && npm run test:ruleta && npm run test:reloj && npm run test:invitacion && npm run test:casino && npm run test:parchis && npm run test:tablero && npm run test:salas && npm run test:enlace && npm run test:pwa && npm run test:reconexion"
   },
   "devDependencies": {
-    "esbuild": "0.24.0",
-    "prettier": "3.3.3"
+    "peer": "1.0.2",
+    "peerjs": "1.5.4"
   }
 }
