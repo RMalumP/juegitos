@@ -1,4 +1,4 @@
-// Salas por juego: cada juego tiene su botón «🌐 Conectar», su lobby y su límite de jugadores; una sala no admite a quien entra desde otro juego.
+// Salas por juego (también UNO, hasta 8): cada juego tiene su botón «🌐 Conectar», su lobby y su límite de jugadores; una sala no admite a quien entra desde otro juego.
 const { entorno, wait, ok, fin } = require('./helpers');
 const JUEGOS = [
   { id: 'ajedrez', nombre: 'Ajedrez', max: 2, win: 'winChess', abrir: pg => pg.evaluate(() => window.openChessTab(0)) },
@@ -9,7 +9,8 @@ const JUEGOS = [
   { id: 'poker', nombre: 'Póquer', max: 6, win: 'winPoker', abrir: pg => pg.evaluate(() => window.openGame('poker')) },
   { id: 'hundir', nombre: 'Hundir la flota', max: 2, win: 'winHundir', abrir: pg => pg.evaluate(() => window.openGame('hundir')) },
   { id: 'c4', nombre: 'Conecta 4', max: 2, win: 'winC4', abrir: pg => pg.evaluate(() => window.openGame('c4')) },
-  { id: 'ttt', nombre: 'Tres en raya', max: 2, win: 'winTtt', abrir: pg => pg.evaluate(() => window.openGame('ttt')) }
+  { id: 'ttt', nombre: 'Tres en raya', max: 2, win: 'winTtt', abrir: pg => pg.evaluate(() => window.openGame('ttt')) },
+  { id: 'uno', nombre: 'UNO', max: 8, win: 'winUno', abrir: pg => pg.evaluate(() => window.openGame('uno')) }
 ];
 const LB = j => '#' + j.win + ' .olLobby[data-j=' + j.id + ']';
 (async () => {
