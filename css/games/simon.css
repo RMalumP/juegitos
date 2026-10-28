@@ -9,7 +9,7 @@
 .simPad[data-i="0"]{background:#27ae60;border-radius:100% 0 0 0}.simPad[data-i="1"]{background:#e74c3c;border-radius:0 100% 0 0}
 .simPad[data-i="2"]{background:#f1c40f;border-radius:0 0 0 100%}.simPad[data-i="3"]{background:#2980b9;border-radius:0 0 100% 0}
 .simPad.on{opacity:1;filter:brightness(1.5) drop-shadow(0 0 14px #fff)}
-#simVels{display:flex;gap:6px;align-items:center;font-size:11px}
+#simVels{display:flex;gap:6px;align-items:center;font-size:11px;position:relative;z-index:11}
 .simVel{background:#242436;color:#eee;border:2px solid #4a4a6a;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:11px}.simVel.sel{background:#fff;color:#15151f;border-color:#fff}
 #simStart,#simOver{position:absolute;inset:0;z-index:10;background:#15151ff2;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:14px;text-align:center}
 #simStart{display:flex}#simOver{display:none}#simOver.show{display:flex}
