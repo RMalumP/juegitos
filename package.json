@@ -3,7 +3,7 @@
   "private": true,
   "description": "Juegos Windows XP: escritorio con juegos, bingo online y sala online (PWA)",
   "scripts": {
-    "test": "node --test tests/bingo-engine.test.js tests/casino-engine.test.js tests/hundir-engine.test.js tests/g2048-engine.test.js tests/duelo-engines.test.js tests/fase4-engines.test.js tests/domino-engine.test.js tests/ahorcado-engine.test.js tests/simon-engine.test.js",
+    "test": "node --test tests/bingo-engine.test.js tests/casino-engine.test.js tests/hundir-engine.test.js tests/g2048-engine.test.js tests/duelo-engines.test.js tests/fase4-engines.test.js tests/domino-engine.test.js tests/ahorcado-engine.test.js tests/simon-engine.test.js tests/uno-engine.test.js",
     "test:ui": "node tests/ui-bingo-local.js",
     "test:online": "node tests/ui-bingo-online.js",
     "test:pwa": "node tests/pwa.js",
@@ -30,6 +30,7 @@
     "test:breakout": "node tests/ui-breakout.js",
     "test:pinball": "node tests/ui-pinball.js",
     "test:ahorcado": "node tests/ui-ahorcado.js",
+    "test:uno": "node tests/ui-uno.js",
     "test:duelo": "node tests/ui-duelo.js",
     "test:duelo-online": "node tests/ui-duelo-online.js",
     "test:fase4": "node tests/ui-fase4.js",
@@ -40,7 +41,7 @@
     "test:regresion": "node tests/ui-regresion.js",
     "test:mejoras": "node tests/ui-mejoras.js",
     "test:reconexion": "node tests/ui-bingo-reconexion.js",
-    "test:all": "npm test && npm run test:ui && npm run test:online && npm run test:regresion && npm run test:mejoras && npm run test:niveles && npm run test:tetris && npm run test:teclas && npm run test:atras && npm run test:hundir && npm run test:hundir-online && npm run test:2048 && npm run test:guardar && npm run test:breakout && npm run test:pinball && npm run test:ahorcado && npm run test:duelo && npm run test:duelo-online && npm run test:fase4 && npm run test:simon && npm run test:domino && npm run test:domino-online && npm run test:escritorio && npm run test:turn && npm run test:app && npm run test:vibracion && npm run test:blackjack && npm run test:ruleta && npm run test:reloj && npm run test:invitacion && npm run test:casino && npm run test:parchis && npm run test:tablero && npm run test:salas && npm run test:enlace && npm run test:pwa && npm run test:reconexion"
+    "test:all": "npm test && npm run test:ui && npm run test:online && npm run test:regresion && npm run test:mejoras && npm run test:niveles && npm run test:tetris && npm run test:teclas && npm run test:atras && npm run test:hundir && npm run test:hundir-online && npm run test:2048 && npm run test:guardar && npm run test:breakout && npm run test:pinball && npm run test:ahorcado && npm run test:uno && npm run test:duelo && npm run test:duelo-online && npm run test:fase4 && npm run test:simon && npm run test:domino && npm run test:domino-online && npm run test:escritorio && npm run test:turn && npm run test:app && npm run test:vibracion && npm run test:blackjack && npm run test:ruleta && npm run test:reloj && npm run test:invitacion && npm run test:casino && npm run test:parchis && npm run test:tablero && npm run test:salas && npm run test:enlace && npm run test:pwa && npm run test:reconexion"
   },
   "devDependencies": {
     "peer": "1.0.2",

@@ -1,9 +1,9 @@
 // Ordenador: escalado por altura (--ui), menú de inicio grande, juegos verticales que NO se ensanchan, juegos anchos que sí, ventanas dentro de la pantalla,
 // puntero correcto con el zoom (Breakout, Tetris con gestos activados) y móvil sin cambios.
 const { entorno, wait, ok, fin } = require('./helpers');
-const JUEGOS = ['mine', 'tetris', 'inv', 'snk', 'pac', 'chess', 'parchis', 'ast', 'sud', 'sol', 'carta', 'bj', 'roul', 'poker', 'pong', 'frog', 'hundir', 'g2048', 'brk', 'pin', 'c4', 'ttt', 'domino', 'mem', 'sim', 'flap', 'word', 'ahor', 'dice', 'bingo'];
+const JUEGOS = ['mine', 'tetris', 'inv', 'snk', 'pac', 'chess', 'parchis', 'ast', 'sud', 'sol', 'carta', 'bj', 'roul', 'poker', 'pong', 'frog', 'hundir', 'g2048', 'brk', 'pin', 'uno', 'c4', 'ttt', 'domino', 'mem', 'sim', 'flap', 'word', 'ahor', 'dice', 'bingo'];
 const VERTICALES = ['tetris', 'brk', 'pin', 'flap', 'word', 'ahor', 'pac', 'frog', 'hundir', 'g2048', 'mem', 'sim', 'c4', 'ttt', 'domino', 'snk', 'sud', 'dice'];
-const ANCHOS = ['inv', 'ast', 'pong', 'mine', 'sol', 'carta', 'bj', 'roul', 'poker', 'bingo'];
+const ANCHOS = ['inv', 'ast', 'pong', 'mine', 'sol', 'carta', 'bj', 'roul', 'poker', 'uno', 'bingo'];
 const geo = pg => pg.evaluate(() => {
   const w = [...document.querySelectorAll('.win')].find(x => !x.classList.contains('hidden')); const b = w.getBoundingClientRect();
   return { l: b.left, t: b.top, w: b.width, h: b.height, tb: document.getElementById('taskbar').getBoundingClientRect().top, forma: w.getAttribute('data-forma') };
@@ -28,7 +28,7 @@ const geo = pg => pg.evaluate(() => {
       if (ANCHOS.includes(j) && g.forma !== 'ancho') malas.push(j + ' sin forma ancha');
       if (['chess', 'parchis'].includes(j) && g.w < W - 20) malas.push(j + ' debería ocupar el ancho');
     }
-    ok(malas.length === 0, W + '×' + H + ': las 30 ventanas caben, los verticales siguen siendo columnas y Ajedrez/Parchís ocupan el ancho' + (malas.length ? ' → ' + malas.join('; ') : ''));
+    ok(malas.length === 0, W + '×' + H + ': las 31 ventanas caben, los verticales siguen siendo columnas y Ajedrez/Parchís ocupan el ancho' + (malas.length ? ' → ' + malas.join('; ') : ''));
     if (W === 1920) {
       const gt = (await (async () => { await pg.evaluate(() => window.openGame('tetris')); await wait(200); return geo(pg); })());
       ok(gt.w > 600 && gt.w < 720, 'Tetris a 1920×1080 mide ≈' + Math.round(gt.w) + ' px de ancho (no se ensancha) y toda la altura (' + Math.round(gt.h) + ')');

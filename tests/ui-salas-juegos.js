@@ -11,7 +11,8 @@ const JUEGOS = [
   { id: 'c4', nombre: 'Conecta 4', max: 2, win: 'winC4', abrir: pg => pg.evaluate(() => window.openGame('c4')) },
   { id: 'ttt', nombre: 'Tres en raya', max: 2, win: 'winTtt', abrir: pg => pg.evaluate(() => window.openGame('ttt')) },
   { id: 'domino', nombre: 'Dominó', max: 4, win: 'winDomino', abrir: pg => pg.evaluate(() => window.openGame('domino')) },
-  { id: 'ahorcado', nombre: 'Ahorcado', max: 6, win: 'winAhor', abrir: pg => pg.evaluate(() => window.openGame('ahor')) }
+  { id: 'ahorcado', nombre: 'Ahorcado', max: 6, win: 'winAhor', abrir: pg => pg.evaluate(() => window.openGame('ahor')) },
+  { id: 'uno', nombre: 'UNO', max: 8, win: 'winUno', abrir: pg => pg.evaluate(() => window.openGame('uno')) }
 ];
 const LB = j => '#' + j.win + ' .olLobby[data-j=' + j.id + ']';
 (async () => {
