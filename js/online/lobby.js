@@ -1,4 +1,4 @@
-/* js/online/lobby.js — Lobby de cada juego con sala online (Ajedrez, Damas, Parchís, Ruleta, Blackjack, Póquer, Hundir la flota, Conecta 4, Tres en raya, Dominó).
+/* js/online/lobby.js — Lobby de cada juego con sala online (Ajedrez, Damas, Parchís, Ruleta, Blackjack, Póquer, Hundir la flota, Conecta 4, Tres en raya, Dominó, Ahorcado).
    Se carga solo cuando hace falta (botón «🌐 Conectar» de un juego, o al entrar en una sala). Pinta, sobre la ventana del propio juego:
    la sala, los asientos (con el límite de jugadores del juego), los botones de compartir y QR, las opciones del juego y «Empezar».
    Cada juego registra su parte con JuegosOnline.registrar(id, { opciones(esHost, estado) → nodos, preparar(ctx) → { estado, roles }, alEstado(estado) }). */
@@ -85,7 +85,7 @@
     todos();
   }
   // Cada grupo de juegos tiene su adaptador (js/online/j-<grupo>.js), que se carga al entrar en la sala de ese juego.
-  var ARCH = { ajedrez: 'tablero', damas: 'tablero', parchis: 'parchis', ruleta: 'ruleta', blackjack: 'blackjack', poker: 'casino', hundir: 'hundir', c4: 'duelo', ttt: 'duelo', domino: 'domino' }, cargados = {};
+  var ARCH = { ajedrez: 'tablero', damas: 'tablero', parchis: 'parchis', ruleta: 'ruleta', blackjack: 'blackjack', poker: 'casino', hundir: 'hundir', c4: 'duelo', ttt: 'duelo', domino: 'domino', ahorcado: 'ahorcado' }, cargados = {};
   function cargarAdaptador(j) {
     var a = ARCH[j]; if (!a) return Promise.resolve();
     function cargar(archivo) {

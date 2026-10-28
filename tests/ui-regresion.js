@@ -1,6 +1,6 @@
 // Regresión: todos los juegos del escritorio (también los anteriores al bingo) se abren sin errores y se pueden cerrar.
 const { entorno, wait, ok, fin } = require('./helpers');
-const JUEGOS = ['mine', 'ast', 'sud', 'sol', 'carta', 'bj', 'roul', 'poker', 'tetris', 'inv', 'snk', 'pac', 'chess', 'parchis', 'pong', 'frog', 'hundir', 'g2048', 'brk', 'pin', 'c4', 'ttt', 'domino', 'mem', 'sim', 'flap', 'word', 'dice', 'bingo', 'sala'];
+const JUEGOS = ['mine', 'ast', 'sud', 'sol', 'carta', 'bj', 'roul', 'poker', 'tetris', 'inv', 'snk', 'pac', 'chess', 'parchis', 'pong', 'frog', 'hundir', 'g2048', 'brk', 'pin', 'c4', 'ttt', 'domino', 'mem', 'sim', 'flap', 'word', 'ahor', 'dice', 'bingo', 'sala'];
 (async () => {
   const env = await entorno(9372, 9371);
   const ctx = await env.contexto();
@@ -9,7 +9,7 @@ const JUEGOS = ['mine', 'ast', 'sud', 'sol', 'carta', 'bj', 'roul', 'poker', 'te
   for (const j of JUEGOS) {
     await pg.evaluate(n => window.openGame(n), j);
     await wait(250);
-    const vis = await pg.evaluate(n => { const m = { mine: 'Mine', ast: 'Ast', sud: 'Sud', sol: 'Sol', carta: 'Carta', bj: 'BJ', roul: 'Roul', poker: 'Poker', tetris: 'Tetris', inv: 'Inv', snk: 'Snk', pac: 'Pac', chess: 'Chess', parchis: 'Parchis', pong: 'Pong', frog: 'Frog', hundir: 'Hundir', g2048: 'G2048', brk: 'Brk', pin: 'Pin', c4: 'C4', ttt: 'Ttt', domino: 'Domino', mem: 'Mem', sim: 'Sim', flap: 'Flap', word: 'Word', dice: 'Dice', bingo: 'Bingo', sala: 'Sala' }[n]; const w = document.getElementById('win' + m); return !!w && !w.classList.contains('hidden'); }, j);
+    const vis = await pg.evaluate(n => { const m = { mine: 'Mine', ast: 'Ast', sud: 'Sud', sol: 'Sol', carta: 'Carta', bj: 'BJ', roul: 'Roul', poker: 'Poker', tetris: 'Tetris', inv: 'Inv', snk: 'Snk', pac: 'Pac', chess: 'Chess', parchis: 'Parchis', pong: 'Pong', frog: 'Frog', hundir: 'Hundir', g2048: 'G2048', brk: 'Brk', pin: 'Pin', c4: 'C4', ttt: 'Ttt', domino: 'Domino', mem: 'Mem', sim: 'Sim', flap: 'Flap', word: 'Word', ahor: 'Ahor', dice: 'Dice', bingo: 'Bingo', sala: 'Sala' }[n]; const w = document.getElementById('win' + m); return !!w && !w.classList.contains('hidden'); }, j);
     ok(vis, 'se abre «' + j + '»');
     const otros = await pg.evaluate(() => Array.from(document.querySelectorAll('.win')).filter(w => !w.classList.contains('hidden')).length);
     ok(otros === 1, '«' + j + '»: solo hay una ventana visible');
