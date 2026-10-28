@@ -53,6 +53,21 @@ async function hastaElFinal(pgs, max) {
   const antes = await pg.evaluate(() => window.unoEstado().s.ev);
   const mala = pg.locator('#unoMano .unoCarta.no').first();
   if (await mala.count()) { await mala.click({ force: true }); await wait(50); ok((await pg.evaluate(() => window.unoEstado().s.ev)) === antes, 'una carta que no encaja no se puede jugar'); }
+  // sin marcar las cartas que se pueden echar (en mi turno, con las CPU quietas)
+  await pg.waitForFunction(() => document.getElementById('unoEstado').classList.contains('mio'), null, { timeout: 10000 });
+  await pg.evaluate(() => window.unoRetardo(1e6));
+  await pg.locator('#unoMarcar').click(); await wait(50);
+  ok(await pg.locator('#unoMano .unoCarta.puede, #unoMano .unoCarta.no').count() === 0 && await pg.locator('#unoMano .unoCarta:not(:disabled)').count() > 0, 'con «Marcar: no» ninguna carta se resalta y se pueden tocar todas');
+  const ilegal = await pg.evaluate(() => { const s = window.unoEstado().s, js = window.UnoEngine.jugables(s, 0); return s.turno === 0 ? s.manos[0].findIndex((c, i) => !js.includes(i)) : -1; });
+  if (ilegal >= 0) {
+    const ev0 = await pg.evaluate(() => window.unoEstado().s.ev);
+    await pg.locator('#unoMano .unoCarta[data-i="' + ilegal + '"]').click(); await wait(80);
+    ok((await pg.evaluate(() => window.unoEstado().s.ev)) === ev0 && /no se puede|robar|Solo puedes/.test(await pg.locator('#partidaAviso').innerText()), 'sin marcar, una carta que no vale avisa y no se juega');
+  }
+  ok(await pg.evaluate(() => JSON.parse(localStorage.getItem('unoConf')).marcar === false), 'la opción se recuerda');
+  await pg.locator('#unoMarcar').click(); await wait(50);
+  ok(await pg.locator('#unoMano .unoCarta.puede, #unoMano .unoCarta.no').count() > 0, 'se vuelve a marcar al activarlo');
+  await pg.evaluate(() => { window.unoRetardo(20); window.resumeUno(); });
   ok(await hastaElFinal([pg]), 'la partida contra la CPU llega al final');
   e = await pg.evaluate(() => window.unoEstado());
   ok(e.s.fase === 'final' && e.s.manos[e.s.ganador].length === 0, 'gana quien se queda sin cartas (' + e.s.nombres[e.s.ganador] + ')');
@@ -125,10 +140,10 @@ async function hastaElFinal(pgs, max) {
   ok(gE.mano.length === pub.cuantas[gE.p], 'online: el invitado recibe solo su mano (' + gE.mano.length + ' cartas)');
   ok(await G.locator('#unoRivales .unoRival', { hasText: 'CPU' }).count() === 1, 'online: el asiento de la CPU se ve en la mesa');
   // jugada ilegal del invitado: el anfitrión la rechaza
-  const evAntes = await H.evaluate(() => window.Sala.estado.uno.ev);
+  const manoAntes = (await G.evaluate(() => window.unoEstado().mano)).join();
   await G.evaluate(() => window.Sala.enviar('host', { tipo: 'accion', a: 'jugar', i: 99 }));
-  await wait(400);
-  ok((await H.evaluate(() => window.Sala.estado.uno.ev)) === evAntes, 'online: una jugada imposible del invitado no cambia nada');
+  await G.waitForFunction(() => /turno|no se puede|robar/i.test((document.getElementById('salaToast') || {}).textContent || ''), null, { timeout: 5000 }).catch(() => {});
+  ok(/turno|no se puede|robar/i.test(await G.evaluate(() => (document.getElementById('salaToast') || {}).textContent || '')) && (await G.evaluate(() => window.unoEstado().mano)).join() === manoAntes, 'online: el anfitrión rechaza una jugada imposible del invitado y le avisa');
   // unas jugadas y el anfitrión recarga
   for (let i = 0; i < 40; i++) { await Promise.all([H, G].map(paso)); await wait(20); }
   const evR = await H.evaluate(() => window.Sala.estado.uno.ev);

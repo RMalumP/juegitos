@@ -10,7 +10,7 @@ Doble seis de **2 a 4 jugadores**: 7 fichas cada uno y, con 2 o 3, se roba del p
 
 ## UNO
 
-Baraja de **108 cartas** (por color un 0, dos de cada número del 1 al 9 y dos +2, Reversa y Salta; 4 comodines y 4 comodines +4) con las reglas del reglamento oficial: robar y jugar la robada (o pasar), **+2 y +4 acumulables** (opción), **reto al +4** (si era ilegal roba 4 quien lo tiró; si era legal, el retador roba 6), **«¡UNO!»** con la penúltima carta (si alguien te pilla sin decirlo, robas 2), carta de salida con su efecto y partida **rápida o a 200/500 puntos**. Con 2 jugadores la Reversa hace de Salta.
+Baraja de **108 cartas** (por color un 0, dos de cada número del 1 al 9 y dos +2, Reversa y Salta; 4 comodines y 4 comodines +4) con las reglas del reglamento oficial: robar y jugar la robada (o pasar), **+2 y +4 acumulables** (opción), **reto al +4** (si era ilegal roba 4 quien lo tiró; si era legal, el retador roba 6), **«¡UNO!»** con la penúltima carta (si alguien te pilla sin decirlo, robas 2), carta de salida con su efecto y partida **rápida o a 200/500 puntos**. Con 2 jugadores la Reversa hace de Salta. La ayuda **💡 Marcar jugables** (menú y botón de la mesa) resalta las cartas que se pueden echar; apagada, no se marca nada y una carta que no vale solo da un aviso.
 
 - **🤖 Contra la CPU:** de 1 a 7 rivales, fácil, normal o difícil. Cuenta victorias y guarda el récord de turnos para ganar.
 - **📱 Pasar el móvil** (como el Póquer): de 2 a 8 personas en un móvil, con CPU opcionales; una tapa oculta la mano entre turnos.

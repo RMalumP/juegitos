@@ -11,7 +11,7 @@
   var UE = window.UnoEngine;
   var NIVELES = ['', 'Fácil', 'Normal', 'Difícil'];
   var U = { modo: null, s: null, jug: [], visor: 0, timer: null, tapa: false, online: null, pub: null, mano: [], p: 0, eraMio: false, comodin: -1, retardo: 900,
-    conf: { modo: 'cpu', rivales: 3, nivel: 2, personas: 2, cpus: 0, meta: 0, acumular: true, nombres: [] } };
+    conf: { modo: 'cpu', rivales: 3, nivel: 2, personas: 2, cpus: 0, meta: 0, acumular: true, marcar: true, nombres: [] } };
   try { var g = JSON.parse(localStorage.getItem('unoConf')); if (g && typeof g === 'object') Object.assign(U.conf, g); } catch (e) { /* sin ajustes */ }
   function guardarConf() { try { localStorage.setItem('unoConf', JSON.stringify(U.conf)); } catch (e) { /* nada */ } }
   function leerStats() { try { var o = JSON.parse(localStorage.getItem('unoStats')); return o && typeof o.jugadas === 'number' ? o : { jugadas: 0, ganadas: 0 }; } catch (e) { return { jugadas: 0, ganadas: 0 }; } }
@@ -22,7 +22,7 @@
 
   /* ---------- estructura ---------- */
   var wrap = $('unoWrap');
-  wrap.innerHTML = '<div id="unoHeader"><span>UNO</span><span id="unoInfo"></span></div>' +
+  wrap.innerHTML = '<div id="unoHeader"><span>UNO</span><span id="unoInfo"></span><button type="button" id="unoMarcar"></button></div>' +
     '<div id="unoMesa"><div id="unoRivales"></div><div id="unoCentro"><button type="button" id="unoMazo" class="unoCarta dorso" aria-label="Robar del mazo"><span class="unoOv">UNO</span></button>' +
     '<div id="unoPozo"></div><div id="unoRumbo"><span id="unoMazoN"></span><span id="unoColorAct"></span><span id="unoSentido"></span><span id="unoAcum"></span></div></div>' +
     '<div id="unoEstado"></div><div id="unoLog"></div><div id="unoAcc"></div><div id="unoManoTit"></div><div id="unoMano"></div></div>' +
@@ -31,6 +31,7 @@
     $('unoElegir').querySelector('.unoElC').appendChild(boton(UE.NOMBRE_COLOR[c], 'unoElB c-' + c, function () { elegido(c); }));
   });
   $('unoElegir').querySelector('.unoNo').addEventListener('click', function () { U.comodin = -1; $('unoElegir').style.display = 'none'; });
+  $('unoMarcar').addEventListener('click', function () { U.conf.marcar = !U.conf.marcar; guardarConf(); pintar(); if (window.Partida) window.Partida.aviso(U.conf.marcar ? '💡 Se marcan las cartas que puedes echar' : 'Ya no se marcan las cartas que puedes echar'); });
   $('unoMazo').addEventListener('click', function () { var v = vistaAct(); if (puedoActuar(v) && !v.robada && v.fase === 'jugando') actuar({ a: 'robar' }); });
 
   /* ---------- carta ---------- */
@@ -78,6 +79,10 @@
     $('unoMenu').style.display = U.modo ? 'none' : 'flex';
     $('unoInfo').textContent = !U.modo ? '' : (U.modo === 'cpu' ? '🤖 CPU · ' + NIVELES[U.conf.nivel] : U.modo === 'local' ? '📱 Un móvil' : '🌐 ' + ((window.Sala && window.Sala.sala) || 'online')) +
       (v ? ' · ronda ' + v.ronda + (v.op.meta ? ' · a ' + v.op.meta + ' pts' : '') : '');
+    $('unoMarcar').style.display = en ? '' : 'none';
+    $('unoMarcar').className = U.conf.marcar ? 'on' : '';
+    $('unoMarcar').title = U.conf.marcar ? 'Dejar de marcar las cartas que se pueden echar' : 'Marcar las cartas que se pueden echar';
+    $('unoMarcar').textContent = U.conf.marcar ? '💡 Marcar: sí' : '💡 Marcar: no';
     if (!en) return;
     var me = yo(), mano = manoAct() || [], mio = puedoActuar(v), js = mio && v.fase === 'jugando' ? jugablesAct(v) : [];
     if (mio && !U.eraMio) vib([30, 40, 30]);
@@ -104,9 +109,9 @@
     if (v.fase === 'fin' || v.fase === 'final') est = '🏆 ' + esc(nombre(v.ganadorRonda, v)) + ' gana la ronda.';
     else if (mio) {
       if (v.fase === 'color') est = 'Te toca empezar: elige el color.';
-      else if (v.acum) est = '¡Te toca robar ' + v.acum + '!' + (js.length ? ' O acumula otro ' + (v.acumTipo === 'D' ? '+2 o +4' : '+4') + '.' : '') + (v.reto ? ' También puedes retar el +4.' : '');
+      else if (v.acum) est = '¡Te toca robar ' + v.acum + '!' + (js.length || (!U.conf.marcar && v.op.acumular) ? ' O acumula otro ' + (v.acumTipo === 'D' ? '+2 o +4' : '+4') + '.' : '') + (v.reto ? ' También puedes retar el +4.' : '');
       else if (v.robada) est = 'Has robado una carta que sirve: juégala o pasa.';
-      else est = 'Tu turno: juega una carta' + (js.length ? '' : ' (no tienes ninguna que sirva)') + ' o roba.';
+      else est = 'Tu turno: juega una carta' + (js.length || !U.conf.marcar ? '' : ' (no tienes ninguna que sirva)') + ' o roba.';
     } else est = (U.tapa ? '' : 'Turno de ' + esc(nombre(v.turno, v)) + (esCpu(v.turno) ? ' 🤖…' : '…'));
     $('unoEstado').innerHTML = est; $('unoEstado').classList.toggle('mio', mio);
     var ult = v.log && v.log[v.log.length - 1]; $('unoLog').innerHTML = textoEv(ult, v);
@@ -129,8 +134,9 @@
     if (!tapada) {
       var idx = mano.map(function (c, i) { return i; }).sort(function (a, b) { return clave(mano[a]) - clave(mano[b]) || a - b; });
       idx.forEach(function (i) {
-        var ok = js.indexOf(i) >= 0, b = carta(mano[i], (mio && v.fase === 'jugando' ? (ok ? 'puede' : 'no') : '') + (v.robada && mio && i === mano.length - 1 ? ' robada' : ''));
-        b.dataset.i = i; b.disabled = !ok;
+        var ok = js.indexOf(i) >= 0, turno = mio && v.fase === 'jugando', marca = turno && U.conf.marcar ? (ok ? 'puede' : 'no') : turno ? 'libre' : '';
+        var b = carta(mano[i], marca + (v.robada && mio && i === mano.length - 1 ? ' robada' : ''));
+        b.dataset.i = i; b.disabled = U.conf.marcar ? !ok : !turno;      // sin marcar se puede tocar cualquiera: si no vale, el árbitro avisa
         b.addEventListener('click', function () { tocar(i); });
         cont.appendChild(b);
       });
@@ -141,7 +147,7 @@
 
   function tocar(i) {
     var v = vistaAct(), mano = manoAct(); if (!puedoActuar(v) || v.fase !== 'jugando') return;
-    if (UE.esComodin(mano[i])) { U.comodin = i; $('unoElegir').style.display = 'flex'; return; }
+    if (UE.esComodin(mano[i]) && jugablesAct(v).indexOf(i) >= 0) { U.comodin = i; $('unoElegir').style.display = 'flex'; return; }
     actuar({ a: 'jugar', i: i });
   }
   function elegido(c) {
@@ -297,6 +303,7 @@
     }
     if (c.modo === 'cpu' || c.cpus > 0) { f = fila('Dificultad:'); [1, 2, 3].forEach(function (n) { opcion(f, NIVELES[n], c.nivel === n, function () { c.nivel = n; }); }); m.appendChild(f); }
     f = fila('Final:'); [[0, 'Rápida'], [200, 'A 200 pts'], [500, 'A 500 pts']].forEach(function (x) { opcion(f, x[1], c.meta === x[0], function () { c.meta = x[0]; }); }); m.appendChild(f);
+    f = fila('Marcar jugables:'); opcion(f, 'Sí', c.marcar, function () { c.marcar = true; }); opcion(f, 'No', !c.marcar, function () { c.marcar = false; }); m.appendChild(f);
     f = fila('Acumular +2/+4:'); opcion(f, 'Sí', c.acumular, function () { c.acumular = true; }); opcion(f, 'No', !c.acumular, function () { c.acumular = false; }); m.appendChild(f);
     m.appendChild(boton('▶ Empezar', 'unoBig', function () { empezar(c.modo); }));
     var st = leerStats(), rec = typeof loadRecord === 'function' ? loadRecord('uno') : null;
