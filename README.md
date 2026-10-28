@@ -42,6 +42,7 @@ Cada juego con online tiene un botón **🌐 Conectar** en su barra de menú que
 | Ruleta | 2–6 | **el juego original**: tapete completo (números, split, calle, trío, esquina, seisena, docenas, columnas, dobles, cero y 00), rueda, historial, deshacer, repetir; europea o americana. El anfitrión ejecuta el juego, los invitados lo reflejan y mandan sus apuestas |
 | Blackjack | 2–6 | **el juego original**: 6 barajas, dividir (hasta 4 manos), doblar, blackjack 3:2, la banca pide hasta 17; la carta oculta de la banca nunca llega a los invitados |
 | Póquer | 2–6 | Texas Hold'em con ciegas, subidas, all-in y botes secundarios; las cartas privadas llegan solo a su dueño |
+| Simon | 2–6 | todos ven la misma secuencia a la vez y la repiten; quien falla o no contesta a tiempo queda eliminado y gana el último en pie. El anfitrión comprueba cada respuesta y elige la velocidad |
 
 Las reglas del bingo y del póquer están en `js/bingo/engine.js` y `js/online/casino-engine.js` (sin DOM, con tests). Ajedrez, Damas, Parchís, **Ruleta y Blackjack reutilizan los motores originales** (sin modificar `core.js`: se enganchan por sus nombres globales). Las fichas del casino son virtuales.
 
@@ -102,6 +103,8 @@ js/online/c4-engine.js        Conecta 4: reglas, árbitro e IA (sin DOM, con tes
 js/online/ttt-engine.js       Tres en raya: reglas, árbitro e IA perfecta (sin DOM, con tests)
 js/games/duelo.js             interfaz común de los juegos de 2 jugadores por turnos (menú CPU / 2 en un móvil / online)
 js/online/j-duelo.js          Conecta 4 y Tres en raya online (el anfitrión valida cada jugada)
+js/online/simon-engine.js     Simon multijugador: rondas por eliminación (sin DOM, con tests)
+js/online/j-simon.js          Simon online (2 a 6 a la vez; el anfitrión comprueba las respuestas y pone el plazo)
 js/games/g2048-engine.js      2048: reglas puras (con tests)
 js/games/mem-engine.js         Memoria (parejas): reglas puras (con tests)
 js/games/wordle-engine.js      Wordle: evaluación de letras (repetidas como el original), palabra del día (con tests)
@@ -132,6 +135,7 @@ Si cambias archivos de la aplicación: sube `APP_VERSION` (y `APP_FECHA`) en `js
 | `npm run test:breakout` | Breakout: 15 niveles de inicio, bot que rompe ladrillos, vidas y fin de partida |
 | `npm run test:duelo` | Conecta 4 y Tres en raya: 2 jugadores en un móvil y contra la CPU en los 3 niveles |
 | `npm run test:duelo-online` | Conecta 4 y Tres en raya online con 2 navegadores: turnos, jugadas ilegales ignoradas, victoria, recarga y revancha |
+| `npm run test:simon` | Simon multijugador: 3 en un móvil con «pasa el móvil» (eliminación, ganador, otra vez) y online con 3 navegadores (velocidad, plazo, respuestas ignoradas, recarga y revancha) |
 | `npm run test:fase4` | Memoria (parejas y 2 jugadores), Simon (bot), Flappy (bot) y Wordle (palabras, colores, estadísticas y recarga) |
 | `npm run test:escritorio` | ordenador (1920×1080 y 1366×768): factor --ui, menú de inicio grande, juegos verticales que no se ensanchan, las 27 ventanas caben y el puntero funciona con el zoom; móvil sin cambios |
 | `npm run test:enlace` | entrar por enlace solo con el nombre, símbolo con la barra plegada y que los iconos del escritorio no se solapen |

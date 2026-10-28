@@ -48,6 +48,8 @@ const ARCHIVOS = [
   'js/games/flappy.js',
   'css/games/simon.css',
   'js/games/simon.js',
+  'js/online/simon-engine.js',
+  'js/online/j-simon.js',
   'js/games/mem-engine.js',
   'css/games/memoria.css',
   'js/games/memoria.js',
