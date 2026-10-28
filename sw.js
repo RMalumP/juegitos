@@ -60,6 +60,8 @@ const ARCHIVOS = [
   'js/games/c4.js',
   'css/games/breakout.css',
   'js/games/breakout.js',
+  'css/games/pinball.css',
+  'js/games/pinball.js',
   'js/games/g2048-engine.js',
   'css/games/g2048.css',
   'js/games/g2048.js',

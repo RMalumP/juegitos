@@ -1,6 +1,6 @@
 # Juegos Windows XP
 
-Escritorio estilo Windows XP con juegos clásicos (Buscaminas, Tetris, Ajedrez, Parchís, Póquer, Hundir la flota, 2048, Breakout, Conecta 4, Memoria, Simon, Flappy, Wordle…)
+Escritorio estilo Windows XP con juegos clásicos (Buscaminas, Tetris, Ajedrez, Parchís, Póquer, Hundir la flota, 2048, Breakout, Pinball, Conecta 4, Memoria, Simon, Flappy, Wordle…)
 
 **Hundir la flota** admite tableros de 6×6 a 15×15 y flotas a medida (plantillas Clásica, Rápida, Grande y Armada, o un editor de barcos de 1 a 6 casillas) contra la CPU, con 2 jugadores en un móvil y online. **Teclas reasignables** («⌨ Reasignar» en el menú de la ventana) en Breakout, 2048, Flappy y Hundir (que además se juega entero con teclado: cursor, colocar/disparar, girar con R). En Hundir los barcos pegados se distinguen por contorno y tono. **Botón «atrás» del móvil**: minimiza el juego abierto, cierra el menú de inicio o vuelve al juego desde la pantalla de conexión; sin nada que cerrar, sale de la web. **Wordle**: «Del día» no es aleatoria (la palabra sale de la fecha del dispositivo y cambia a medianoche; es la misma para todos); «Libre» elige una palabra al azar cada vez y no cuenta para las estadísticas., **Bingo** local y online, y la app **Sala online** para jugar con amigos cada uno desde su móvil. Es una PWA instalable y funciona sin conexión (el online necesita https y que los móviles se encuentren por internet una vez).
 
@@ -76,6 +76,7 @@ css/core.css, css/sala.css    estilos del escritorio · de la Sala online y la b
 css/games/*.css, js/games/*.js  un juego por archivo (se cargan al abrirlos: js/lazy-loader.js)
 js/bingo/engine.js            reglas del bingo, sin DOM (con tests en Node)
 js/games/bingo.js             interfaz del bingo (local y online)
+js/games/pinball.js           Pinball espacial: mesa vertical con física propia (flippers, muelle, bumpers, dianas, agujero negro), sonidos con Web Audio
 js/online/sala.js             app «Sala online»: ventana, símbolo de la barra y API window.Sala
 js/online/transport-peer.js   transporte PeerJS (STUN + TURN)
 js/online/lobby.js            lobby de cada juego (asientos, límite de jugadores, opciones, Empezar)
@@ -92,7 +93,7 @@ js/vibracion.js               vibración común (interruptor 📳)
 js/records.js                 récords (Tetris, Invaders, Pac-Man por puntos; Buscaminas y Sudoku por tiempo)
 js/a11y.js                    accesibilidad: rol de botón, tabulador y Enter/Espacio en los botones <div>
 js/opciones.js                ⚙ Opciones: detecta móvil/ordenador, control táctil (auto/activado/desactivado) y repetición de Tetris (DAS, ARR, SDF)
-js/teclas.js                 reasignación de teclas común (Breakout, 2048, Flappy, Hundir)
+js/teclas.js                 reasignación de teclas común (Breakout, Pinball, 2048, Flappy, Hundir)
 js/atras.js                  botón «atrás» del móvil: cierra la capa superior (modal, menú de inicio, conexión, ventana)
 js/escala.js                 tamaño en ordenador: la interfaz se agranda según la altura de la pantalla (--ui); ventanas verticales (columna), anchas y completas (data-forma)
 js/pasar-movil.js            «pasa el móvil»: tapa a pantalla completa para jugar varios en un mismo móvil
@@ -130,6 +131,7 @@ Si cambias archivos de la aplicación: sube `APP_VERSION` (y `APP_FECHA`) en `js
 | `npm run test:guardar` | botón 💾 Guardar de Blackjack, Ruleta, Póker, Hundir la flota (CPU y 2 jugadores), Parchís y Dados: guarda, se recupera una sola vez al reabrir la app, se borra al terminar o con «Nueva partida» y la barra de menús cabe en 360 px |
 | `npm run test:2048` | 2048: jugadas con teclado y ratón, deshacer, tamaños 4×4/5×5/6×6, victoria y récord por tamaño |
 | `npm run test:breakout` | Breakout: 15 niveles de inicio, bot que rompe ladrillos, vidas y fin de partida |
+| `npm run test:pinball` | Pinball: lanzador con muelle, flippers con teclado y con las mitades de la pantalla, bumpers y dianas, pausa, 3 bolas y récord |
 | `npm run test:duelo` | Conecta 4 y Tres en raya: 2 jugadores en un móvil y contra la CPU en los 3 niveles |
 | `npm run test:duelo-online` | Conecta 4 y Tres en raya online con 2 navegadores: turnos, jugadas ilegales ignoradas, victoria, recarga y revancha |
 | `npm run test:fase4` | Memoria (parejas y 2 jugadores), Simon (bot), Flappy (bot) y Wordle (palabras, colores, estadísticas y recarga) |
