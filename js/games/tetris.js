@@ -271,7 +271,8 @@
   function finPartida() {
     playing = false; Input.reiniciar(); musicaOff(); cancelAnimationFrame(raf); vib(200);
     $('tet-ov-title').textContent = 'GAME OVER';
-    $('tet-ov-sub').innerHTML = 'Puntuación: ' + score + '<br>Nivel: ' + level + '<br>Líneas: ' + lines;
+    var rec = recordText(saveRecord('tetris', score));
+    $('tet-ov-sub').innerHTML = 'Puntuación: ' + score + '<br>Nivel: ' + level + '<br>Líneas: ' + lines + (rec ? '<br>' + rec : '');
     $('tet-ov-btn').textContent = 'REINICIAR'; $('tetOverlay').style.display = 'flex'; tetSel('flex');
   }
   function iniciarOReanudar() {
