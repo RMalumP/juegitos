@@ -1,7 +1,7 @@
 // Service worker: guarda la app para que funcione sin conexión.
 // build.mjs pone en CACHE un hash de index.html, así cada
 // versión nueva usa una caché nueva y se borran las antiguas.
-const CACHE = "juegitos-1c3496054568";
+const CACHE = "juegitos-770c3cfdd0e8";
 const FILES = [
   "./",
   "./index.html",

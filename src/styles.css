@@ -4097,3 +4097,19 @@ html {
   letter-spacing: 3px;
   font-size: clamp(18px, 6vw, 28px);
 }
+
+/* Foco visible al navegar con teclado (borde punteado, como en Windows XP). */
+[role="button"]:focus-visible {
+  outline: 1px dotted #fff;
+  outline-offset: 2px;
+}
+.wbtn[role="button"]:focus-visible,
+.choiceBtn[role="button"]:focus-visible,
+.sudNumBtn[role="button"]:focus-visible {
+  outline-color: #000;
+}
+/* Se puede ampliar con dos dedos, pero sin el zoom por doble toque, que
+   molestaba al jugar. Los mandos de los juegos ya tienen touch-action: none. */
+html {
+  touch-action: manipulation;
+}

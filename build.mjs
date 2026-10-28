@@ -21,6 +21,7 @@ const SCRIPTS = [
   "js/embedded-games.js",
   "js/asteroids.js",
   "js/window-bar.js",
+  "js/a11y.js",
 ];
 
 // Juegos que viven en su propio documento dentro de un <iframe>.
@@ -47,7 +48,12 @@ const collapse = (html) => html.replace(/\n[ \t]*/g, "");
 function build() {
   const embedded = Object.entries(EMBEDDED)
     .map(([name, file]) => {
-      const gz = gzipSync(Buffer.from(read(file)), { level: 9 });
+      // Los <script src="x.js"> del documento se incrustan desde src/embedded/.
+      const html = read(file).replace(
+        /<script src="([\w-]+\.js)"><\/script>/g,
+        (_, js) => `<script>${minJs(read("embedded/" + js), js)}</script>`,
+      );
+      const gz = gzipSync(Buffer.from(html), { level: 9 });
       // mtime fijo en la cabecera gzip para que el build sea reproducible
       gz.writeUInt32LE(0, 4);
       return `const ${name}=${JSON.stringify(gz.toString("base64"))};`;
