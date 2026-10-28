@@ -497,7 +497,31 @@
     if (n !== N) { N = n; iniciarTableros(); }
   }
   iniciarTableros();
-  window.initHundir = function () { if (!U.modo) menu(); };
+  /* partida a medias (contra la CPU o 2 jugadores en un móvil; la online no se guarda): la guarda el botón «💾 Guardar» y se recupera al abrir el juego */
+  function guardarPartida() {
+    if (!window.Partida) return;
+    if (U.modo === 'online') { window.Partida.aviso('Una partida online no se puede guardar'); return; }
+    if ((U.modo !== 'cpu' && U.modo !== 'local') || !U.pt || U.pt.fase !== 'jugando') { window.Partida.aviso(U.pt && U.pt.fase === 'colocando' ? 'Coloca las flotas antes de guardar' : 'No hay ninguna partida en curso'); return; }
+    window.Partida.guardar('hundir', { modo: U.modo, nivel: U.nivel, nombres: U.nombres, pt: JSON.parse(JSON.stringify(U.pt)) });
+    window.Partida.aviso('💾 Partida guardada');
+  }
+  function restaurar() {
+    var d = window.Partida && window.Partida.cargar('hundir'), pt = d && d.pt;
+    if (!pt || (d.modo !== 'cpu' && d.modo !== 'local') || pt.fase !== 'jugando' || !pt.op || !Array.isArray(pt.flotas) || !Array.isArray(pt.shots)) return false;
+    var cf = HE.validarConfig({ n: pt.op.n, flota: pt.op.flota, tocar: pt.op.tocar }); if (!cf.ok) return false;
+    clearTimeout(U.timer); PasarMovil.quitar();
+    U.modo = d.modo; U.nivel = d.nivel >= 1 && d.nivel <= 3 ? d.nivel : U.nivel; U.nombres = Array.isArray(d.nombres) ? d.nombres : U.nombres;
+    U.online = null; U.pub = null; U.fin = false; U.bloqueado = false; U.ultimo = -1; U.msg = ''; U.draft = []; U.p = 0;
+    aplicarCfg(cf); U.pt = pt; U.actor = U.modo === 'local' ? pt.turno : 0;
+    $('hunMenu').style.display = 'none'; $('hunFin').style.display = 'none'; $('hunOwnBox').style.display = '';
+    if (U.modo === 'local') {                               // 2 jugadores: no se enseña ninguna flota hasta que lo coja quien dispara
+      ocultar();
+      PasarMovil.mostrar({ contenedor: $('hunWrap'), titulo: 'Partida recuperada', texto: 'Le toca disparar a ' + nombre(U.actor) + '.', boton: 'Soy ' + nombre(U.actor) + ' · Disparar' }).then(function () { pintar(); });
+    } else empezarDisparos();
+    return true;
+  }
+  $('hunSave').addEventListener('click', guardarPartida);
+  window.initHundir = function () { if (!U.modo && !restaurar()) menu(); };
   window.hundirStartNew = menu;
   window.pauseHundir = function () { /* la partida espera: no hay reloj */ };
   /* solo lectura / pruebas */

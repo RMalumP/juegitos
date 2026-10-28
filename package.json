@@ -26,6 +26,7 @@
     "test:hundir": "node tests/ui-hundir.js",
     "test:hundir-online": "node tests/ui-hundir-online.js",
     "test:2048": "node tests/ui-g2048.js",
+    "test:guardar": "node tests/ui-guardar.js",
     "test:breakout": "node tests/ui-breakout.js",
     "test:duelo": "node tests/ui-duelo.js",
     "test:duelo-online": "node tests/ui-duelo-online.js",
@@ -34,7 +35,7 @@
     "test:regresion": "node tests/ui-regresion.js",
     "test:mejoras": "node tests/ui-mejoras.js",
     "test:reconexion": "node tests/ui-bingo-reconexion.js",
-    "test:all": "npm test && npm run test:ui && npm run test:online && npm run test:regresion && npm run test:mejoras && npm run test:niveles && npm run test:tetris && npm run test:teclas && npm run test:atras && npm run test:hundir && npm run test:hundir-online && npm run test:2048 && npm run test:breakout && npm run test:duelo && npm run test:duelo-online && npm run test:fase4 && npm run test:escritorio && npm run test:turn && npm run test:app && npm run test:vibracion && npm run test:blackjack && npm run test:ruleta && npm run test:reloj && npm run test:invitacion && npm run test:casino && npm run test:parchis && npm run test:tablero && npm run test:salas && npm run test:enlace && npm run test:pwa && npm run test:reconexion"
+    "test:all": "npm test && npm run test:ui && npm run test:online && npm run test:regresion && npm run test:mejoras && npm run test:niveles && npm run test:tetris && npm run test:teclas && npm run test:atras && npm run test:hundir && npm run test:hundir-online && npm run test:2048 && npm run test:guardar && npm run test:breakout && npm run test:duelo && npm run test:duelo-online && npm run test:fase4 && npm run test:escritorio && npm run test:turn && npm run test:app && npm run test:vibracion && npm run test:blackjack && npm run test:ruleta && npm run test:reloj && npm run test:invitacion && npm run test:casino && npm run test:parchis && npm run test:tablero && npm run test:salas && npm run test:enlace && npm run test:pwa && npm run test:reconexion"
   },
   "devDependencies": {
     "peer": "1.0.2",

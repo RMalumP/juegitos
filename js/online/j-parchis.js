@@ -51,7 +51,7 @@
     w.checkWin = function () { var r = o.checkWin.apply(this, arguments); if (online() && S.host) programarFoto(w); return r; };
     // los botones guardaron la función original: se vuelven a enlazar con la versión enganchada
     var d = w.document; d.getElementById('rollBtn').onclick = w.roll; d.getElementById('dice').onclick = w.roll;
-    var est = d.createElement('style'); est.id = 'olEstilo'; est.textContent = '.ol #newBtn,.ol #againBtn{display:none!important}'; d.head.appendChild(est);
+    var est = d.createElement('style'); est.id = 'olEstilo'; est.textContent = '.ol #newBtn,.ol #againBtn,.ol #saveBtn{display:none!important}'; d.head.appendChild(est);
   }
   // En línea: solo ven aros de «puedes mover» en el turno propio; el botón de tirar solo vale en el turno propio.
   function retocar(w) {

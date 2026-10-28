@@ -47,7 +47,7 @@ document.getElementById('creditsModal').addEventListener('click',e=>{if(e.target
     O();for(var r=0;r<E.rows;r++)for(var c=0;c<E.cols;c++)R(r,c);
   };
 
-  /* Botón «💾 Guardar» de Buscaminas y Solitario: guarda la partida en el móvil (js/partida.js) y se recupera al abrir el juego */
+  /* Botón «💾 Guardar» de Buscaminas, Solitario, Blackjack, Ruleta y Póker: guarda la partida en el móvil (js/partida.js) y se recupera al abrir el juego */
   function guardarMem(id,snap){
     var o=snap();
     if(!o){window.Partida.aviso('No hay ninguna partida en curso');return;}
@@ -55,6 +55,14 @@ document.getElementById('creditsModal').addEventListener('click',e=>{if(e.target
   }
   document.getElementById('mSaveMine').addEventListener('click',function(){guardarMem('buscaminas',window.mineSnapshot);});
   document.getElementById('mSaveSol').addEventListener('click',function(){guardarMem('solitario',window.solSnapshot);});
+  /* Blackjack, Ruleta y Póker: la partida online (sala) no se guarda */
+  [['bjSave','blackjack',function(){return window.bjSnapshot();}],['roulSave','ruleta',function(){return window.roulSnapshot();}],['pkSave','poker',function(){return window.pkSnapshot();}]].forEach(function(g){
+    var b=document.getElementById(g[0]);if(!b)return;
+    b.addEventListener('click',function(){
+      if(window.Sala&&window.Sala.activo&&window.Sala.juego===g[1]){window.Partida.aviso('Una partida online no se puede guardar');return;}
+      guardarMem(g[1],g[2]);
+    });
+  });
 
   /* Blackjack (cada mano lleva .bet sobre el propio array) */
   window.bjSnapshot=function(){
@@ -103,10 +111,10 @@ document.getElementById('creditsModal').addEventListener('click',e=>{if(e.target
       openGame=function(k){_open(k);try{applyMemoria(k);}catch(e){console.error('memoria',e);}try{applyResume(k);}catch(e){console.error('resume',e);}};
     }
   }catch(e){}
-  /* Al abrir Buscaminas o Solitario por primera vez tras abrir la app, se recupera la partida guardada con «💾 Guardar» */
+  /* Al abrir Buscaminas, Solitario, Blackjack, Ruleta o Póker por primera vez tras abrir la app, se recupera la partida guardada con «💾 Guardar» */
   var memHecho={};
   function applyMemoria(k){
-    var m={sol:['solitario',window.solRestore],Sol:['solitario',window.solRestore],mine:['buscaminas',window.mineRestore],Mine:['buscaminas',window.mineRestore]}[k];
+    var m={sol:['solitario',window.solRestore],Sol:['solitario',window.solRestore],mine:['buscaminas',window.mineRestore],Mine:['buscaminas',window.mineRestore],bj:['blackjack',window.bjRestore],BJ:['blackjack',window.bjRestore],roul:['ruleta',window.roulRestore],Roul:['ruleta',window.roulRestore],poker:['poker',window.pkRestore],Poker:['poker',window.pkRestore]}[k];
     if(!m||memHecho[m[0]]||!window.Partida)return;
     memHecho[m[0]]=1;
     var o=window.Partida.cargar(m[0]);

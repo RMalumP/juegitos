@@ -176,5 +176,25 @@
     if(e.code==="Space"||e.code==="Enter"){e.preventDefault();roll();}
   });
 
-  window.initDice=function(){showSetup();};
+  /* Partida a medias (dados, jugadores, turno e historial): la guarda el botón «💾 Guardar» y se recupera al abrir el juego por primera vez */
+  function guardarPartida(){
+    if(!window.Partida)return;
+    if(!playing){window.Partida.aviso('No hay ninguna partida en curso');return;}
+    window.Partida.guardar('dados',{faces:faces,coins:coins,players:players,turn:turn,round:round,history:history,pendingClear:pendingClear});
+    window.Partida.aviso('💾 Partida guardada');
+  }
+  function restaurar(){
+    var d=window.Partida&&window.Partida.cargar('dados');
+    if(!d||!Array.isArray(d.faces)||!d.faces.length||d.faces.length>DICE_MAX||!Array.isArray(d.players)||!d.players.length||!Array.isArray(d.history))return false;
+    faces=d.faces.map(function(f){return Math.max(FACE_MIN,Math.min(FACE_MAX,f|0));});
+    coins=faces.map(function(f,i){return f===2&&!!(d.coins&&d.coins[i]);});
+    players=d.players.map(function(n,i){return (typeof n==="string"&&n.trim())?n:"Jugador "+(i+1);});
+    turn=d.turn>=0&&d.turn<players.length?d.turn|0:0;round=d.round>=1?d.round|0:1;history=d.history.filter(function(h){return h&&Array.isArray(h.vals)&&Array.isArray(h.facesArr);});pendingClear=!!d.pendingClear;rolling=false;playing=true;
+    $("diceSetup").style.display="none";$("diceGame").style.display="flex";$("diceRollBtn").disabled=false;
+    renderHist();renderCurrent(null);renderTurn(pendingClear);
+    return true;
+  }
+  $("diceSave").onclick=guardarPartida;
+  var recuperada=false;
+  window.initDice=function(){if(!recuperada){recuperada=true;if(restaurar())return;}showSetup();};
 })();

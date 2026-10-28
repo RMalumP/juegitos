@@ -5,7 +5,7 @@ PWA con estética de Windows XP, en español y pensada para móvil: escritorio c
 ## Ramas y publicación
 
 - **`main` es la única rama** y la que publica GitHub Pages (desde la raíz). Trabaja en una rama nueva y abre el PR contra `main`; el dueño dice cuándo fusionar.
-- La CI (`.github/workflows/pruebas.yml`) pasa en cada PR `npm test`, `test:pwa`, `test:regresion` y `test:mejoras`.
+- La CI (`.github/workflows/pruebas.yml`) pasa en cada PR `npm test`, `test:pwa`, `test:regresion`, `test:mejoras` y `test:guardar`.
 - Al cambiar archivos de la app: sube `APP_VERSION` (y `APP_FECHA`) en `js/version.js` (de ahí salen la versión de los créditos y la caché del service worker) y añade a `ARCHIVOS` de `sw.js` cualquier archivo nuevo (`npm run test:pwa` lo comprueba).
 
 ## Estructura
