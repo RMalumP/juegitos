@@ -73,5 +73,15 @@ const { entorno, wait, ok, fin } = require('./helpers');
   const htmlTxt = fs.readFileSync(path.join(env.root, 'index.html'), 'utf8'), mf = JSON.parse(fs.readFileSync(path.join(env.root, 'manifest.webmanifest'), 'utf8'));
   ok(!/viewport-fit/.test(htmlTxt) && mf.display === 'standalone' && !mf.display_override && !fs.existsSync(path.join(env.root, 'js/pantalla.js')), 'sin pantalla completa forzada: la app instalada se ve como siempre (con su barra de notificaciones)');
   ok(/<link rel="icon" type="image\/svg\+xml" href="icons\/xp\.svg">/.test(htmlTxt), 'la pestaña usa el icono de la app (mando dentro de una ventana)');
+  // ---------------- con la barra de tareas plegada, abrir o cambiar de juego no sube la pantalla ----------------
+  {
+    const c2 = await env.contexto({ viewport: { width: 412, height: 860 } }), p2 = await env.pagina(c2, 'barra plegada');
+    await p2.locator('#startScreen').evaluate(e => { e.style.display = 'none'; });
+    await p2.evaluate(() => { window.openGame('mine'); window.openGame('g2048'); }); await wait(300);
+    await p2.locator('#tbHideBtn').click(); await wait(300);
+    await p2.evaluate(() => { const i = document.getElementById('iconMine'); i.click(); i.click(); }); await wait(400);
+    const e = await p2.evaluate(() => ({ sc: document.body.scrollTop + document.documentElement.scrollTop, t: document.querySelector('#winMine .winTitle').getBoundingClientRect().top, tb: document.getElementById('taskbar').getBoundingClientRect().top }));
+    ok(e.sc === 0 && e.t >= 0 && e.tb >= 859, 'con la barra de tareas plegada, abrir otro juego no sube la pantalla: se ve la cabecera y la barra sigue plegada');
+  }
   await env.cerrar(); fin();
 })().catch(e => { console.error(e); process.exit(1); });

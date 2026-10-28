@@ -1,12 +1,14 @@
 /* partida.js — Juegos XP: guarda en el móvil (localStorage) la partida que queda a medias de cada juego, para retomarla al volver.
    La guarda el jugador con el botón «💾 Guardar» de cada juego (Partida.guardar(id, estado)); al abrir el juego, este recupera lo guardado
-   (Partida.cargar(id)). Partida.aviso(txt) muestra el mensaje de confirmación. Se guarda como «partida_<id>» y, al ser localStorage, entra también en Guardar/Cargar datos. */
+   (Partida.tomar(id): la lee y la borra, así se recupera UNA sola vez; para volver a tenerla hay que guardar de nuevo). Cada juego la borra también
+   al terminar la partida o empezar otra (Partida.borrar(id)). Partida.aviso(txt) muestra el mensaje de confirmación. Se guarda como «partida_<id>» y, al ser localStorage, entra también en Guardar/Cargar datos. */
 (function () {
   'use strict';
   var P = 'partida_';
   window.Partida = {
     guardar: function (id, d) { try { localStorage.setItem(P + id, JSON.stringify({ v: 1, t: Date.now(), d: d })); } catch (e) { /* sin espacio o sin almacenamiento */ } },
     cargar: function (id) { try { var o = JSON.parse(localStorage.getItem(P + id)); return o && o.v === 1 ? o.d : null; } catch (e) { return null; } },
+    tomar: function (id) { var d = window.Partida.cargar(id); if (d !== null) window.Partida.borrar(id); return d; },
     borrar: function (id) { try { localStorage.removeItem(P + id); } catch (e) { /* nada */ } },
     existe: function (id) { return window.Partida.cargar(id) !== null; },
     aviso: function (txt) {                                    // mensaje breve en la parte baja de la pantalla

@@ -55,6 +55,19 @@ document.getElementById('creditsModal').addEventListener('click',e=>{if(e.target
   }
   document.getElementById('mSaveMine').addEventListener('click',function(){guardarMem('buscaminas',window.mineSnapshot);});
   document.getElementById('mSaveSol').addEventListener('click',function(){guardarMem('solitario',window.solSnapshot);});
+  /* Lo guardado se borra al terminar la partida (Buscaminas: W; Solitario: he; Póker: Pn) o al empezar otra con los botones del juego */
+  function borrarAlTerminar(nombre,id,terminada){
+    var f=window[nombre];if(typeof f!=='function')return;
+    window[nombre]=function(){var r=f.apply(this,arguments);try{if(terminada())window.Partida.borrar(id);}catch(e){}return r;};
+  }
+  borrarAlTerminar('W','buscaminas',function(){return true;});
+  borrarAlTerminar('he','solitario',function(){return K.every(function(c){return c.length===13;});});
+  borrarAlTerminar('Pn','poker',function(){return true;});
+  [['mNewMine','buscaminas'],['smiley','buscaminas'],['applyCustom','buscaminas'],['mNewSol','solitario'],['mModeSol','solitario'],['solOBtn','solitario'],
+   ['bjNewGame','blackjack'],['roulNewGame','ruleta'],['pkNewGame','poker']].forEach(function(g){
+    var b=document.getElementById(g[0]);if(b)b.addEventListener('click',function(){window.Partida.borrar(g[1]);});
+  });
+  document.querySelectorAll('.diffBtn').forEach(function(b){b.addEventListener('click',function(){if(b.dataset.diff!=='custom')window.Partida.borrar('buscaminas');});});
   /* Blackjack, Ruleta y Póker: la partida online (sala) no se guarda */
   [['bjSave','blackjack',function(){return window.bjSnapshot();}],['roulSave','ruleta',function(){return window.roulSnapshot();}],['pkSave','poker',function(){return window.pkSnapshot();}]].forEach(function(g){
     var b=document.getElementById(g[0]);if(!b)return;
@@ -117,7 +130,7 @@ document.getElementById('creditsModal').addEventListener('click',e=>{if(e.target
     var m={sol:['solitario',window.solRestore],Sol:['solitario',window.solRestore],mine:['buscaminas',window.mineRestore],Mine:['buscaminas',window.mineRestore],bj:['blackjack',window.bjRestore],BJ:['blackjack',window.bjRestore],roul:['ruleta',window.roulRestore],Roul:['ruleta',window.roulRestore],poker:['poker',window.pkRestore],Poker:['poker',window.pkRestore]}[k];
     if(!m||memHecho[m[0]]||!window.Partida)return;
     memHecho[m[0]]=1;
-    var o=window.Partida.cargar(m[0]);
+    var o=window.Partida.tomar(m[0]);
     if(o)m[1](o);
   }
   function applyResume(k){

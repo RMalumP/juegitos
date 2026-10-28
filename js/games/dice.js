@@ -67,6 +67,7 @@
     renderFaces();renderPlayers();
   }
   function startGame(){
+    if(window.Partida)window.Partida.borrar('dados');   /* lo guardado se borra al empezar otra partida */
     /* limpia nombres vacíos */
     players=players.map(function(n,i){return (n&&n.trim())?n.trim():"Jugador "+(i+1);});
     faces=faces.map(function(f){return Math.max(FACE_MIN,Math.min(FACE_MAX,f|0));});
@@ -77,6 +78,7 @@
     renderHist();renderCurrent(null);renderTurn(false);
   }
   function newGame(){
+    if(window.Partida)window.Partida.borrar('dados');
     if(!playing){startGame();return;}
     turn=0;round=1;history=[];pendingClear=false;rolling=false;
     renderHist();renderCurrent(null);renderTurn(false);
@@ -184,7 +186,7 @@
     window.Partida.aviso('💾 Partida guardada');
   }
   function restaurar(){
-    var d=window.Partida&&window.Partida.cargar('dados');
+    var d=window.Partida&&window.Partida.tomar('dados');
     if(!d||!Array.isArray(d.faces)||!d.faces.length||d.faces.length>DICE_MAX||!Array.isArray(d.players)||!d.players.length||!Array.isArray(d.history))return false;
     faces=d.faces.map(function(f){return Math.max(FACE_MIN,Math.min(FACE_MAX,f|0));});
     coins=faces.map(function(f,i){return f===2&&!!(d.coins&&d.coins[i]);});

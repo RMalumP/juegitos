@@ -367,6 +367,7 @@
 
   /* ---------- fin de partida ---------- */
   function mostrarFin(pub, p) {
+    if (U.modo !== 'online' && window.Partida) window.Partida.borrar('hundir');   // lo guardado se borra al terminar o al empezar otra
     U.fin = true; clearTimeout(U.timer);
     var gano = pub.ganador === p, local = U.modo === 'local';
     $('hunFinT').textContent = local ? '🏆 Gana ' + nombre(pub.ganador) : gano ? '🏆 ¡VICTORIA!' : '💀 DERROTA';
@@ -434,6 +435,7 @@
     var l = +b.dataset.bl; U.conf.cuenta[l] = Math.max(0, Math.min(4, (U.conf.cuenta[l] || 0) + (+b.dataset.d))); U.conf.pl = 'custom'; guardarAjustes(); marcarMenu();
   });
   function empezar(modo) {
+    if (window.Partida) window.Partida.borrar('hundir');
     $('hunMenu').style.display = 'none'; $('hunFin').style.display = 'none';
     U.modo = modo; U.fin = false; U.bloqueado = false; U.ultimo = -1; U.msg = ''; U.online = null;
     var turno = Math.random() < 0.5 ? 0 : 1, cf = HE.validarConfig({ n: U.conf.n, flota: flotaDeCuenta(U.conf.cuenta), tocar: U.op.tocar });
@@ -457,6 +459,7 @@
   });
   $('hunNewGame').addEventListener('click', function () {
     if (U.modo === 'online') { if (window.Sala) window.Sala.toast('En línea: el anfitrión puede volver al lobby con «↩ Lobby» y cualquiera puede salir de la sala.'); return; }
+    if (window.Partida) window.Partida.borrar('hundir');
     menu();
   });
 
@@ -506,7 +509,7 @@
     window.Partida.aviso('💾 Partida guardada');
   }
   function restaurar() {
-    var d = window.Partida && window.Partida.cargar('hundir'), pt = d && d.pt;
+    var d = window.Partida && window.Partida.tomar('hundir'), pt = d && d.pt;
     if (!pt || (d.modo !== 'cpu' && d.modo !== 'local') || pt.fase !== 'jugando' || !pt.op || !Array.isArray(pt.flotas) || !Array.isArray(pt.shots)) return false;
     var cf = HE.validarConfig({ n: pt.op.n, flota: pt.op.flota, tocar: pt.op.tocar }); if (!cf.ok) return false;
     clearTimeout(U.timer); PasarMovil.quitar();

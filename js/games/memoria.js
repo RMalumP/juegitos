@@ -40,7 +40,7 @@
     window.Partida.aviso('💾 Partida guardada');
   }
   function restaurar() {
-    var d = window.Partida && window.Partida.cargar('memoria');
+    var d = window.Partida && window.Partida.tomar('memoria');
     if (!d || !TAM[d.tam] || !d.est || d.est.fase !== 'jugando' || !Array.isArray(d.est.cartas) || d.est.cartas.length !== TAM[d.tam][0] * TAM[d.tam][1]) return false;
     clearTimeout(rtimer); clearInterval(tTimer);
     tam = d.tam; jug = d.jug === 2 ? 2 : 1; est = d.est; est.abiertas = []; seg = +d.seg || 0; t0 = 0;
@@ -49,6 +49,7 @@
     return true;
   }
   function nueva() {
+    if (window.Partida) window.Partida.borrar('memoria');    // lo guardado se borra al empezar otra partida o al terminar
     clearTimeout(rtimer); clearInterval(tTimer);
     est = E.crear(TAM[tam][0], TAM[tam][1], jug); seg = 0; t0 = 0; $('memOver').classList.remove('show'); pintar();
   }
@@ -61,6 +62,7 @@
     else if (est.fase === 'fin') fin();
   }
   function fin() {
+    if (window.Partida) window.Partida.borrar('memoria');
     clearInterval(tTimer); seg = (Date.now() - t0) / 1000; pintar();
     var tit, sub;
     if (jug === 1) {

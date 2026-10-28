@@ -28,7 +28,7 @@
     window.Partida.aviso('💾 Partida guardada');
   }
   function restaurar() {
-    var d = window.Partida && window.Partida.cargar('g2048');
+    var d = window.Partida && window.Partida.tomar('g2048');
     if (!d || !(d.n >= 4 && d.n <= 6) || !Array.isArray(d.grid) || d.grid.length !== d.n) return false;
     var bien = function (g) { return Array.isArray(g) && g.length === d.n && g.every(function (f) { return Array.isArray(f) && f.length === d.n && f.every(function (v) { return typeof v === 'number' && v >= 0; }); }); };
     if (!bien(d.grid) || (d.prev && !bien(d.prev.grid)) || !E.puedeMover(d.grid)) return false;
@@ -37,6 +37,7 @@
     return true;
   }
   function nuevoJuego() {
+    if (window.Partida) window.Partida.borrar('g2048');      // lo guardado se borra al empezar otra partida o al perder
     best = lsBest(); grid = E.nuevoJuego(n); score = 0; prev = null; over = false; ganado = false; seguir = false; nueva = null;
     $('g48Over').classList.remove('show'); pintar();
   }
@@ -52,7 +53,7 @@
     if (r.puntos) vib(12);
     pintar();
     if (!ganado && !seguir && E.maximo(grid) >= 2048) { ganado = true; vib([0, 40, 60, 40]); fin('🏆 ¡2048!', 'Has llegado a 2048. Puntos: ' + score, true); return; }
-    if (!E.puedeMover(grid)) { over = true; vib(200); fin('FIN DE LA PARTIDA', 'Puntos: ' + score + ' · Ficha mayor: ' + E.maximo(grid), false); }
+    if (!E.puedeMover(grid)) { over = true; if (window.Partida) window.Partida.borrar('g2048'); vib(200); fin('FIN DE LA PARTIDA', 'Puntos: ' + score + ' · Ficha mayor: ' + E.maximo(grid), false); }
   }
   function deshacer() { if (!prev || over) return; grid = prev.grid; score = prev.score; prev = null; nueva = null; $('g48Over').classList.remove('show'); pintar(); }
 

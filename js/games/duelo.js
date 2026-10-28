@@ -61,7 +61,7 @@
       window.Partida.aviso('💾 Partida guardada');
     }
     function restaurar() {
-      var d = window.Partida && window.Partida.cargar(id);
+      var d = window.Partida && window.Partida.tomar(id);
       if (!d || (d.modo !== 'cpu' && d.modo !== 'local') || !d.est || d.est.fase !== 'jugando' || !Array.isArray(d.est.tab)) return false;
       clearTimeout(U.timer); U.modo = d.modo; U.online = null; U.fin = false; U.nivel = d.nivel >= 1 && d.nivel <= 3 ? d.nivel : U.nivel;
       U.nombres = Array.isArray(d.nombres) ? d.nombres : cfg.nombres.slice(); U.starter = d.starter === 0 ? 0 : 1; U.est = d.est;
@@ -70,6 +70,7 @@
       return true;
     }
     function mostrarFin() {
+      if (U.modo !== 'online' && window.Partida) window.Partida.borrar(id);
       U.fin = true; clearTimeout(U.timer);
       var e = U.est, f = q('.duFin');
       f.querySelector('h1').textContent = texto(); f.querySelector('.duSub').textContent = e.ganador === 2 ? 'Tablero lleno.' : 'Jugadas: ' + e.n + '.';
@@ -93,6 +94,7 @@
       }, window.dueloRapido ? 10 : 550);
     }
     function empezar(modo) {
+      if (window.Partida) window.Partida.borrar(id);         // lo guardado se borra al empezar otra partida o al terminar
       clearTimeout(U.timer); U.modo = modo; U.online = null; U.fin = false;
       U.nombres = modo === 'cpu' ? ['Tú', 'CPU'] : cfg.nombres.slice();
       U.starter = modo === 'cpu' ? (Math.random() < 0.5 ? 0 : 1) : 1 - U.starter;
@@ -122,6 +124,7 @@
     var nuevaPartida = $(id + 'NewGame');
     if (nuevaPartida) nuevaPartida.addEventListener('click', function () {
       if (U.modo === 'online') { if (window.Sala) window.Sala.toast('En línea: el anfitrión puede volver al lobby con «↩ Lobby» y cualquiera puede salir de la sala.'); return; }
+      if (window.Partida) window.Partida.borrar(id);
       menu();
     });
     var btnGuardar = $(id + 'Save'); if (btnGuardar) btnGuardar.addEventListener('click', guardarPartida);

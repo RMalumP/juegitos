@@ -99,6 +99,35 @@ const { entorno, wait, ok, fin } = require('./helpers');
   await pg.evaluate(() => window.openGame('dice')); await wait(300);
   ok(await pg.locator('#diceGame').isVisible() && await pg.locator('#diceHist .diceHistRow').count() === 1, 'Dados: al reabrir sigue la partida con su historial');
 
+  // ---------------- se recupera una sola vez y se borra al terminar o empezar otra ----------------
+  for (const id of ['blackjack', 'ruleta', 'poker', 'hundir', 'parchis', 'dados']) ok(await guardado(pg, id) === null, id + ': al recuperarla, lo guardado se borra (solo se recupera una vez)');
+  await pg.close(); pg = await abrir();
+  await pg.evaluate(() => window.openGame('dice')); await wait(300);
+  ok(await pg.locator('#diceSetup').isVisible(), 'Dados: al volver a abrir la app sin guardar otra vez, la partida no vuelve');
+  await pg.locator('#dicePlayBtn').click(); await pg.locator('#diceRollBtn').click(); await wait(800);
+  await pg.locator('#diceSave').click(); await wait(100);
+  await pg.locator('#diceNewGame').click(); await wait(100);
+  ok(await guardado(pg, 'dados') === null, 'Dados: «Nueva partida» borra lo guardado');
+  await pg.evaluate(() => window.openGame('bj')); await wait(200);
+  await pg.locator('#bjSave').click(); await wait(100);
+  await pg.locator('#bjNewGame').click(); await wait(100);
+  ok(await guardado(pg, 'blackjack') === null, 'Blackjack: «Nueva partida» borra lo guardado');
+  await pg.evaluate(() => window.openGame('mine')); await wait(200);
+  await pg.evaluate(() => { document.querySelector('#board').children[0].click(); }); await wait(100);
+  await pg.locator('#mSaveMine').click(); await wait(100);
+  ok(!!(await guardado(pg, 'buscaminas')), 'Buscaminas: se guarda');
+  await pg.evaluate(() => { for (let r = 0; r < E.rows; r++) for (let c = 0; c < E.cols; c++) if (v[r][c].mine) { document.querySelector('#board').children[r * E.cols + c].click(); return; } }); await wait(200);
+  ok(await guardado(pg, 'buscaminas') === null, 'Buscaminas: al perder se borra lo guardado');
+  await pg.evaluate(() => window.openGame('hundir')); await wait(200);
+  await pg.evaluate(() => { window.PasarMovil.retardo = 0; window.hundirStartNew(); }); await wait(100);
+  await pg.locator('#hunMenu [data-modo=cpu]').click(); await wait(150);
+  await pg.locator('#hunBtns button', { hasText: 'Aleatorio' }).click(); await pg.locator('#hunBtns button', { hasText: 'Listo' }).click(); await wait(200);
+  await pg.waitForFunction(() => window.hundirEstado().pt.turno === 0, null, { timeout: 5000 });
+  await pg.locator('#hunSave').click(); await wait(100);
+  pg.once('dialog', d => d.accept());
+  await pg.locator('#hunBtns button', { hasText: 'Rendirse' }).click(); await wait(300);
+  ok(await guardado(pg, 'hundir') === null, 'Hundir: al terminar (rendirse) se borra lo guardado');
+
   // ---------------- Hundir, 2 jugadores: al recuperar no se ve ninguna flota hasta pasar el móvil ----------------
   await pg.evaluate(() => window.openGame('hundir')); await pg.evaluate(() => { window.PasarMovil.retardo = 0; window.hundirStartNew(); }); await wait(100);
   await pg.locator('#hunMenu [data-modo=local]').click(); await wait(100);
