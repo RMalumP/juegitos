@@ -535,7 +535,17 @@ function W(e) {
           ? `¡Has ganado!`
           : `BOOM — pisaste una mina`),
         (document.getElementById(`mOSub`).textContent =
-          `Tiempo: ` + C + `s · Minas: ` + E.mines),
+          `Tiempo: ` +
+          C +
+          `s · Minas: ` +
+          E.mines +
+          (e
+            ? ` · ` +
+              recordText(
+                saveRecord(`mine:${E.rows}x${E.cols}x${E.mines}`, C, !0),
+                (t) => t + `s`,
+              )
+            : ``)),
         document.getElementById(`mineOverlay`).classList.remove(`hidden`);
     },
     e ? 400 : 800,

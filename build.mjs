@@ -1,8 +1,9 @@
-// Genera index.html (un único archivo autocontenido) a partir de src/.
+// Genera index.html (un único archivo autocontenido) y sw.js a partir de src/.
 //   node build.mjs          -> escribe index.html
 //   node build.mjs --check  -> falla si index.html no está al día con src/
 import { readFileSync, writeFileSync } from "node:fs";
 import { gzipSync } from "node:zlib";
+import { createHash } from "node:crypto";
 import { transformSync } from "esbuild";
 
 const SRC = new URL("./src/", import.meta.url);
@@ -30,8 +31,12 @@ const EMBEDDED = {
 };
 
 const minJs = (code, file) =>
-  transformSync(code, { loader: "js", minify: true, target: "es2020", sourcefile: file })
-    .code.trim();
+  transformSync(code, {
+    loader: "js",
+    minify: true,
+    target: "es2020",
+    sourcefile: file,
+  }).code.trim();
 const minCss = (code) =>
   transformSync(code, { loader: "css", minify: true }).code.trim();
 
@@ -54,20 +59,37 @@ function build() {
     SCRIPTS.map((f) => `<script>${minJs(read(f), f)}</script>`).join("");
 
   const page = collapse(read("index.html"))
-    .replace("<!-- build:css -->", () => `<style>${minCss(read("styles.css"))}</style>`)
+    .replace(
+      "<!-- build:css -->",
+      () => `<style>${minCss(read("styles.css"))}</style>`,
+    )
     .replace("<!-- build:js -->", () => scripts);
   return page + "\n";
 }
 
-const out = build();
-const target = new URL("./index.html", import.meta.url);
+const html = build();
+// La versión del service worker cambia con cada index.html distinto, para que
+// los móviles con la app instalada descarguen la versión nueva.
+const version = createHash("sha256").update(html).digest("hex").slice(0, 12);
+const outputs = {
+  "index.html": html,
+  "sw.js": read("sw.js").replace("__VERSION__", version),
+};
+
 if (process.argv.includes("--check")) {
-  if (readFileSync(target, "utf8") !== out) {
-    console.error("index.html no está al día: ejecuta `npm run build`.");
+  const stale = Object.entries(outputs).filter(
+    ([file, content]) =>
+      readFileSync(new URL(file, import.meta.url), "utf8") !== content,
+  );
+  if (stale.length) {
+    console.error(
+      `${stale.map(([f]) => f).join(", ")} no está al día: ejecuta \`npm run build\`.`,
+    );
     process.exit(1);
   }
-  console.log("index.html al día.");
+  console.log("index.html y sw.js al día.");
 } else {
-  writeFileSync(target, out);
-  console.log(`index.html: ${(Buffer.byteLength(out) / 1024).toFixed(1)} KB`);
+  for (const [file, content] of Object.entries(outputs))
+    writeFileSync(new URL(file, import.meta.url), content);
+  console.log(`index.html: ${(Buffer.byteLength(html) / 1024).toFixed(1)} KB`);
 }

@@ -23,3 +23,42 @@ function makeFixedStep(step, hz = 60) {
     }
   };
 }
+
+// Récords guardados en este navegador. Para tiempos, `lowerIsBetter`.
+// Devuelve el mejor valor tras registrar `value` y si es un récord nuevo.
+function loadRecord(key) {
+  try {
+    let v = localStorage.getItem(`record:` + key);
+    return v === null ? null : Number(v);
+  } catch {
+    return null;
+  }
+}
+function saveRecord(key, value, lowerIsBetter = false) {
+  let prev = loadRecord(key),
+    isNew =
+      prev === null
+        ? lowerIsBetter || value > 0
+        : lowerIsBetter
+          ? value < prev
+          : value > prev;
+  if (isNew)
+    try {
+      localStorage.setItem(`record:` + key, String(value));
+    } catch {}
+  return { best: isNew ? value : prev, isNew };
+}
+function recordText(rec, format = String) {
+  return rec.isNew
+    ? `🏆 ¡Nuevo récord!`
+    : rec.best === null
+      ? ``
+      : `Récord: ` + format(rec.best);
+}
+
+// App instalable y sin conexión (solo cuando se sirve por http/https; abriendo
+// el archivo directamente con file:// no hay service worker).
+if (`serviceWorker` in navigator && location.protocol.startsWith(`http`))
+  addEventListener(`load`, () => {
+    navigator.serviceWorker.register(`sw.js`).catch(() => {});
+  });

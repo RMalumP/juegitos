@@ -262,7 +262,13 @@
         vibrate(200),
         (document.getElementById(`tet-ov-title`).textContent = `GAME OVER`),
         (document.getElementById(`tet-ov-sub`).innerHTML =
-          `Puntuación: ` + v + `<br>Nivel: ` + g + `<br>Líneas: ` + E),
+          `Puntuación: ` +
+          v +
+          `<br>Nivel: ` +
+          g +
+          `<br>Líneas: ` +
+          E +
+          ((r) => (r ? `<br>` + r : ``))(recordText(saveRecord(`tetris`, v)))),
         (document.getElementById(`tet-ov-btn`).textContent = `REINICIAR`),
         (document.getElementById(`tetOverlay`).style.display = `flex`));
   }

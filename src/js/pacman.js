@@ -1,4 +1,5 @@
 (function () {
+  let pacRecord = null;
   let e = document.getElementById(`pacC`),
     t = e.getContext(`2d`),
     n = 28,
@@ -533,10 +534,12 @@
             t.fillText(`GAME OVER`, 112, 108),
             (t.font = `11px Courier New`),
             (t.fillStyle = `#fff`),
-            t.fillText(`PUNTOS: ` + g + `  ·  NIVEL: ` + E, 112, 128),
+            t.fillText(`PUNTOS: ` + g + `  ·  NIVEL: ` + E, 112, 126),
             (t.font = `9px Courier New`),
+            (t.fillStyle = `#ffcc00`),
+            pacRecord && t.fillText(recordText(pacRecord), 112, 140),
             (t.fillStyle = `#9999ff`),
-            t.fillText(`Toca o pulsa una flecha para reiniciar`, 112, 146)),
+            t.fillText(`Toca o pulsa una flecha para reiniciar`, 112, 156)),
         (t.textAlign = `left`));
   }
   function K(e, n, a) {
@@ -678,7 +681,11 @@
             N <= 0 &&
               (function () {
                 if ((v--, (l.textContent = String(v)), v <= 0))
-                  return (M = !0), void d.gameOver();
+                  return (
+                    (M = !0),
+                    (pacRecord = saveRecord(`pacman`, g)),
+                    void d.gameOver()
+                  );
                 (T.x = 14),
                   (T.y = 23),
                   (T.dir = { x: 0, y: 0 }),

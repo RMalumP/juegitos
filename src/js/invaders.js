@@ -367,11 +367,14 @@
             : ((t.fillStyle = `#f44`), t.fillText(`GAME OVER`, 240, 130)),
           (t.font = `16px Courier New`),
           (t.fillStyle = `#0f0`),
-          t.fillText(`PUNTUACIÓN: ` + E, 240, 164),
+          t.fillText(`PUNTUACIÓN: ` + E, 240, 158),
+          (t.font = `13px Courier New`),
+          (t.fillStyle = `#ff0`),
+          t.fillText(recordText(saveRecord(`invaders`, E)), 240, 176),
           (t.font = `12px Courier New`),
           (t.fillStyle = `#0a0`),
-          t.fillText(`ENTER · ESPACIO · FIRE para reiniciar`, 240, 188),
-          t.fillText(`o toca la pantalla`, 240, 206),
+          t.fillText(`ENTER · ESPACIO · FIRE para reiniciar`, 240, 198),
+          t.fillText(`o toca la pantalla`, 240, 214),
           (t.textAlign = `left`),
           (document.onkeydown = (e) => {
             (e.code !== `Enter` && e.code !== `Space`) || K();

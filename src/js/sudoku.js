@@ -308,7 +308,13 @@ function sudWin() {
       `:` +
       String(t).padStart(2, `0`) +
       ` · Errores: ` +
-      SUD.mistakes),
+      SUD.mistakes +
+      ` · ` +
+      recordText(saveRecord(`sud:` + SUD.diff, SUD.seconds, !0), (s) =>
+        [Math.floor(s / 60), s % 60]
+          .map((n) => String(n).padStart(2, `0`))
+          .join(`:`),
+      )),
     (document.getElementById(`sudOBtn`).textContent = `Nueva partida`),
     document.getElementById(`sudOverlay`).classList.remove(`hidden`);
 }
