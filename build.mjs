@@ -10,6 +10,7 @@ const read = (p) => readFileSync(new URL(p, SRC), "utf8");
 
 // Orden de carga: cada archivo va en su propio <script>, como en el original.
 const SCRIPTS = [
+  "js/shared.js",
   "js/core.js",
   "js/sudoku.js",
   "js/tetris.js",

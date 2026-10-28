@@ -44,3 +44,8 @@ document.getElementById("sBtnDamas").onclick = function () {
     last = now;
   });
 })();
+
+function pauseChessClocks() {
+  var w = document.getElementById("chessFrame").contentWindow;
+  w && typeof w.pauseClocks === "function" && w.pauseClocks();
+}

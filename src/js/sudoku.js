@@ -50,48 +50,96 @@ function sudFillBoard(e) {
   }
   return !0;
 }
-function sudCountSolutions(e, t) {
-  let n = 0;
-  return (
-    (function d() {
-      if (!(n >= t)) {
-        for (let t = 0; t < 81; t++) {
-          let n = Math.floor(t / 9),
-            o = t % 9;
-          if (e[n][o] === 0) {
-            for (let t = 1; t <= 9; t++)
-              sudIsValid(e, n, o, t) && ((e[n][o] = t), d(), (e[n][o] = 0));
-            return;
-          }
-        }
-        n++;
-      }
-    })(),
-    n
-  );
-}
-function sudGeneratePuzzle(e) {
-  let t = sudEmptyBoard();
-  sudFillBoard(t);
-  let n = t.map((e) => [...e]),
-    d = sudShuffle(Array.from({ length: 81 }, (e, t) => t)),
-    o = 0,
-    s = 81 - e;
-  for (let e of d) {
-    if (o >= s) break;
-    let t = Math.floor(e / 9),
-      d = e % 9,
-      u = n[t][d];
-    u !== 0 &&
-      ((n[t][d] = 0),
-      sudCountSolutions(
-        n.map((e) => [...e]),
-        2,
-      ) === 1
-        ? o++
-        : (n[t][d] = u));
+// Cuenta soluciones (hasta `limit`) con máscaras de bits y eligiendo siempre
+// la casilla con menos candidatos. Es cientos de veces más rápido que probar
+// las casillas en orden, que llegaba a congelar la página en "experto".
+function sudCountSolutions(board, limit) {
+  const rows = new Uint16Array(9),
+    cols = new Uint16Array(9),
+    boxes = new Uint16Array(9),
+    cells = new Uint8Array(81);
+  for (let i = 0; i < 81; i++) {
+    const v = board[(i / 9) | 0][i % 9];
+    if (!v) continue;
+    const bit = 1 << v,
+      r = (i / 9) | 0,
+      c = i % 9,
+      b = 3 * ((r / 3) | 0) + ((c / 3) | 0);
+    if ((rows[r] | cols[c] | boxes[b]) & bit) return 0;
+    rows[r] |= bit;
+    cols[c] |= bit;
+    boxes[b] |= bit;
+    cells[i] = v;
   }
-  return { puzzle: n, solution: t };
+  let count = 0;
+  (function solve() {
+    let best = -1,
+      bestMask = 0,
+      bestCount = 10;
+    for (let i = 0; i < 81; i++) {
+      if (cells[i]) continue;
+      const r = (i / 9) | 0,
+        c = i % 9,
+        b = 3 * ((r / 3) | 0) + ((c / 3) | 0),
+        mask = ~(rows[r] | cols[c] | boxes[b]) & 0x3fe;
+      let n = 0;
+      for (let m = mask; m; m &= m - 1) n++;
+      if (n < bestCount) {
+        best = i;
+        bestMask = mask;
+        bestCount = n;
+        if (n === 0) return;
+        if (n === 1) break;
+      }
+    }
+    if (best < 0) {
+      count++;
+      return;
+    }
+    const r = (best / 9) | 0,
+      c = best % 9,
+      b = 3 * ((r / 3) | 0) + ((c / 3) | 0);
+    for (let m = bestMask; m && count < limit; m &= m - 1) {
+      const bit = m & -m;
+      rows[r] |= bit;
+      cols[c] |= bit;
+      boxes[b] |= bit;
+      cells[best] = 31 - Math.clz32(bit);
+      solve();
+      rows[r] &= ~bit;
+      cols[c] &= ~bit;
+      boxes[b] &= ~bit;
+      cells[best] = 0;
+    }
+  })();
+  return count;
+}
+function sudTryPuzzle(clues) {
+  let solution = sudEmptyBoard();
+  sudFillBoard(solution);
+  let puzzle = solution.map((e) => [...e]),
+    filled = 81;
+  for (let i of sudShuffle(Array.from({ length: 81 }, (e, t) => t))) {
+    if (filled <= clues) break;
+    let r = Math.floor(i / 9),
+      c = i % 9,
+      v = puzzle[r][c];
+    puzzle[r][c] = 0;
+    sudCountSolutions(puzzle, 2) === 1 ? filled-- : (puzzle[r][c] = v);
+  }
+  return { puzzle, solution, filled };
+}
+// Con pocas pistas no siempre se llega al objetivo a la primera (a veces
+// quedan 25-26 en "experto"): se reintenta unas cuantas veces y se queda
+// con el que tenga menos pistas, sin pasar de ~150 ms.
+function sudGeneratePuzzle(clues) {
+  let best = null,
+    start = performance.now();
+  do {
+    let p = sudTryPuzzle(clues);
+    if (!best || p.filled < best.filled) best = p;
+  } while (best.filled > clues && performance.now() - start < 150);
+  return { puzzle: best.puzzle, solution: best.solution };
 }
 function initSud() {
   buildSudBoard(),
@@ -275,6 +323,9 @@ function sudLose() {
 }
 function pauseSud() {
   sudStopTimer();
+}
+function resumeSud() {
+  SUD.puzzle && !SUD.won && !SUD.timerId && sudStartTimer();
 }
 function renderSud() {
   let e = document.querySelectorAll(`#sudBoard .sudCell`),

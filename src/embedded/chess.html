@@ -3106,6 +3106,16 @@ function saveGameAsHtml(){
     showSaveMsg('❌ Error: ' + e.message, '#5c1a1a');
   }
 }
+
+// Llamado desde la página principal al minimizar, cambiar de juego o de
+// pestaña: pausa los relojes en marcha para que no se pierda tiempo.
+function pauseClocks(){
+  if(chessClock.started && chessClock.running && !chess.gameOver){
+    if(chessClock.mode === 'auto') chessClockAutoToggle();
+    else if(chessClock.mode === 'manual') chessClockManualTogglePause();
+  }
+  if(bigClock.running) bigClockTogglePause();
+}
 </script>
 </body>
 </html>

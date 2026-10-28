@@ -554,8 +554,12 @@
       t.arc(n + 1.6 + 0.6 * r, a - 1.2 + 0.6 * i, 0.6, 0, 2 * Math.PI),
       t.fill();
   }
-  function z() {
+  function z(now) {
+    I || (runSteps(now), W(), M || (A = requestAnimationFrame(z)));
+  }
+  const runSteps = makeFixedStep(function () {
     I ||
+      M ||
       (B++,
       S
         ? (V--, V <= 0 && (D(E + 1, !0), d.sirenStart(E)))
@@ -693,10 +697,8 @@
                   (C = 0),
                   (k = 420),
                   d.sirenStart(E);
-              })()),
-      W(),
-      M || (A = requestAnimationFrame(z)));
-  }
+              })()));
+  });
   function J(e, t) {
     M ? X() : (T.want = { x: e, y: t });
   }

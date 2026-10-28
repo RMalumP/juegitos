@@ -182,7 +182,14 @@ function d(e) {
           ? pausePac()
           : e === `Sud` && typeof pauseSud == `function`
             ? pauseSud()
-            : e === `Ast` && typeof pauseAst == `function` && pauseAst();
+            : e === `Ast` && typeof pauseAst == `function`
+              ? pauseAst()
+              : e === `Chess` && pauseChessClocks();
+}
+// Lo contrario de d(): solo el Sudoku se reanuda solo (su cronómetro); los
+// juegos de acción muestran su pantalla de PAUSA con el botón "Continuar".
+function resumeWin(e) {
+  e === `Sud` && resumeSud();
 }
 function openGame(e) {
   let t = a[e];
@@ -192,6 +199,7 @@ function openGame(e) {
       document.getElementById(`chip` + e).classList.remove(`active`);
   }),
     document.getElementById(`win` + t).classList.remove(`hidden`),
+    c[t] && resumeWin(t),
     document.getElementById(`chip` + t).classList.remove(`hidden`),
     document.getElementById(`chip` + t).classList.add(`active`),
     c[t] ||
@@ -242,7 +250,7 @@ function u(e) {
     n = document.getElementById(`win` + t),
     o = document.getElementById(`chip` + t);
   n.classList.contains(`hidden`)
-    ? (n.classList.remove(`hidden`), o.classList.add(`active`))
+    ? (n.classList.remove(`hidden`), o.classList.add(`active`), resumeWin(t))
     : (d(t), n.classList.add(`hidden`), o.classList.remove(`active`));
 }
 function m() {
@@ -281,6 +289,14 @@ s.forEach((e) => {
 }),
   m(),
   setInterval(m, 15e3);
+// Al cambiar de pestaña, bloquear el móvil o pasar a otra app, se pausa el
+// juego visible (antes seguía corriendo y se perdían vidas o tiempo).
+document.addEventListener(`visibilitychange`, () => {
+  s.forEach((e) => {
+    document.getElementById(`win` + e).classList.contains(`hidden`) ||
+      (document.hidden ? d(e) : resumeWin(e));
+  });
+});
 let p = !0;
 function vibrate(e) {
   p && navigator.vibrate && navigator.vibrate(e);

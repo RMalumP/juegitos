@@ -259,8 +259,9 @@
         ctx.fillRect(p.x - 1, p.y - 1, 2, 2);
     (ctx.globalAlpha = 1), gameOver || drawShip();
   }
-  function loop() {
-    update(), draw(), (raf = requestAnimationFrame(loop));
+  const runSteps = makeFixedStep(update);
+  function loop(now) {
+    runSteps(now), draw(), (raf = requestAnimationFrame(loop));
   }
   function startGame() {
     (document.getElementById(`astStartScreen`).style.display = `none`),
