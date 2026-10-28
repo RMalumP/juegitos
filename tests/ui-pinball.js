@@ -75,6 +75,24 @@ const { entorno, wait, ok, fin } = require('./helpers');
   e = await pg.evaluate(() => window.pinEstado());
   ok(e.vy < -6, 'el flipper lanza la bola hacia arriba (vy ' + (e.vy || 0).toFixed(1) + ')');
   await pg.keyboard.up('KeyZ');
+  // teclas alternativas X y N
+  await pg.keyboard.down('KeyX'); await pg.keyboard.down('KeyN'); await wait(120);
+  e = await pg.evaluate(() => window.pinEstado());
+  ok(e.flipL < 0 && e.flipR > Math.PI, 'X y N también mueven los flippers');
+  await pg.keyboard.up('KeyX'); await pg.keyboard.up('KeyN'); await wait(150);
+  // la luz roja de arriba enciende el Jackpot
+  await pg.evaluate(() => window.pinColocar(252, 92, 0, -6)); await wait(200);
+  ok((await pg.evaluate(() => window.pinEstado())).jackpotOn, 'la luz roja de arriba enciende el Jackpot');
+  // impulsor lateral: devuelve la bola desde la calle de salida una vez
+  await pg.evaluate(() => window.pinColocar(18, 440, 0, 4)); await wait(250);
+  e = await pg.evaluate(() => window.pinEstado());
+  ok(!e.impulsor[0] && e.hayBola && e.by < 440, 'el impulsor izquierdo devuelve la bola y se gasta');
+  // cruz roja: 1.000.000 cuando está activa
+  await pg.evaluate(() => window.pinPrueba({ cruzOn: true }));
+  s0 = (await pg.evaluate(() => window.pinEstado())).score;
+  await pg.evaluate(() => window.pinColocar(120, 396, 0, 4)); await wait(200);
+  e = await pg.evaluate(() => window.pinEstado());
+  ok(!e.cruzOn && e.score >= s0 + 1000000, 'la cruz roja activa da 1.000.000 de puntos');
   // pausa
   await pg.evaluate(() => window.pausePin()); const t0 = (await pg.evaluate(() => window.pinEstado())).tick; await wait(300);
   e = await pg.evaluate(() => window.pinEstado());
@@ -90,6 +108,10 @@ const { entorno, wait, ok, fin } = require('./helpers');
   e = await pg.evaluate(() => window.pinEstado());
   ok(e.over && await pg.locator('#pinOver').isVisible(), 'tras 3 bolas perdidas sale GAME OVER');
   ok(Number(await pg.evaluate(() => localStorage.getItem('record:pinball'))) === e.score && e.score > 0, 'se guarda el récord (' + e.score + ')');
+  // F2 empieza una partida nueva
+  await pg.keyboard.press('F2'); await wait(300);
+  e = await pg.evaluate(() => window.pinEstado());
+  ok(e.running && !e.over && e.score === 0 && e.bola === 1, 'F2 empieza una partida nueva');
   // sin scroll horizontal en móvil
   ok(await pg.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), 'sin scroll horizontal en móvil');
   await pg.screenshot({ path: process.env.CAPTURA || '/dev/null' }).catch(() => {});

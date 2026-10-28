@@ -3,7 +3,9 @@
    slingshots, 3 carriles superiores (multiplicador), 3 dianas abatibles, agujero negro, rampa morada (devuelve la bola al flipper izquierdo),
    carril rojo de órbita (sube por la derecha y deja la bola en los carriles de arriba) y el círculo central de 24 luces (hiperespacio), órbita gris, objetivo verde, asteroides, calles de entrada y salida con salva bolas y misiones.
    Rangos de Cadete a Almirante (al llegar a Capitán, bola extra). 3 bolas; récord con saveRecord('pinball').
-   Teclado: Z / ← flipper izquierdo, M / → derecho, Espacio / ↓ lanzador (mantén para cargar), P pausa, Intro nueva partida.
+   Teclado: Z / X / ← flipper izquierdo, M / N / → derecho, Espacio / ↓ lanzador (mantén para cargar), P pausa, Intro o F2 nueva partida.
+   Como en la guía del original: Jackpot por la órbita (lo activa la luz roja), luces verdes de motores y armas, impulsores en las calles
+   de salida (uno por rango), flechas azules hacia la misión, gravedad mayor en rangos altos y la cruz roja (1.000.000) tras todas las misiones.
    Táctil: mitad izquierda o derecha de la mesa = flipper; con la bola en el lanzador, la mitad derecha carga el muelle (suelta para lanzar).
    Física de paso fijo a 60 pasos/s con 8 subpasos (la bola nunca atraviesa un muro). Pausa al minimizar o cambiar de pestaña. */
 (function () {
@@ -78,10 +80,18 @@
   function flipper(x, rest, up) { return { x: x, y: 532, ang: rest, rest: rest, up: up, w: 0, on: false, L: 50 }; }
   var fl = flipper(108, 0.5, -0.45), fr = flipper(2 * CX - 108, Math.PI - 0.5, Math.PI + 0.45);
   var LUCES = 24;
+  var cofre = { x0: 98, y0: 60, x1: 126, y1: 82, luces: [false, false, false] };   // cofre marrón con 3 luces amarillas
+  [[98, 60, 126, 60], [126, 60, 126, 82], [126, 82, 98, 82], [98, 82, 98, 60]].forEach(function (q) { muro(q[0], q[1], q[2], q[3], { t: 'c', e: 0.5 }); });
+  var luzRoja = { x: 252, y: 70, r: 9 };                       // luz roja redonda: activa el Jackpot
+  var cruz = { x: 120, y: 410, r: 12 };                         // cruz roja: premio de 1.000.000
+  /* flechas azules que señalan la misión actual: [x, y, ángulo] */
+  var FLECHAS = { carriles: [183, 104, -Math.PI / 2], rampa: [148, 290, -2.2], dianas: [290, 326, 0], orbita: [292, 296, -1.75],
+    verde: [124, 128, -Math.PI / 2], agujero: [136, 236, -Math.PI / 2], hiper: [CX, 300, Math.PI / 2] };
   var rocas = [{ x: 252, y: 204, r: 8 }, { x: 272, y: 228, r: 7 }, { x: 246, y: 236, r: 6 }];   // asteroides
 
   /* ---------- estado ---------- */
   var salva = 0;                                               // salva bolas (redespliegue) los primeros 8 s de cada bola
+  var jackpot = 10000, jackpotOn = false, ultimaOrbita = -9999, verdes = [[false, false, false], [false, false, false]], impulsor = [true, true], cruzOn = false;
   var score = 0, bola = 1, extra = 0, mult = 1, misiones = 0, rango = 0, best = 0, luces = 0;
   var lit = [false, false, false], bolaAct = null, espera = 0, reponerDianas = 0, carga = 0, cargando = false;
   var running = false, paused = false, over = false, raf = null, aviso = '', avisoT = 0, tick = 0;
@@ -134,9 +144,10 @@
   function mision(texto, id) {
     if (MISIONES[actual].id !== id) { avisar(texto, 60); return; }
     misiones++; actual = (actual + 1) % MISIONES.length; sumar(5000 * (rango + 1)); panel();
+    if (actual === 0) { cruzOn = true; avisar('¡CRUZ ROJA ACTIVA!', 120); }
     var nuevo = Math.min(RANGOS.length - 1, Math.floor(misiones / 2));
     if (nuevo > rango) {
-      rango = nuevo; sumar(10000 * rango); SON.premio(); vib([0, 40, 40, 40]);
+      rango = nuevo; sumar(10000 * rango); SON.premio(); vib([0, 40, 40, 40]); impulsor = [true, true];
       if (rango === 3) { extra++; hud(); avisar('¡' + RANGOS[rango] + '! BOLA EXTRA', 140); } else avisar('¡ASCENSO! ' + RANGOS[rango], 120);
     } else { SON.premio(); avisar('MISIÓN CUMPLIDA', 100); }
   }
@@ -151,6 +162,21 @@
       lit = [false, false, false]; sumar(2000 * mult); SON.premio();
       if (mult < 5) mult++; hud(); mision('MULTIPLICADOR ×' + mult, 'carriles');
     }
+  }
+  function encenderVerde(g) {                                 // luces verdes: 0 = motores (izquierda), 1 = armas (derecha)
+    var v = verdes[g], i = v.indexOf(false); if (i < 0) return;
+    v[i] = true; sumar(250 * mult);
+    if (v.every(Boolean)) {
+      verdes[g] = [false, false, false]; SON.premio(); sumar(5000 * mult);
+      if (g === 0) { if (mult < 5) mult++; hud(); avisar('MOTORES MEJORADOS ×' + mult, 90); }
+      else { impulsor = [true, true]; avisar('ARMAS MEJORADAS: IMPULSORES', 90); }
+    }
+  }
+  function orbita() {                                          // Jackpot: con la luz roja encendida o con dos órbitas seguidas
+    if (jackpotOn || tick - ultimaOrbita < 360) {
+      sumar(jackpot * mult); avisar('JACKPOT ' + jackpot * mult, 120); SON.premio(); vib([0, 60, 40, 60]); jackpot = 10000; jackpotOn = false;
+    }
+    ultimaOrbita = tick;
   }
   function rotarCarriles(dir) { lit = dir < 0 ? [lit[1], lit[2], lit[0]] : [lit[2], lit[0], lit[1]]; }
   function tumbarDiana(d) {
@@ -185,7 +211,7 @@
   function subpaso(b) {
     fl.ang += fl.w / SUB; fr.ang += fr.w / SUB;
     if (b.capt > 0 || b.rampa) return;
-    b.vy += G / SUB; b.vx *= 0.9998; b.vy *= 0.9998;
+    b.vy += G * (1 + 0.04 * rango) / SUB; b.vx *= 0.9998; b.vy *= 0.9998;   // en rangos altos la gravedad es más fuerte
     var yAnt = b.y;
     b.x += b.vx / SUB; b.y += b.vy / SUB;
     if (b.enCarril && b.x < CARRIL - 4) { b.enCarril = false; if (!b.desplegada) { b.desplegada = true; salva = 480; } }
@@ -193,21 +219,34 @@
     for (var i = 0; i < muros.length; i++) {
       var m = muros[i]; if (m.n === 1) continue;
       var imp = contraMuro(b, m);
-      if (imp > 2.5 && m.t === 's') { m.flash = 8; sumar(50); SON.sling(); vib(6); }
+      if (imp > 2.5 && m.t === 's') { m.flash = 8; sumar(50); SON.sling(); vib(6); encenderVerde(m.lado); }
+      else if (imp > 1.5 && m.t === 'c') {                     // cofre: cada golpe enciende una luz; con las 3, premio
+        var ic = cofre.luces.indexOf(false); sumar(750 * mult); SON.diana();
+        if (ic >= 0) cofre.luces[ic] = true;
+        if (cofre.luces.every(Boolean)) { cofre.luces = [false, false, false]; sumar(5000 * mult); encenderLuz(4); avisar('COFRE', 70); }
+      }
     }
     if (!b.enCarril) contraMuro(b, puerta);
     if (b.x > CARRIL) { var my = MUELLE + carga * 22; choque(b, clamp(b.x, CARRIL, 350), my, 1.5, 0.2, 0, 0, 0); }
     dianas.forEach(function (d) { if (!d.abajo && contraMuro(b, d) > 0.8) tumbarDiana(d); });
     bumpers.forEach(function (u) {
       if (u.p) return;
-      if (choque(b, u.x, u.y, u.r, 0.5, 0, 0, u.p ? 4 : 5) > 0) { u.flash = 10; sumar((u.p ? 150 : 100) * mult); SON.bumper(); vib(8); encenderLuz(u.p ? 0 : 1); }
+      if (choque(b, u.x, u.y, u.r, 0.5, 0, 0, 5) > 0) { u.flash = 10; sumar(100 * mult); SON.bumper(); vib(8); encenderLuz(1); jackpot += 500; }
     });
+    if (b.noLuz > 0) b.noLuz--;
+    else if (Math.hypot(b.x - luzRoja.x, b.y - luzRoja.y) < luzRoja.r + 4) { b.noLuz = 60; sumar(500 * mult); if (!jackpotOn) { jackpotOn = true; avisar('JACKPOT ACTIVO', 70); SON.carril(); } }
+    if (cruzOn && Math.hypot(b.x - cruz.x, b.y - cruz.y) < cruz.r) { cruzOn = false; sumar(1000000); avisar('¡1.000.000!', 150); SON.premio(); vib([0, 80, 40, 80, 40, 80]); }
     if (choque(b, verde.x, verde.y, verde.r, 0.6, 0, 0, 0) > 1) { verde.flash = 20; sumar(1000 * mult); SON.carril(); vib(10); encenderLuz(1); mision('OBJETIVO VERDE', 'verde'); }
     rocas.forEach(function (o) { if (choque(b, o.x, o.y, o.r, 0.5, 0, 0, 0) > 1.5) { sumar(200 * mult); SON.diana(); } });
     contraFlipper(b, fl); contraFlipper(b, fr);
     if ((b.y - CALLE_Y) * (yAnt - CALLE_Y) <= 0 && b.vy > 0 && !b.enCarril) {
       var k2 = b.x < 33 ? 0 : b.x < 57 ? 1 : b.x > 2 * CX - 33 ? 3 : b.x > 2 * CX - 57 ? 2 : -1;
       if (k2 >= 0) { calles[k2] = 30; sumar((k2 === 0 || k2 === 3 ? 500 : 300) * mult); SON.carril(); encenderLuz(1); }
+      if (k2 === 1 || k2 === 2) encenderVerde(k2 === 1 ? 0 : 1);
+      var lado = k2 === 0 ? 0 : k2 === 3 ? 1 : -1;
+      if (lado >= 0 && impulsor[lado]) {                       // impulsor lateral: devuelve la bola desde la calle de salida
+        impulsor[lado] = false; b.vy = -15; b.vx = lado ? -0.3 : 0.3; SON.lanzar(); vib([0, 30, 20, 30]); avisar('IMPULSOR', 60);
+      }
     }
     if ((b.y - LANE_Y) * (yAnt - LANE_Y) <= 0) CARRILES.forEach(function (x, k) { if (Math.abs(b.x - x) < 14) encenderCarril(k); });
     if (b.noHole > 0) b.noHole--;
@@ -219,7 +258,7 @@
     else rampas.forEach(function (r) {
       if (!b.rampa && b.vy < -2.5 && Math.hypot(b.x - r.x, b.y - r.y) < r.r) {
         b.rampa = r; b.dist = 0; b.velRampa = Math.max(5, Math.min(9, Math.hypot(b.vx, b.vy) * 0.6));
-        sumar(r.pts * mult); SON.rampa(); vib(15); encenderLuz(2); mision(r.aviso, r.id);
+        sumar(r.pts * mult); SON.rampa(); vib(15); encenderLuz(2); mision(r.aviso, r.id); if (r.id === 'orbita') orbita();
       }
     });
     var s = Math.hypot(b.vx, b.vy); if (s > VMAX) { b.vx *= VMAX / s; b.vy *= VMAX / s; }
@@ -244,7 +283,7 @@
     var obj = f.on ? f.up : f.rest, v = f.on ? 0.32 : 0.18, d = obj - f.ang;
     f.w = clamp(d, -v, v);
   }
-  function nuevaBola() { bolaAct = { x: (CARRIL + 350) / 2, y: MUELLE - R - 2, vx: 0, vy: 0, enCarril: true, capt: 0, noHole: 0, noRampa: 0, rampa: null, nivel: 0 }; }
+  function nuevaBola() { bolaAct = { x: (CARRIL + 350) / 2, y: MUELLE - R - 2, vx: 0, vy: 0, enCarril: true, capt: 0, noHole: 0, noRampa: 0, rampa: null, nivel: 0, noLuz: 0 }; }
   function lanzar() {
     var c = carga; carga = 0;
     if (!enLanzador()) return;
@@ -486,6 +525,18 @@
     c.lineTo(agujero.x + 12, agujero.y + 4); c.lineTo(agujero.x - 12, agujero.y + 6); c.closePath(); c.fill();
     c.fillStyle = '#05050f'; c.strokeStyle = '#7a7a90'; c.lineWidth = 3;
     c.beginPath(); c.arc(agujero.x, agujero.y, 13, 0, Math.PI * 2); c.fill(); c.stroke();
+    var gco = c.createLinearGradient(cofre.x0, cofre.y0, cofre.x0, cofre.y1);   // cofre marrón
+    gco.addColorStop(0, '#a8743a'); gco.addColorStop(1, '#5a3412');
+    c.fillStyle = 'rgba(0,0,0,.4)'; c.fillRect(cofre.x0 + 3, cofre.y0 + 4, 28, 22);
+    c.fillStyle = gco; c.fillRect(cofre.x0, cofre.y0, 28, 22); c.strokeStyle = '#2a1404'; c.lineWidth = 1.5; c.strokeRect(cofre.x0, cofre.y0, 28, 22);
+    c.fillStyle = '#d8a050'; c.fillRect(cofre.x0, cofre.y0, 28, 5);
+    c.fillStyle = '#c8262a'; c.beginPath(); c.arc(luzRoja.x, luzRoja.y, luzRoja.r + 3, 0, Math.PI * 2); c.fill();   // aro de la luz roja
+    [0, 1].forEach(function (lado) {                           // tubo rojo con cuadros junto a cada calle de salida
+      var X = function (x) { return lado ? 2 * CX - x : x; };
+      c.fillStyle = '#9b1b1f'; c.fillRect(X(22.5) - 5, 396, 10, 36);
+      for (var t = 0; t < 4; t++) { c.fillStyle = t % 2 ? '#f4f4fa' : '#2a2a2a'; c.fillRect(X(22.5) - 3, 400 + t * 7, 6, 5); }
+    });
+    c.fillStyle = '#ff7ac8'; c.beginPath(); c.moveTo(306, 372); c.lineTo(296, 390); c.lineTo(316, 390); c.closePath(); c.fill();   // triángulo rosa
     rocas.forEach(function (o) {                               // asteroides marrones con cráteres
       var gr = c.createRadialGradient(o.x - o.r * 0.4, o.y - o.r * 0.4, 1, o.x, o.y, o.r + 2);
       gr.addColorStop(0, '#b08868'); gr.addColorStop(1, '#4a3022'); c.fillStyle = gr;
@@ -530,16 +581,39 @@
     ctx.drawImage(capa, 0, 0, W, H);
     ctx.textAlign = 'center';
     for (var i = 0; i < LUCES; i++) {                         // anillo de 16 luces azules
-      var a = -Math.PI / 2 + i * Math.PI * 2 / LUCES; luz(CX + Math.cos(a) * 58, 380 + Math.sin(a) * 58, 4, i < luces, '#8fd0ff', '#2a4a86');
+      var a = -Math.PI / 2 + i * Math.PI * 2 / LUCES, alta = rango >= 4;   // en rangos altos (gravedad fuerte) el anillo se pone rojo
+      luz(CX + Math.cos(a) * 58, 380 + Math.sin(a) * 58, 4, i < luces, alta ? '#ff7a7a' : '#8fd0ff', alta ? '#6e1a22' : '#2a4a86');
     }
-    for (var m = 0; m < 10; m++) {                             // anillo interior amarillo: multiplicador (2 luces por nivel)
-      var am = -Math.PI / 2 + m * Math.PI * 2 / 10; luz(CX + Math.cos(am) * 34, 380 + Math.sin(am) * 34, 3.5, m < mult * 2, '#ffe14a', '#5a5420');
+    for (var m = 0; m < 10; m++) {                             // anillo interior amarillo: rango actual (2 luces por rango)
+      var am = -Math.PI / 2 + m * Math.PI * 2 / 10; luz(CX + Math.cos(am) * 34, 380 + Math.sin(am) * 34, 3.5, m < (rango + 1) * 2, '#ffe14a', '#5a5420');
     }
     luz(CX, 380, 4, tick % 40 < 20, '#ffe14a', '#5a5420');
     texto(RANGOS[rango], CX, 448, 10, 'rgba(200,230,255,.8)');
     CARRILES.forEach(function (x, k) { luz(x, 86, 4.5, lit[k], '#ffe14a', '#4a4630'); });
     [22.5, 45, 2 * CX - 45, 2 * CX - 22.5].forEach(function (x, k) { luz(x, 440, 3.5, calles[k] > 0, '#ffe14a', '#5a5420'); });
     luz(CX, 586, 3.5, tick % 50 < 25, '#ffe14a', '#5a5420');   // luz entre los flippers
+    cofre.luces.forEach(function (on, k) { luz(cofre.x0 + 7 + k * 7, cofre.y0 + 14, 2.5, on, '#ffe14a', '#5a4a10'); });
+    luz(luzRoja.x, luzRoja.y, luzRoja.r - 1, jackpotOn || tick % 60 < 8, '#ff4a3a', '#6a1010');
+    ctx.fillStyle = jackpotOn ? (tick % 20 < 10 ? '#7fd0ff' : '#2a7aff') : '#1a2a5a';   // cuadro azul del Jackpot, en la boca de la órbita
+    ctx.fillRect(286, 300, 14, 10); ctx.strokeStyle = '#d0e8ff'; ctx.lineWidth = 1; ctx.strokeRect(286, 300, 14, 10);
+    luz(306, 384, 3, tick % 30 < 15, '#ff4a3a', '#6a1010');    // luz roja del triángulo rosa
+    [0, 1].forEach(function (g) {                              // cajas verdes: motores (izquierda) y armas (derecha)
+      verdes[g].forEach(function (on, k) {
+        var x = g ? 2 * CX - 76 + k * 12 : 52 + k * 12;
+        ctx.fillStyle = on ? '#5aff6a' : '#0e3a14'; ctx.shadowColor = '#5aff6a'; ctx.shadowBlur = on ? 8 : 0; ctx.fillRect(x, 570, 9, 7); ctx.shadowBlur = 0;
+        ctx.strokeStyle = '#0a1a0a'; ctx.strokeRect(x, 570, 9, 7);
+      });
+      var xi = g ? 2 * CX - 22.5 : 22.5;                       // impulsor (bola roja con poste) y su ventana
+      ctx.fillStyle = '#c8c8d4'; ctx.fillRect(xi - 2, 588, 4, 14);
+      luz(xi, 586, 5, impulsor[g], '#ff3a3a', '#5a1414');
+      ctx.fillStyle = impulsor[g] ? '#ffe9a0' : '#3a3420'; ctx.fillRect(g ? 296 : 30, 360, 10, 8);
+    });
+    if (cruzOn) { ctx.save(); ctx.translate(cruz.x, cruz.y); ctx.rotate(0.6); ctx.fillStyle = tick % 16 < 8 ? '#ffffff' : '#ff3a3a'; ctx.shadowColor = '#f33'; ctx.shadowBlur = 14;
+      ctx.fillRect(-11, -3.5, 22, 7); ctx.fillRect(-3.5, -11, 7, 22); ctx.restore(); ctx.shadowBlur = 0; }
+    if (running && bolaAct && !enLanzador() && tick % 40 < 26) {   // flechas azules hacia la misión actual
+      var fa = FLECHAS[MISIONES[actual].id];
+      for (var q = 0; q < 3; q++) { var dq = (2 - q) * 9 - ((tick % 40) / 40) * 6; flecha(ctx, fa[0] - Math.cos(fa[2]) * dq, fa[1] - Math.sin(fa[2]) * dq, fa[2], q === 0 ? '#e8f6ff' : '#3fa8ff'); }
+    }
     if (salva > 0 && (salva > 120 || tick % 20 < 10)) texto('REDESPLIEGUE', CX, 597, 9, '#7fe0ff');
     var giro = tick * 0.08;                                    // agujero negro
     ctx.strokeStyle = 'rgba(190,120,255,.85)'; ctx.lineWidth = 1.5;
@@ -590,7 +664,8 @@
 
   /* ---------- partida ---------- */
   function nueva() {
-    score = 0; bola = 1; extra = 0; mult = 1; misiones = 0; rango = 0; luces = 0; salva = 0; actual = 0; litPlat = [false, false, false]; lit = [false, false, false]; espera = 0; reponerDianas = 0; carga = 0;
+    score = 0; bola = 1; extra = 0; mult = 1; misiones = 0; rango = 0; luces = 0; salva = 0; actual = 0; litPlat = [false, false, false];
+    jackpot = 10000; jackpotOn = false; ultimaOrbita = -9999; verdes = [[false, false, false], [false, false, false]]; impulsor = [true, true]; cruzOn = false; cofre.luces = [false, false, false]; lit = [false, false, false]; espera = 0; reponerDianas = 0; carga = 0;
     dianas.forEach(function (d) { d.abajo = false; }); fl.ang = fl.rest; fr.ang = fr.rest; tick = 0; avisoT = 0;
     over = false; paused = false; $('pinStart').style.display = 'none'; $('pinOver').classList.remove('show');
     nuevaBola(); hud(); ac(); actualizarControles();
@@ -613,9 +688,12 @@
     var b = bolaAct;
     return { score: score, bola: bola, extra: extra, mult: mult, rango: rango, running: running, paused: paused, over: over, carga: carga,
       hayBola: !!b, bx: b ? b.x : null, by: b ? b.y : null, vy: b ? b.vy : null, enCarril: b ? b.enCarril : null, rampa: b && b.rampa ? b.rampa.id : null, nivel: b ? b.nivel : null,
-      flipL: fl.ang, flipR: fr.ang, dianas: dianas.filter(function (d) { return d.abajo; }).length, mision: MISIONES[actual].id, misiones: misiones, carriles: lit.slice(), luces: luces, tick: tick };
+      flipL: fl.ang, flipR: fr.ang, dianas: dianas.filter(function (d) { return d.abajo; }).length, mision: MISIONES[actual].id, misiones: misiones, carriles: lit.slice(), luces: luces, tick: tick,
+      jackpotOn: jackpotOn, impulsor: impulsor.slice(), verdes: verdes.map(function (v) { return v.filter(Boolean).length; }), cruzOn: cruzOn,
+      cofre: cofre.luces.filter(Boolean).length };
   };
-  window.pinColocar = function (x, y, vx, vy) { if (!bolaAct) nuevaBola(); var b = bolaAct; b.x = x; b.y = y; b.vx = vx; b.vy = vy; b.enCarril = x > CARRIL; b.capt = 0; b.rampa = null; b.noRampa = 0; b.nivel = 0; salva = 0; };
+  window.pinColocar = function (x, y, vx, vy) { if (!bolaAct) nuevaBola(); var b = bolaAct; b.x = x; b.y = y; b.vx = vx; b.vy = vy; b.enCarril = x > CARRIL; b.capt = 0; b.rampa = null; b.noRampa = 0; b.nivel = 0; b.noLuz = 0; salva = 0; };
+  window.pinPrueba = function (o) { if ('actual' in o) actual = o.actual; if ('rango' in o) rango = o.rango; if ('cruzOn' in o) cruzOn = o.cruzOn; panel(); };
 
   /* ---------- entrada ---------- */
   function actualizarControles() {
@@ -642,10 +720,10 @@
   zona.addEventListener('pointerup', soltar); zona.addEventListener('pointercancel', soltar);
   zona.addEventListener('contextmenu', function (e) { e.preventDefault(); });
   var TK = window.Teclas.crear({ id: 'pin', ventana: 'winPin', titulo: 'Pinball', acciones: [
-    { id: 'izq', etiqueta: 'Flipper izquierdo', def: 'KeyZ', alt: ['ArrowLeft', 'ShiftLeft'] },
-    { id: 'der', etiqueta: 'Flipper derecho', def: 'KeyM', alt: ['ArrowRight', 'ShiftRight', 'Slash'] },
+    { id: 'izq', etiqueta: 'Flipper izquierdo', def: 'KeyZ', alt: ['KeyX', 'ArrowLeft', 'ShiftLeft'] },
+    { id: 'der', etiqueta: 'Flipper derecho', def: 'KeyM', alt: ['KeyN', 'ArrowRight', 'ShiftRight', 'Slash'] },
     { id: 'lanzar', etiqueta: 'Lanzador (mantén)', def: 'Space', alt: ['ArrowDown'] },
-    { id: 'pausa', etiqueta: 'Pausa', def: 'KeyP' }, { id: 'nueva', etiqueta: 'Nueva partida (al terminar)', def: 'Enter' }] });
+    { id: 'pausa', etiqueta: 'Pausa', def: 'KeyP' }, { id: 'nueva', etiqueta: 'Nueva partida (Intro al terminar, F2 siempre)', def: 'Enter', alt: ['F2'] }] });
   window.pinTeclas = TK;
   document.addEventListener('keydown', function (e) {
     var w = $('winPin'); if (!w || w.classList.contains('hidden')) return;
@@ -653,7 +731,7 @@
     if (a === 'izq' || a === 'der' || a === 'lanzar') e.preventDefault();
     if (e.repeat) return;
     if (a === 'pausa') pausar(!paused);
-    else if (a === 'nueva') { if (!running) nueva(); }
+    else if (a === 'nueva') { if (!running || e.code === 'F2') { e.preventDefault(); nueva(); } }
     else if (paused) { if (a === 'lanzar') pausar(false); }
     else { tecla[a === 'izq' ? 'l' : a === 'der' ? 'r' : 'p'] = true; actualizarControles(); }
   });
