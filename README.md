@@ -1,8 +1,8 @@
 # Juegos Windows XP
 
-Escritorio estilo Windows XP con juegos clásicos (Buscaminas, Tetris, Ajedrez, Parchís, Póquer, Hundir la flota, 2048, Breakout, Pinball, Conecta 4, Dominó, Memoria, Simon, Flappy, Wordle…)
+Escritorio estilo Windows XP con juegos clásicos (Buscaminas, Tetris, Ajedrez, Parchís, Póquer, Hundir la flota, 2048, Breakout, Pinball, Conecta 4, Dominó, Memoria, Simon, Flappy, Wordle, Ahorcado…)
 
-**Hundir la flota** admite tableros de 6×6 a 15×15 y flotas a medida (plantillas Clásica, Rápida, Grande y Armada, o un editor de barcos de 1 a 6 casillas) contra la CPU, con 2 jugadores en un móvil y online. **Teclas reasignables** («⌨ Reasignar» en el menú de la ventana) en Breakout, 2048, Flappy y Hundir (que además se juega entero con teclado: cursor, colocar/disparar, girar con R). En Hundir los barcos pegados se distinguen por contorno y tono. **Botón «atrás» del móvil**: minimiza el juego abierto, cierra el menú de inicio o vuelve al juego desde la pantalla de conexión; sin nada que cerrar, sale de la web. **Wordle**: «Del día» no es aleatoria (la palabra sale de la fecha del dispositivo y cambia a medianoche; es la misma para todos); «Libre» elige una palabra al azar cada vez y no cuenta para las estadísticas., **Bingo** local y online, y la app **Sala online** para jugar con amigos cada uno desde su móvil. Es una PWA instalable y funciona sin conexión (el online necesita https y que los móviles se encuentren por internet una vez).
+**Hundir la flota** admite tableros de 6×6 a 15×15 y flotas a medida (plantillas Clásica, Rápida, Grande y Armada, o un editor de barcos de 1 a 6 casillas) contra la CPU, con 2 jugadores en un móvil y online. **Teclas reasignables** («⌨ Reasignar» en el menú de la ventana) en Breakout, 2048, Flappy y Hundir (que además se juega entero con teclado: cursor, colocar/disparar, girar con R). En Hundir los barcos pegados se distinguen por contorno y tono. **Botón «atrás» del móvil**: minimiza el juego abierto, cierra el menú de inicio o vuelve al juego desde la pantalla de conexión; sin nada que cerrar, sale de la web. **Wordle**: «Del día» no es aleatoria (la palabra sale de la fecha del dispositivo y cambia a medianoche; es la misma para todos); «Libre» elige una palabra al azar cada vez y no cuenta para las estadísticas. **Ahorcado**: «Solo» saca una palabra al azar de las del Wordle; con «2 jugadores» en un móvil uno escribe la palabra (oculta, sin tildes y con Ñ; también puede pedir una al azar), pasa el móvil y se turnan llevando el marcador; online (2–6) uno escribe y los demás la adivinan por turnos., **Bingo** local y online, y la app **Sala online** para jugar con amigos cada uno desde su móvil. Es una PWA instalable y funciona sin conexión (el online necesita https y que los móviles se encuentren por internet una vez).
 
 ## Dominó
 
@@ -46,6 +46,7 @@ Cada juego con online tiene un botón **🌐 Conectar** en su barra de menú que
 | Ruleta | 2–6 | **el juego original**: tapete completo (números, split, calle, trío, esquina, seisena, docenas, columnas, dobles, cero y 00), rueda, historial, deshacer, repetir; europea o americana. El anfitrión ejecuta el juego, los invitados lo reflejan y mandan sus apuestas |
 | Blackjack | 2–6 | **el juego original**: 6 barajas, dividir (hasta 4 manos), doblar, blackjack 3:2, la banca pide hasta 17; la carta oculta de la banca nunca llega a los invitados |
 | Dominó | 2–4 (+ hasta 2 CPU) | el anfitrión es el árbitro y juega por las CPU; cada uno recibe solo su mano; opciones: 0–2 CPU (sin pasar de 4), 1 mano / a 50 / a 100 y, con 4, por parejas (con 2 personas y 2 CPU, juntas o rivales) |
+| Ahorcado | 2–6 | en cada ronda uno escribe la palabra y los demás la adivinan por turnos (acertar repite turno, fallar lo pasa). La palabra solo la tiene el anfitrión: los demás reciben los huecos hasta el final. Puntos: 1 por letra, 2 más a quien la completa y 3 a quien la escribió si los ahorca |
 | Póquer | 2–6 | Texas Hold'em con ciegas, subidas, all-in y botes secundarios; las cartas privadas llegan solo a su dueño |
 
 Las reglas del bingo y del póquer están en `js/bingo/engine.js` y `js/online/casino-engine.js` (sin DOM, con tests). Ajedrez, Damas, Parchís, **Ruleta y Blackjack reutilizan los motores originales** (sin modificar `core.js`: se enganchan por sus nombres globales). Las fichas del casino son virtuales.
@@ -114,6 +115,9 @@ js/online/j-domino.js         Dominó online (el anfitrión es el árbitro, repa
 js/games/g2048-engine.js      2048: reglas puras (con tests)
 js/games/mem-engine.js         Memoria (parejas): reglas puras (con tests)
 js/games/wordle-engine.js      Wordle: evaluación de letras (repetidas como el original), palabra del día (con tests)
+js/games/ahorcado-engine.js    Ahorcado: validar la palabra escrita, letras, fallos y vista pública sin la palabra (con tests)
+js/games/ahorcado.js           Ahorcado: solo (palabras del Wordle), 2 jugadores en un móvil y la interfaz del online
+js/online/j-ahorcado.js        Ahorcado online (el anfitrión guarda la palabra y arbitra los turnos)
 js/games/wordle-palabras.js    palabras de 5 letras en español (≈1 600 soluciones y ≈9 300 válidas); diccionario MIT «an-array-of-spanish-words» y orden de frecuencia de «FrequencyWords»
 sw.js, manifest.webmanifest, icons/   PWA
 tests/                        pruebas
@@ -140,6 +144,7 @@ Si cambias archivos de la aplicación: sube `APP_VERSION` (y `APP_FECHA`) en `js
 | `npm run test:2048` | 2048: jugadas con teclado y ratón, deshacer, tamaños 4×4/5×5/6×6, victoria y récord por tamaño |
 | `npm run test:breakout` | Breakout: 15 niveles de inicio, bot que rompe ladrillos, vidas y fin de partida |
 | `npm run test:pinball` | Pinball: lanzador con muelle, flippers con teclado y con las mitades de la pantalla, bumpers y dianas, pausa, 3 bolas y récord |
+| `npm run test:ahorcado` | Ahorcado: solo (palabra del Wordle, fallos, victoria, derrota y racha), 2 jugadores en un móvil (validar la palabra, pasar el móvil, marcador) y online con 3 navegadores (privacidad de la palabra, turnos, jugadas fuera de turno, puntos, siguiente ronda y recarga) |
 | `npm run test:duelo` | Conecta 4 y Tres en raya: 2 jugadores en un móvil y contra la CPU en los 3 niveles |
 | `npm run test:duelo-online` | Conecta 4 y Tres en raya online con 2 navegadores: turnos, jugadas ilegales ignoradas, victoria, recarga y revancha |
 | `npm run test:domino` | Dominó local: contra 3 CPU por parejas hasta el final, guardar y recuperar, sin scroll horizontal y 2 personas + CPU en un móvil con «pasa el móvil» |
