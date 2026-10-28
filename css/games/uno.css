@@ -1,0 +1,89 @@
+/* UNO — ventana #winUno (css/games/uno.css) */
+#unoWrap{--r:#e53935;--a:#f9b800;--v:#2e9e44;--z:#1e74d0;--cw:clamp(40px,12.5vw,58px);flex:1;min-height:0;display:flex;flex-direction:column;position:relative;background:radial-gradient(ellipse at 50% 40%,#b3261e 0,#7a1610 70%,#4d0d09 100%);color:#fff;font-family:Arial,Helvetica,sans-serif;overflow:hidden}
+#unoHeader{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:5px 10px;background:#0006;font-weight:bold;letter-spacing:2px;font-size:13px;flex-shrink:0}
+#unoMarcar{font:11px Arial,sans-serif;padding:2px 7px;border-radius:9px;border:1px solid #fff8;background:#0005;color:#fff;cursor:pointer;flex-shrink:0;letter-spacing:0}
+#unoMarcar.on{background:#ffd54a;color:#7a1610;border-color:#fff}
+#unoMano .unoCarta.libre{cursor:pointer}
+#unoInfo{flex:1;font-size:11px;letter-spacing:0;font-weight:normal;color:#ffd9d4;text-align:right}
+#unoMesa{flex:1;min-height:0;overflow-y:auto;flex-direction:column;align-items:center;gap:6px;padding:8px 8px 12px}
+#unoRivales{display:flex;flex-wrap:wrap;justify-content:center;gap:5px;width:100%}
+.unoRival{display:flex;flex-direction:column;align-items:center;gap:1px;min-width:72px;max-width:110px;padding:4px 6px;border-radius:8px;background:#0004;border:2px solid transparent;font-size:12px;position:relative}
+.unoRival.turno{border-color:#ffd54a;background:#0007;box-shadow:0 0 8px #ffd54a88}
+.unoRival.ultima{background:#5a0a0a}
+.unoRN{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:bold}
+.unoRC{display:flex;align-items:center;gap:3px;font-size:13px}
+.unoRC .mini{display:inline-block;width:11px;height:16px;border-radius:2px;background:#111;border:1px solid #fff;box-shadow:inset 0 0 0 2px #e53935}
+.unoRP{font-size:10px;color:#ffd9d4}
+.unoBadge{position:absolute;top:-7px;right:-4px;background:#ffd54a;color:#7a1610;font-weight:bold;font-size:10px;padding:1px 4px;border-radius:6px;transform:rotate(8deg)}
+#unoCentro{display:flex;align-items:center;justify-content:center;gap:14px;margin:6px 0 2px}
+#unoMazo,#unoPozo .unoCarta{--cw:clamp(54px,17vw,78px)}
+#unoMazoN{font-size:11px;color:#ffd9d4}
+#unoMazo:not(:disabled){cursor:pointer;box-shadow:0 0 0 3px #ffd54a,0 3px 8px #0008}
+#unoRumbo{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:64px}
+#unoColorAct{padding:2px 8px;border-radius:10px;font-size:12px;font-weight:bold;border:2px solid #fff;background:#333}
+#unoColorAct.c-r{background:var(--r)}#unoColorAct.c-a{background:var(--a);color:#222}#unoColorAct.c-v{background:var(--v)}#unoColorAct.c-z{background:var(--z)}
+#unoSentido{font-size:24px;line-height:1}
+#unoAcum{font-size:18px;font-weight:bold;color:#ffd54a;min-height:1.1em}
+#unoEstado{text-align:center;font-size:clamp(12px,3.6vw,15px);line-height:1.3;min-height:1.3em;max-width:440px;margin-top:8px}
+#unoEstado.mio{color:#ffd54a;font-weight:bold}
+#unoLog{text-align:center;font-size:12px;color:#ffd9d4;min-height:1.2em;max-width:440px}
+#unoAcc{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;min-height:34px}
+.unoB{font:bold 13px Arial,sans-serif;padding:7px 12px;border-radius:8px;border:2px solid #fff;background:#0007;color:#fff;cursor:pointer}
+.unoB.ok{background:#2e9e44}.unoB.mal{background:#8b1a1a}.unoB.uno{background:#ffd54a;color:#7a1610;border-color:#7a1610;animation:unoLatido .8s infinite alternate}
+@keyframes unoLatido{to{transform:scale(1.07)}}
+#unoManoTit{font-size:12px;color:#ffd9d4;margin-top:2px}
+#unoMano{display:flex;flex-wrap:wrap;justify-content:center;gap:4px;width:100%;max-width:640px;padding-bottom:4px}
+#unoMano.muchas{--cw:clamp(34px,10.5vw,50px)}
+/* carta */
+.unoCarta{width:var(--cw);height:calc(var(--cw)*1.48);flex:0 0 auto;padding:0;border-radius:calc(var(--cw)*.12);border:calc(var(--cw)*.06) solid #fff;box-shadow:0 2px 5px #0009;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden;color:#fff;font:bold calc(var(--cw)*.4) Arial,sans-serif;background:#333;cursor:default;transition:transform .12s}
+.unoCarta::before{content:"";position:absolute;left:8%;right:8%;top:16%;bottom:16%;border-radius:50%;background:#fff;transform:rotate(-28deg)}
+.unoCarta.c-r{background:var(--r);--col:var(--r)}.unoCarta.c-a{background:var(--a);--col:#c48c00}.unoCarta.c-v{background:var(--v);--col:var(--v)}.unoCarta.c-z{background:var(--z);--col:var(--z)}
+.unoOv{position:relative;color:var(--col,#fff);text-shadow:1px 1px 0 #0003;font-size:1.15em}
+.unoEsq{position:absolute;top:2%;left:7%;font-style:normal;font-size:.42em;text-shadow:1px 1px 0 #0006}
+.unoCarta.negra{background:#111}
+.unoCarta.negra::before{background:conic-gradient(var(--r) 0 25%,var(--z) 0 50%,var(--a) 0 75%,var(--v) 0)}
+.unoCarta.negra .unoOv{color:#fff;text-shadow:0 0 3px #000,0 0 3px #000}
+.unoCarta.dorso{background:#111}
+.unoCarta.dorso::before{background:var(--r)}
+.unoCarta.dorso .unoOv{color:#ffd54a;font-size:.6em;font-style:italic;transform:rotate(-20deg);text-shadow:2px 2px 0 #000}
+#unoMano .unoCarta.puede{cursor:pointer;transform:translateY(-4px);box-shadow:0 0 0 2px #ffd54a,0 4px 8px #000a}
+#unoMano .unoCarta.puede:hover{transform:translateY(-8px)}
+#unoMano .unoCarta.no{filter:brightness(.55)}
+#unoMano .unoCarta.robada{outline:3px dashed #ffd54a;outline-offset:1px}
+.unoCarta:disabled{opacity:1;color:#fff}
+.unoCarta.mini{--cw:24px;border-width:1px;box-shadow:none}
+/* elegir color */
+#unoElegir{position:absolute;inset:0;z-index:40;background:#000b;display:none;flex-direction:column;align-items:center;justify-content:center;gap:12px}
+.unoElT{font-size:18px;font-weight:bold}
+.unoElC{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.unoElB{width:min(36vw,130px);height:min(26vw,90px);border-radius:12px;border:3px solid #fff;font:bold 16px Arial,sans-serif;color:#fff;cursor:pointer;text-transform:capitalize}
+.unoElB.c-r{background:var(--r)}.unoElB.c-a{background:var(--a);color:#222}.unoElB.c-v{background:var(--v)}.unoElB.c-z{background:var(--z)}
+.unoNo{background:none;border:1px solid #fff8;color:#fff;padding:6px 14px;border-radius:8px;cursor:pointer}
+/* fin de ronda */
+#unoFin{position:absolute;inset:0;z-index:30;background:#000d;display:none;flex-direction:column;align-items:center;gap:8px;padding:14px 10px;overflow-y:auto}
+.unoFT{font-size:clamp(17px,5vw,22px);font-weight:bold;text-align:center;color:#ffd54a}
+.unoFS{font-size:13px;color:#ffd9d4;text-align:center}
+.unoFL{display:flex;flex-direction:column;gap:4px;width:100%;max-width:520px}
+.unoFJ{display:flex;flex-direction:column;gap:3px;padding:5px 8px;border-radius:8px;background:#ffffff14}
+.unoFJ.gana{background:#ffd54a33}
+.unoFN{font-size:13px}
+.unoFM{display:flex;flex-wrap:wrap;gap:2px}
+.unoFB{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:4px}
+/* menú */
+#unoMenu{flex:1;min-height:0;overflow-y:auto;display:none;flex-direction:column;align-items:center;gap:9px;padding:14px 12px;text-align:center}
+#unoMenu h1{margin:0;font:italic 900 46px Arial Black,Arial,sans-serif;letter-spacing:2px;transform:rotate(-6deg);text-shadow:3px 3px 0 #000}
+#unoMenu h1 .u1{color:#ffd54a}#unoMenu h1 .u2{color:#fff}#unoMenu h1 .u3{color:#ffd54a}
+#unoMenu .sub{font-size:13px;color:#ffd9d4;line-height:1.4;max-width:420px}
+.unoTabs{display:flex;flex-wrap:wrap;justify-content:center;gap:6px}
+.unoTab{font:bold 13px Arial,sans-serif;padding:8px 10px;border-radius:9px;border:2px solid #fff8;background:#0005;color:#fff;cursor:pointer}
+.unoTab.on{background:#ffd54a;color:#7a1610;border-color:#fff}
+.unoRow{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:5px;font-size:13px}
+.unoRL{min-width:90px;text-align:right;color:#ffd9d4}
+.unoOpt{font:13px Arial,sans-serif;padding:5px 10px;border-radius:7px;border:1px solid #fff8;background:#0005;color:#fff;cursor:pointer;min-width:32px}
+.unoOpt.on{background:#fff;color:#7a1610;font-weight:bold}
+.unoNum{min-width:22px;font-size:16px}
+.unoNombres{display:grid;grid-template-columns:1fr 1fr;gap:5px;width:100%;max-width:340px}
+.unoNombres input{min-width:0;font:13px Arial,sans-serif;padding:5px 7px;border-radius:6px;border:1px solid #fff8;background:#fff;color:#222}
+.unoBig{font:bold 17px Arial,sans-serif;padding:10px 26px;border-radius:12px;border:3px solid #fff;background:#ffd54a;color:#7a1610;cursor:pointer;box-shadow:0 3px 0 #0008}
+.unoStats{font-size:12px;color:#ffd9d4;max-width:420px}
+.unoReglas{font-size:11px;line-height:1.45;color:#f3c9c4;max-width:440px;text-align:left;background:#0003;padding:7px 9px;border-radius:8px}
