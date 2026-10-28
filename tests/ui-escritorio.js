@@ -1,8 +1,8 @@
 // Ordenador: escalado por altura (--ui), menú de inicio grande, juegos verticales que NO se ensanchan, juegos anchos que sí, ventanas dentro de la pantalla,
 // puntero correcto con el zoom (Breakout, Tetris con gestos activados) y móvil sin cambios.
 const { entorno, wait, ok, fin } = require('./helpers');
-const JUEGOS = ['mine', 'tetris', 'inv', 'snk', 'pac', 'chess', 'parchis', 'ast', 'sud', 'sol', 'carta', 'bj', 'roul', 'poker', 'pong', 'frog', 'hundir', 'g2048', 'brk', 'pin', 'c4', 'ttt', 'mem', 'sim', 'flap', 'word', 'dice', 'bingo'];
-const VERTICALES = ['tetris', 'brk', 'pin', 'flap', 'word', 'pac', 'frog', 'hundir', 'g2048', 'mem', 'sim', 'c4', 'ttt', 'snk', 'sud', 'dice'];
+const JUEGOS = ['mine', 'tetris', 'inv', 'snk', 'pac', 'chess', 'parchis', 'ast', 'sud', 'sol', 'carta', 'bj', 'roul', 'poker', 'pong', 'frog', 'hundir', 'g2048', 'brk', 'pin', 'c4', 'ttt', 'domino', 'mem', 'sim', 'flap', 'word', 'dice', 'bingo'];
+const VERTICALES = ['tetris', 'brk', 'pin', 'flap', 'word', 'pac', 'frog', 'hundir', 'g2048', 'mem', 'sim', 'c4', 'ttt', 'domino', 'snk', 'sud', 'dice'];
 const ANCHOS = ['inv', 'ast', 'pong', 'mine', 'sol', 'carta', 'bj', 'roul', 'poker', 'bingo'];
 const geo = pg => pg.evaluate(() => {
   const w = [...document.querySelectorAll('.win')].find(x => !x.classList.contains('hidden')); const b = w.getBoundingClientRect();
