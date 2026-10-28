@@ -41,11 +41,13 @@ async function hastaElFinal(pgs, max) {
   for (let i = 0; i < 6; i++) await pg.locator('#unoMenu .unoRow', { hasText: 'Rivales' }).locator('.unoOpt', { hasText: '−' }).click();
   await pg.locator('#unoMenu .unoRow', { hasText: 'Rivales' }).locator('.unoOpt', { hasText: '+' }).click();
   ok((await pg.locator('#unoMenu .unoRow', { hasText: 'Rivales' }).innerText()).includes('2'), 'se eligen 2 rivales');
+  await pg.evaluate(() => window.unoRetardo(1e6));                  // las CPU esperan mientras se comprueba el reparto
   await pg.locator('.unoBig').click(); await wait(200);
   let e = await pg.evaluate(() => window.unoEstado());
-  ok(e.modo === 'cpu' && e.s.n === 3 && e.s.manos.every(m => m.length >= 7), 'empieza la partida contra 2 CPU con 7 cartas cada uno');
+  ok(e.modo === 'cpu' && e.s.n === 3 && e.s.manos.every(m => m.length === 7 || m.length === 9), 'empieza la partida contra 2 CPU con 7 cartas cada uno');
   ok(await pg.locator('#unoRivales .unoRival').count() === 2, 'se ven los 2 rivales');
   ok(await sinScroll(), 'mesa sin scroll horizontal a 360 px');
+  await pg.evaluate(() => { window.unoRetardo(20); window.resumeUno(); });
   // carta que no encaja: no se juega
   await pg.waitForFunction(() => document.getElementById('unoEstado').classList.contains('mio'), null, { timeout: 10000 });
   const antes = await pg.evaluate(() => window.unoEstado().s.ev);
