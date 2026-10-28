@@ -40,12 +40,25 @@ const { entorno, wait, ok, fin } = require('./helpers');
   await pg.mouse.up();
   // bumper y dianas puntúan
   let s0 = (await pg.evaluate(() => window.pinEstado())).score;
-  await pg.evaluate(() => window.pinColocar(166, 205, 0, 6)); await wait(200);
+  await pg.evaluate(() => window.pinColocar(188, 222, 0, -6)); await wait(200);
   ok((await pg.evaluate(() => window.pinEstado())).score > s0, 'chocar con un bumper suma puntos');
-  await pg.evaluate(() => window.pinColocar(290, 262, 12, 0)); await wait(200);
+  await pg.evaluate(() => window.pinColocar(290, 305, 12, 0)); await wait(200);
   ok((await pg.evaluate(() => window.pinEstado())).dianas >= 1, 'golpear una diana la tumba');
+  // la rampa morada lleva la bola y la suelta junto al flipper izquierdo
+  s0 = (await pg.evaluate(() => window.pinEstado())).score;
+  await pg.evaluate(() => window.pinColocar(126, 270, -2, -9)); await wait(100);
+  ok((await pg.evaluate(() => window.pinEstado())).rampa === 'rampa', 'la bola sube por la rampa');
+  await pg.waitForFunction(() => !window.pinEstado().rampa, null, { timeout: 4000 }).catch(() => {});
+  e = await pg.evaluate(() => window.pinEstado());
+  ok(e.score >= s0 + 1500 && e.bx < 40 && e.by > 360, 'la rampa suma puntos y deja la bola en el carril izquierdo');
+  // la órbita roja la sube por la derecha hasta los carriles de arriba
+  await pg.evaluate(() => window.pinColocar(300, 280, 0, -10)); await wait(100);
+  ok((await pg.evaluate(() => window.pinEstado())).rampa === 'orbita', 'la bola entra en la órbita roja');
+  await pg.waitForFunction(() => !window.pinEstado().rampa, null, { timeout: 4000 }).catch(() => {});
+  await wait(300);
+  ok((await pg.evaluate(() => window.pinEstado())).carriles.some(Boolean), 'la órbita deja la bola en los carriles de arriba y enciende uno');
   // un flipper golpea la bola hacia arriba
-  await pg.evaluate(() => window.pinColocar(140, 520, 0, 0)); await wait(30);
+  await pg.evaluate(() => window.pinColocar(135, 528, 0, 0)); await wait(30);
   await pg.keyboard.down('KeyZ'); await wait(120);
   e = await pg.evaluate(() => window.pinEstado());
   ok(e.vy < -6, 'el flipper lanza la bola hacia arriba (vy ' + (e.vy || 0).toFixed(1) + ')');
