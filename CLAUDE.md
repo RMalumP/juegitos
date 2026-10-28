@@ -4,7 +4,8 @@ PWA con estética de Windows XP, en español y pensada para móvil: escritorio c
 
 ## Ramas y publicación
 
-- GitHub Pages publica desde la rama **`claude/escalado-niveles`**. Trabaja en una rama nueva y abre el PR contra ella; el dueño dice cuándo fusionar. `main` se mantiene igual que esa rama.
+- **`main` es la única rama** y la que publica GitHub Pages (desde la raíz). Trabaja en una rama nueva y abre el PR contra `main`; el dueño dice cuándo fusionar.
+- La CI (`.github/workflows/pruebas.yml`) pasa en cada PR `npm test`, `test:pwa`, `test:regresion` y `test:mejoras`.
 - Al cambiar archivos de la app: sube `APP_VERSION` (y `APP_FECHA`) en `js/version.js` (de ahí salen la versión de los créditos y la caché del service worker) y añade a `ARCHIVOS` de `sw.js` cualquier archivo nuevo (`npm run test:pwa` lo comprueba).
 
 ## Estructura
@@ -12,7 +13,7 @@ PWA con estética de Windows XP, en español y pensada para móvil: escritorio c
 | Ruta | Qué es |
 |---|---|
 | `index.html` | Marcado de todo (minificado): escritorio, barra de tareas, menú de inicio y una ventana `winX` por juego. |
-| `js/core.js` | Gestor de ventanas (`openGame`, pausa `d()`, `resumeWin`), Buscaminas, Solitario, Carta, Blackjack, Ruleta y Póquer. Minificado: busca por id del DOM. |
+| `js/core.js` | Registro `GAMES` (id → `{ init, pause?, resume? }`) y gestor de ventanas (`openGame`, pausa `d()`, `resumeWin`), Buscaminas, Solitario, Carta, Blackjack, Ruleta y Póquer. Minificado: busca por id del DOM. |
 | `js/games/*.js`, `css/games/*.css` | Un juego por archivo; se cargan al abrirlos (`js/lazy-loader.js`). Varios están minificados. |
 | `games/chess.js`, `games/parchis.js` | El HTML de Ajedrez/Damas y Parchís como cadena (`window.__CHESS_HTML`), cargado en un iframe por `js/iframe-games.js`. Para editarlo: evalúa el archivo, cambia la cadena y vuelve a escribirla con `JSON.stringify`. |
 | `js/online/` | Sala online, lobby, transporte PeerJS y motores sin DOM (con tests). |
@@ -20,6 +21,10 @@ PWA con estética de Windows XP, en español y pensada para móvil: escritorio c
 | `tests/` | `npm test` (motores en Node) y pruebas de navegador `npm run test:<nombre>` con Playwright; `npm run test:all` las pasa todas. |
 
 El README tiene la lista de archivos y pruebas completa.
+
+## Añadir un juego
+
+Crea `js/games/x.js` (y `css/games/x.css`) con `initX()` y `pauseX()`, añádelo a `js/lazy-loader.js` y a `ARCHIVOS` de `sw.js`, añade una línea en `GAMES` de `js/core.js` y crea en `index.html` los elementos `winX`, `chipX`, `iconX`, `sBtnX`, `btnMinX` y `btnCloseX` (copia los de otro juego). Actualiza el README.
 
 ## Convenciones
 
