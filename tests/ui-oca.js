@@ -102,6 +102,39 @@ const W = '#ocaWrap';
   ok(tiraron.size >= 1 && [0, 1].every(i => tiraron.has(i) === e.vista.tiros[i] > 0), 'cada persona tira en su turno con el mismo botón (' + [...tiraron] + ' · ' + e.vista.nj + ' jugadas)');
   console.log('   (tiradas de un dado vistas: ' + unDado + ', nueves en la primera tirada: ' + nueves + ')');
   if (SHOT) await pg.screenshot({ path: SHOT + '/oca-movil-4.png' });
+
+  // tablero clásico (Fournier): se elige en el menú, la imagen carga, las fichas caen dentro de su casilla y se marca la de quien tira
+  await pg.waitForSelector(W + ' .ocFin', { state: 'visible', timeout: 8000 });
+  await pg.locator(W + ' .ocFin [data-r=menu]').click();
+  await pg.locator(W + ' .ocMenu [data-k=tablero] [data-v=clasico]').click();
+  ok(/Heraclio Fournier/.test(await pg.locator(W + ' .ocMenu .ocCred').innerText()), 'el menú da el crédito del tablero clásico');
+  await pg.locator(W + ' .ocMenu [data-r=jugar]').click();
+  await pg.waitForFunction(() => { const i = document.querySelector('#ocaWrap .ocCla img'); return i && i.complete && i.naturalWidth === 660; }, null, { timeout: 10000 });
+  e = await E();
+  ok(e.tablero === 'clasico' && await pg.locator(W + ' .ocTablero.clasico .ocCla img').isVisible() && await pg.locator(W + ' .ocC').first().isHidden(), 'el tablero clásico sustituye a la espiral');
+  ok(await pg.locator(W + ' .ocClaLinea').isVisible() && await pg.locator(W + ' .ocLim polygon').count() === 63, 'con los 63 contornos y la línea del recorrido al empezar');
+  await pg.evaluate(() => { window.ocaRapido = true; });
+  e = await jugarHasta(x => x.vista.nj >= 6 && x.vista.turno === 0 && !x.anim);
+  await pg.evaluate(() => { window.ocaRapido = false; });
+  await wait(300);
+  const dentro = await pg.evaluate(() => {                                // cada ficha queda dentro del contorno de su casilla
+    const e = window.ocaEstado(), svg = document.querySelector('#ocaWrap .ocLim'), r = svg.getBoundingClientRect(), vb = svg.viewBox.baseVal;
+    return e.vis.slice(0, e.vista.n).every((c, i) => {
+      if (!c) return true;
+      const f = document.querySelectorAll('#ocaWrap .ocFicha')[i].getBoundingClientRect();
+      const pt = svg.createSVGPoint(); pt.x = (f.left + f.width / 2 - r.left) / r.width * vb.width; pt.y = (f.top + f.height / 2 - r.top) / r.height * vb.height;
+      return svg.querySelector('[data-c="' + c + '"]').isPointInFill(pt);
+    });
+  });
+  ok(dentro, 'las fichas caen dentro del contorno de su casilla (' + e.vista.nj + ' jugadas, ' + e.vista.fase + ')');
+  e = await E();
+  ok(e.vista.fase !== 'jugando' || !e.vis[e.vista.turno] || await pg.locator(W + ' .ocLim polygon.turno[data-c="' + e.vis[e.vista.turno] + '"]').count() === 1, 'se marca la casilla de quien tira');
+  ok(await pg.evaluate(() => { const w = document.getElementById('ocaWrap'), t = w.querySelector('.ocTablero').getBoundingClientRect(), z = w.querySelector('.ocZona').getBoundingClientRect(); return w.scrollWidth <= w.clientWidth + 1 && t.width > 250 && t.right <= z.right + 1 && t.bottom <= z.bottom + 1; }), 'el clásico cabe entero, sin scroll horizontal');
+  if (SHOT) await pg.screenshot({ path: SHOT + '/oca-movil-clasico.png' });
+  if (await pg.locator(W + ' .ocFin').isVisible()) await pg.locator(W + ' .ocFin [data-r=ver]').click();
+  await pg.locator(W + ' .ocVerTab').click();
+  ok((await E()).tablero === 'espiral' && await pg.locator(W + ' .ocC').first().isVisible(), '🗺️ vuelve a la espiral a mitad de partida');
+  ok(await pg.evaluate(() => JSON.parse(localStorage.getItem('ocaConf')).tablero === 'espiral'), 'y se recuerda la elección');
   await ctx.close();
 
   // ordenador: la ventana se ve entera

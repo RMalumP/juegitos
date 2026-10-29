@@ -18,7 +18,7 @@ Baraja de **108 cartas** (por color un 0, dos de cada número del 1 al 9 y dos +
 
 ## Juego de la Oca
 
-Tablero de 63 casillas en espiral, de **2 a 4 jugadores**, con **1 o 2 dados**. Oca a oca y vuelves a tirar; puente (6 ↔ 12) y dados (26 ↔ 53) y vuelves a tirar; posada (19) pierde 1 turno; cárcel (52), 2; pozo (31), sin tirar hasta que otro caiga en él o pasen 3 turnos; laberinto (42) a la 30; calavera (58) a la salida; a la 63 hay que llegar justo (lo que sobra se retrocede). Desde la oca 59 se pasa a la 63 y se tira para retroceder lo que salga (o, si se elige en el menú, se gana directamente). Con 2 dados, un 9 en la primera tirada lleva a los dados (5 y 4 → 53, 6 y 3 → 26) y se vuelve a tirar, y desde la casilla 60 se tira con un solo dado. La ficha avanza casilla a casilla, con los dichos de cada casilla y un historial de jugadas (📜). En local, cada asiento es una persona o la **CPU** (todos ven el mismo tablero); **online**, de 2 a 4 personas y el anfitrión puede añadir CPU hasta llenar la mesa. 💾 Guardar.
+Tablero de 63 casillas en espiral, de **2 a 4 jugadores**, con **1 o 2 dados**. Oca a oca y vuelves a tirar; puente (6 ↔ 12) y dados (26 ↔ 53) y vuelves a tirar; posada (19) pierde 1 turno; cárcel (52), 2; pozo (31), sin tirar hasta que otro caiga en él o pasen 3 turnos; laberinto (42) a la 30; calavera (58) a la salida; a la 63 hay que llegar justo (lo que sobra se retrocede). Desde la oca 59 se pasa a la 63 y se tira para retroceder lo que salga (o, si se elige en el menú, se gana directamente). Con 2 dados, un 9 en la primera tirada lleva a los dados (5 y 4 → 53, 6 y 3 → 26) y se vuelve a tirar, y desde la casilla 60 se tira con un solo dado. Hay **dos tableros** a elegir en el menú (o con 🗺️ durante la partida; cada cual ve el suyo, también online): la espiral dibujada por la app o el **clásico de Heraclio Fournier** (`img/oca-clasico.jpg`, la imagen del proyecto «juegoOca» de GitHub), con el centro y el contorno de cada casilla medidos sobre la foto; el contorno de la casilla de quien tira se marca con su color. La ficha avanza casilla a casilla, con los dichos de cada casilla y un historial de jugadas (📜). En local, cada asiento es una persona o la **CPU** (todos ven el mismo tablero); **online**, de 2 a 4 personas y el anfitrión puede añadir CPU hasta llenar la mesa. 💾 Guardar.
 
 ## Bingo
 
@@ -133,7 +133,7 @@ js/online/domino-engine.js    Dominó: reglas (pozo, tranque, parejas, puntos), 
 js/games/domino.js            Dominó: mesa en serpiente, local de 2 a 4 (personas y CPU, «pasa el móvil») e interfaz online
 js/online/j-domino.js         Dominó online (el anfitrión es el árbitro, reparte las manos en privado y juega por las CPU)
 js/online/oca-engine.js       Juego de la Oca: reglas (1 o 2 dados, casillas especiales, turnos perdidos, rebote en la 63) y árbitro (sin DOM, con tests)
-js/games/oca.js               Juego de la Oca: tablero en espiral, ficha animada, local de 2 a 4 (personas y CPU) e interfaz online
+js/games/oca.js               Juego de la Oca: tablero en espiral o clásico (img/oca-clasico.jpg), ficha animada, local de 2 a 4 (personas y CPU) e interfaz online
 js/online/j-oca.js            Juego de la Oca online (el anfitrión tira los dados por todos y juega por las CPU)
 js/games/g2048-engine.js      2048: reglas puras (con tests)
 js/games/mem-engine.js         Memoria (parejas): reglas puras (con tests)
