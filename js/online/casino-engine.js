@@ -49,12 +49,13 @@
     return mejor;
   }
   const NOMBRES_MANO = ['Carta alta', 'Pareja', 'Doble pareja', 'Trío', 'Escalera', 'Color', 'Full', 'Póquer', 'Escalera de color'];
+  const nombreMano = v => v[0] === 8 && v[1] === 12 ? 'Escalera real' : NOMBRES_MANO[v[0]];       // como en el póquer offline
 
   const Poker = {
     nueva(jugadores, opt) {
       const o = opt || {}, fichas = o.fichas || 1000, cg = o.ciegaG || 20;
       const s = { fase: 'espera', mano: 0, boton: -1, ciegaG: cg, ciegaP: o.ciegaP || Math.max(1, Math.floor(cg / 2)), com: [], mazo: [], bote: 0, apuestaActual: 0, minSubida: cg, turno: null, resultado: null, ganador: null,
-        jug: jugadores.map(j => ({ id: j.id, nombre: j.nombre, coins: fichas, hole: [], apostado: 0, total: 0, fold: false, allin: false, actuo: false, fuera: false })) };
+        jug: jugadores.map(j => ({ id: j.id, nombre: j.nombre, coins: fichas, hole: [], apostado: 0, total: 0, fold: false, mostro: false, allin: false, actuo: false, fuera: false })) };
       return s;
     },
     _vivos: s => s.jug.filter(j => !j.fuera),
@@ -67,12 +68,13 @@
       s.jug.forEach(j => { if (j.coins <= 0) j.fuera = true; });
       const vivos = Poker._vivos(s); if (vivos.length < 2) { s.fase = 'fin'; s.ganador = vivos[0] ? vivos[0].id : null; return err('La partida ha terminado.'); }
       s.mano++; s.mazo = mazoBarajado(rng); s.com = []; s.bote = 0; s.resultado = null; s.apuestaActual = 0; s.minSubida = s.ciegaG;
-      s.jug.forEach(j => { j.hole = []; j.apostado = 0; j.total = 0; j.fold = false; j.allin = false; j.actuo = false; });
-      s.boton = Poker._siguiente(s, s.boton < 0 ? s.jug.length - 1 : s.boton, j => !j.fuera);
+      s.jug.forEach(j => { j.hole = []; j.apostado = 0; j.total = 0; j.fold = false; j.mostro = false; j.allin = false; j.actuo = false; });
+      // el primer repartidor se sortea (como en el offline); luego el botón pasa al siguiente con fichas
+      s.boton = Poker._siguiente(s, s.boton < 0 ? Math.floor(rng() * s.jug.length) : s.boton, j => !j.fuera);
       const dosJug = vivos.length === 2;
       const sb = dosJug ? s.boton : Poker._siguiente(s, s.boton, j => !j.fuera), bb = Poker._siguiente(s, sb, j => !j.fuera);
       for (let k = 0; k < 2; k++) s.jug.forEach(j => { if (!j.fuera) j.hole.push(s.mazo.pop()); });
-      Poker._poner(s, s.jug[sb], s.ciegaP); Poker._poner(s, s.jug[bb], s.ciegaG);
+      Poker._poner(s, s.jug[sb], s.ciegaP); Poker._poner(s, s.jug[bb], s.ciegaG); s.sb = sb; s.bb = bb;
       s.apuestaActual = s.ciegaG; s.fase = 'preflop';
       s.turno = Poker._siguiente(s, bb, Poker._puedeActuar);
       if (s.turno < 0 || Poker._noQuedanApuestas(s)) Poker._cerrarRonda(s);
@@ -94,12 +96,13 @@
       const i = s.jug.findIndex(j => j.id === id); if (i < 0) return err('No estás en la mesa.');
       if (!['preflop', 'flop', 'turn', 'river'].includes(s.fase) || s.turno !== i) return err('No es tu turno.');
       const j = s.jug[i], op = Poker.opciones(s, id), tipo = a && a.a;
-      if (tipo === 'fold') j.fold = true;
+      if (tipo === 'fold') { j.fold = true; j.mostro = !!a.ver; }               // `ver`: enseña sus cartas al final de la mano
       else if (tipo === 'check') { if (!op.puedeCheck) return err('No puedes pasar: hay que igualar.'); j.actuo = true; }
       else if (tipo === 'call') { if (op.puedeCheck) { j.actuo = true; } else { Poker._poner(s, j, op.pagar); j.actuo = true; } }
       else if (tipo === 'raise' || tipo === 'allin') {
         const objetivo = tipo === 'allin' ? j.apostado + j.coins : a.m;
         if (!Number.isInteger(objetivo) || objetivo > j.apostado + j.coins) return err('Cantidad no válida.');
+        if (tipo === 'allin' && objetivo <= s.apuestaActual) { Poker._poner(s, j, j.coins); j.actuo = true; Poker._tras(s, i); return bien(); }   // all-in corto: iguala con lo que le queda (como en el offline)
         if (objetivo <= s.apuestaActual) return err('Hay que subir más que la apuesta actual.');
         const todo = objetivo === j.apostado + j.coins;
         if (objetivo < s.apuestaActual + s.minSubida && !todo) return err('La subida mínima es de ' + (s.apuestaActual + s.minSubida) + '.');
@@ -129,11 +132,11 @@
       s.turno = Poker._siguiente(s, s.boton, Poker._puedeActuar);
       if (s.turno < 0) Poker._cerrarRonda(s);
     },
-    _ganaSolo(s, j) { j.coins += s.bote; s.resultado = { motivo: 'todos se retiran', botes: [{ cantidad: s.bote, ganadores: [j.id] }], manos: {}, ganadores: [j.id] }; s.bote = 0; s.fase = 'showdown'; s.turno = null; },
+    _ganaSolo(s, j) { j.coins += s.bote; s.resultado = { motivo: 'todos se retiran', botes: [{ cantidad: s.bote, ganadores: [j.id] }], manos: {}, ganadores: [j.id], ganancias: { [j.id]: s.bote } }; s.bote = 0; s.fase = 'showdown'; s.turno = null; },
     _showdown(s) {
       const candidatos = Poker._enMano(s), manos = {}, niveles = [...new Set(s.jug.filter(j => j.total > 0).map(j => j.total))].sort((a, b) => a - b);
-      candidatos.forEach(j => { const v = mejorMano(j.hole.concat(s.com)); manos[j.id] = { valor: v, nombre: NOMBRES_MANO[v[0]], hole: j.hole.slice() }; });
-      const botes = []; let previo = 0;
+      candidatos.forEach(j => { const v = mejorMano(j.hole.concat(s.com)); manos[j.id] = { valor: v, nombre: nombreMano(v), hole: j.hole.slice() }; });
+      const botes = [], ganancias = {}, cobra = (j, n) => { j.coins += n; ganancias[j.id] = (ganancias[j.id] || 0) + n; }; let previo = 0;
       for (const nivel of niveles) {                         // bote principal y botes secundarios según lo aportado por cada uno
         const aport = s.jug.reduce((t, j) => t + Math.max(0, Math.min(j.total, nivel) - previo), 0);
         const elegibles = candidatos.filter(j => j.total >= nivel);
@@ -142,24 +145,24 @@
           elegibles.forEach(j => { const c = mejor ? cmpArr(manos[j.id].valor, mejor) : 1; if (c > 0) { mejor = manos[j.id].valor; gan = [j]; } else if (c === 0) gan.push(j); });
           const parte = Math.floor(aport / gan.length); let resto = aport - parte * gan.length;
           const primero = Poker._siguiente(s, s.boton, j => gan.includes(j));           // la ficha suelta, al primero a la izquierda del botón
-          gan.forEach(j => { j.coins += parte; });
-          if (resto) { s.jug[primero].coins += resto; resto = 0; }
+          gan.forEach(j => cobra(j, parte));
+          if (resto) { cobra(s.jug[primero], resto); resto = 0; }
           botes.push({ cantidad: aport, ganadores: gan.map(j => j.id) });
-        } else if (aport > 0) { const d = candidatos[0]; if (d) d.coins += aport; }
+        } else if (aport > 0) { const d = candidatos[0]; if (d) cobra(d, aport); }
         previo = nivel;
       }
       const ganadores = [...new Set(botes.flatMap(b => b.ganadores))];
-      s.resultado = { motivo: 'enfrentamiento', botes, manos: Object.fromEntries(Object.entries(manos).map(([id, m]) => [id, { nombre: m.nombre, hole: m.hole }])), ganadores };
+      s.resultado = { motivo: 'enfrentamiento', botes, manos: Object.fromEntries(Object.entries(manos).map(([id, m]) => [id, { nombre: m.nombre, hole: m.hole }])), ganadores, ganancias };
       s.bote = 0; s.fase = 'showdown'; s.turno = null;
     },
     saltar(s) { if (s.turno === null || s.turno < 0) return err('No hay turno.'); const op = Poker.opciones(s, s.jug[s.turno].id); return Poker.accion(s, s.jug[s.turno].id, { a: op.puedeCheck ? 'check' : 'fold' }); },
-    // Vista pública: las cartas privadas solo se ven en el enfrentamiento y solo las de quienes siguen en la mano.
+    // Vista pública: las cartas privadas solo se ven al acabar la mano: las de quienes llegan al enfrentamiento y las de quien se retiró enseñándolas.
     vista(s) {
       const v = JSON.parse(JSON.stringify(s)); delete v.mazo;
-      v.jug.forEach(j => { j.nCartas = j.hole.length; if (!(s.fase === 'showdown' && s.resultado && s.resultado.manos[j.id])) delete j.hole; });
+      v.jug.forEach(j => { j.nCartas = j.hole.length; if (!(s.fase === 'showdown' && s.resultado && (s.resultado.manos[j.id] || (j.fold && j.mostro)))) delete j.hole; });
       return v;
     }
   };
 
-  return { rango, palo, nombreCarta, RANGOS, PALOS, mazoBarajado, mejorMano, evalCinco, cmpArr, NOMBRES_MANO, Poker };
+  return { rango, palo, nombreCarta, RANGOS, PALOS, mazoBarajado, mejorMano, evalCinco, cmpArr, NOMBRES_MANO, nombreMano, Poker };
 });
