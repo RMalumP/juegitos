@@ -35,3 +35,6 @@
 .wbtn[role="button"]:focus-visible,.choiceBtn[role="button"]:focus-visible,.sudNumBtn[role="button"]:focus-visible{outline-color:#000}
 /* se puede ampliar con dos dedos, pero sin el zoom por doble toque, que molesta al jugar (los mandos ya tienen touch-action:none) */
 html{touch-action:manipulation}
+
+/* Móvil estrecho: iconos algo más compactos para que quepan todos los juegos junto a las herramientas */
+@media (max-width:480px){#icons{row-gap:4px;column-gap:0}.deskIcon{padding:3px}.deskIcon .di{font-size:28px;line-height:1.1}.deskIcon .di svg{vertical-align:top}}

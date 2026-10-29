@@ -1,0 +1,62 @@
+/* Dominó — css/games/domino.css */
+.doWrap{flex:1;min-height:0;display:flex;flex-direction:column;position:relative;background:radial-gradient(ellipse at 50% 40%,#1f7a4a,#0e4a2b 75%);color:#e9f6ec;font-family:Arial,sans-serif;overflow:hidden}
+.doHeader{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:5px 10px;background:#0a3a21;border-bottom:1px solid #2f8a57;font-size:12px;letter-spacing:2px;color:#bfe8cc;flex-shrink:0}
+.doInfo{font-size:11px;letter-spacing:0;color:#9fd1b0;text-align:right}
+.doRivales{display:flex;flex-wrap:wrap;gap:5px;justify-content:center;padding:6px 6px 2px;flex-shrink:0}
+.doEquipos{width:100%;display:flex;justify-content:center;gap:14px;font-size:12px}
+.doEquipos b{font-size:14px}
+.doRival{display:flex;align-items:center;gap:5px;background:#0006;border:2px solid #ffffff22;border-radius:8px;padding:3px 7px;font-size:11px;max-width:100%;min-width:0}
+.doRival.turno{border-color:#ffe08a;box-shadow:0 0 8px #ffe08a88}
+.doRN{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:9em;font-weight:700}
+.doPts{background:#ffe08a;color:#3a2a00;border-radius:8px;padding:0 5px;font-weight:700}
+.doDorsos{display:flex;gap:1px}.doDorsos i{width:5px;height:10px;background:#f4efe0;border-radius:1px;display:block}
+.doCnt{color:#cfe;white-space:nowrap}
+.eq0{color:#ffd27a}.eq1{color:#8fd3ff}.doRival.eq0{border-left:4px solid #ffb300}.doRival.eq1{border-left:4px solid #29b6f6}
+.doMesa{flex:1;min-height:90px;display:flex;flex-direction:column;justify-content:center;gap:6px;padding:6px;overflow:hidden;--u:30px}
+.doFila{display:flex;align-items:center;gap:3px;min-height:calc(var(--u) * 2)}
+.doFila.rev{flex-direction:row-reverse}
+.doVacia{text-align:center;color:#cfe8d6;font-size:14px;opacity:.85}
+/* ficha: dos mitades cuadradas con una rejilla de 3×3 para los puntos */
+.doF{display:inline-flex;background:linear-gradient(145deg,#fffdf4,#e8e2cf);border:1px solid #6b6450;border-radius:calc(var(--u) * .16);box-shadow:1px 2px 0 #0005;flex-shrink:0;padding:0;font:inherit;color:inherit}
+.doF.h{flex-direction:row;width:calc(var(--u) * 2);height:var(--u)}
+.doF.v{flex-direction:column;width:var(--u);height:calc(var(--u) * 2)}
+.doM{flex:1;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);padding:14%;box-sizing:border-box;min-width:0;min-height:0}
+.doF.h .doM+.doM{border-left:1px solid #a33}.doF.v .doM+.doM{border-top:1px solid #a33}
+.doM i{display:block;margin:12%;border-radius:50%}.doM i.p{background:#1b1b1b}
+.doMesa .doF.ult{box-shadow:0 0 0 2px #ffe08a,0 0 10px #ffe08a}
+.doMesa .doF.obj{box-shadow:0 0 0 3px #4cff8a,0 0 12px #4cff8a;cursor:pointer;animation:doLate 1s infinite alternate}
+@keyframes doLate{to{box-shadow:0 0 0 3px #4cff8a,0 0 2px #4cff8a}}
+.doPie{flex-shrink:0;background:#0a3a21dd;border-top:1px solid #2f8a57;padding:5px 6px 8px;display:flex;flex-direction:column;align-items:center;gap:5px}
+.doEstado{min-height:1.3em;font-size:clamp(12px,3.6vw,15px);font-weight:700;color:#ffe08a;text-align:center;cursor:default}
+.doAcc{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;align-items:center}
+.doAcc:empty{display:none}
+.doBtn{font:700 13px Arial,sans-serif;color:#fff;background:#1b6e3f;border:2px solid #7fdc9f;border-radius:6px;padding:6px 12px;cursor:pointer}
+.doBtn:hover{background:#238a50}
+.doPozo{font-size:11px;color:#bfe8cc}
+.doMano{width:100%;display:flex;flex-direction:column;align-items:center;gap:3px}
+.doYo{font-size:11px;color:#bfe8cc}
+.doFichas{display:flex;flex-wrap:wrap;gap:5px;justify-content:center;max-width:100%;--u:clamp(22px,8.5vw,38px)}
+.doFichas .doF{cursor:pointer;transition:transform .12s}
+.doFichas .doF:disabled{cursor:default;filter:brightness(.62)}
+.doFichas .doF.jugable{box-shadow:0 0 0 2px #7fdc9f,1px 2px 0 #0005}
+.doFichas .doF.jugable:hover{transform:translateY(-3px)}
+.doFichas .doF.sel{transform:translateY(-7px);box-shadow:0 0 0 3px #ffe08a,0 0 12px #ffe08a}
+.doMenu,.doFin{position:absolute;inset:0;z-index:20;background:#0b3320f4;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:14px;text-align:center;overflow-y:auto}
+.doMenu{display:flex}.doFin{display:none;justify-content:flex-start;padding-top:22px}
+.doMenu h1,.doFin h1{font-size:clamp(19px,6vw,28px);letter-spacing:2px;color:#fff;margin:0}
+.doSub{color:#bfe8cc;font-size:12px;line-height:1.45;max-width:340px}
+.doAsientos{display:flex;flex-direction:column;gap:4px}
+.doRow{display:flex;align-items:center;gap:5px;flex-wrap:wrap;justify-content:center;font-size:11px;color:#bfe8cc}
+.doAs{min-width:5.5em;text-align:right}
+.doBig,.doOpt{font-family:inherit;color:#fff;background:#14532f;border:2px solid #3f9d66;border-radius:6px;padding:6px 10px;cursor:pointer;font-size:11px}
+.doBig{font-size:clamp(13px,3.6vw,16px);padding:9px 16px;min-width:min(86%,280px)}
+.doBig:hover:not(:disabled),.doOpt:hover{background:#1d6e40}.doBig:disabled{opacity:.55;cursor:default}
+.doOpt.sel{background:#fff;color:#0b3320;border-color:#fff}
+.doRec{font-size:12px;color:#ffe08a;min-height:1em}
+.doCuentas{display:flex;flex-direction:column;gap:5px;width:min(100%,420px);--u:14px}
+.doCuenta{display:flex;align-items:center;gap:6px;background:#0005;border-radius:6px;padding:4px 6px;font-size:12px;text-align:left}
+.doCuenta.gana{outline:2px solid #ffe08a}.doCuenta.tot{justify-content:center;font-weight:700}
+.doCN{width:5.5em;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700}
+.doCF{display:flex;flex-wrap:wrap;gap:2px;flex:1;min-width:0}
+.doCP{white-space:nowrap;color:#ffe08a}
+.doBtns{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;align-items:center;margin-top:4px}

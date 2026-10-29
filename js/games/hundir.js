@@ -16,6 +16,7 @@
     conf: { pl: 'clasica', n: 10, cuenta: { 1: 0, 2: 1, 3: 2, 4: 1, 5: 1, 6: 0 } } };   // lo elegido en el menú (cpu / 2 jugadores)
   try { var sn = parseInt(localStorage.getItem('hunNivel'), 10); if (sn >= 1 && sn <= 3) U.nivel = sn; } catch (e) { /* sin ajustes */ }
   try { var so = JSON.parse(localStorage.getItem('hunOp')); if (so) U.op = { tocar: so.tocar !== false, repite: !!so.repite }; } catch (e) { /* sin ajustes */ }
+  try { U.verRest = localStorage.getItem('hunVerRest') === '1'; } catch (e) { /* sin ajustes */ }
   try { var sc = JSON.parse(localStorage.getItem('hunCfg')); if (sc && sc.cuenta && HE.validarConfig({ n: sc.n, flota: flotaDeCuenta(sc.cuenta) }).ok) U.conf = sc; } catch (e) { /* sin ajustes */ }
   function guardarAjustes() { try { localStorage.setItem('hunNivel', U.nivel); localStorage.setItem('hunOp', JSON.stringify(U.op)); localStorage.setItem('hunCfg', JSON.stringify(U.conf)); } catch (e) { /* nada */ } }
   function flotaDeCuenta(cuenta) { var f = []; for (var l = HE.L_MAX; l >= HE.L_MIN; l--) for (var k = 0; k < (cuenta[l] || 0); k++) f.push(l); return f; }
@@ -134,6 +135,8 @@
     }
     if (pub && pub.fase === 'jugando') {
       if (U.modo === 'local' && U.bloqueado) boton('📱 Pasar el móvil', pasarTurno, 'ok');
+      var q = restantes(pub, p);
+      boton('🚢 Quedan ' + q.quedan + '/' + q.lista.length + (U.verRest ? ' ▲' : ' ▼'), alternarRestantes, 'rest' + (U.verRest ? ' sel' : '')).setAttribute('aria-expanded', U.verRest ? 'true' : 'false');
       boton('🏳 Rendirse', rendirse, 'mal');
     }
   }
@@ -149,6 +152,28 @@
       c.appendChild(b);
     });
   }
+  /* barcos enemigos que le quedan por hundir a p: la flota de la partida, marcando como hundidos los de la longitud de cada barco caído */
+  function restantes(pub, p) {
+    var caidos = (pub && pub.hund && pub.hund[p] || []).map(function (cs) { return cs.length; });
+    var lista = U.cfg.flota.map(function (l) { var k = caidos.indexOf(l); if (k >= 0) caidos.splice(k, 1); return { l: l, hundido: k >= 0 }; });
+    lista.sort(function (a, b) { return a.hundido - b.hundido || b.l - a.l; });   // primero los que quedan
+    return { lista: lista, quedan: lista.filter(function (b) { return !b.hundido; }).length };
+  }
+  var panelRest = document.createElement('div'); panelRest.id = 'hunRest'; panelRest.setAttribute('aria-live', 'polite');
+  $('hunEnemyBox').appendChild(panelRest);
+  function pintarRestantes(pub, p, ver) {
+    panelRest.style.display = ver ? '' : 'none'; panelRest.innerHTML = ''; if (!ver) return;
+    var q = restantes(pub, p);
+    var t = document.createElement('div'); t.className = 'hunRestT'; t.textContent = q.quedan ? 'Te quedan por hundir ' + q.quedan + (q.quedan === 1 ? ' barco' : ' barcos') : '¡Flota enemiga hundida!';
+    panelRest.appendChild(t);
+    q.lista.forEach(function (b) {
+      var e = document.createElement('span'); e.className = 'hunRestB' + (b.hundido ? ' hundido' : '');
+      e.innerHTML = '<span class=hunPuntos>' + '■'.repeat(b.l) + '</span><span class=hunNom>' + (HE.NOMBRES[b.l] || 'Barco') + ' (' + b.l + ')' + (b.hundido ? ' ✖' : '') + '</span>';
+      e.setAttribute('aria-label', (HE.NOMBRES[b.l] || 'Barco') + ' de ' + b.l + (b.hundido ? ', hundido' : ', a flote'));
+      panelRest.appendChild(e);
+    });
+  }
+  function alternarRestantes() { U.verRest = !U.verRest; try { localStorage.setItem('hunVerRest', U.verRest ? '1' : '0'); } catch (e) { /* nada */ } pintar(); }
   function pintar() {
     var pub = publicoActual(), f = fase(pub), p = jugadorVista(pub);
     var colocando = U.modo && (f === 'colocando') && !(U.modo === 'online' && pub && pub.listos[p]) ;
@@ -160,6 +185,7 @@
     $('hunEnemyTit').textContent = 'Aguas enemigas' + (U.modo === 'cpu' ? ' (CPU)' : '');
     var puede = f === 'jugando' && pub.turno === p && !U.bloqueado && !(U.modo === 'online' && !U.online);
     if (f === 'jugando' || f === 'fin') pintarEnemigo(pub, p, puede && f === 'jugando');
+    pintarRestantes(pub, p, U.verRest && f === 'jugando');
     if (f === 'colocando' && !esperando) pintarPropio(pub, p, true);
     else if (U.modo) pintarPropio(pub, p, false);
     pintarBarcos(colocando); pintarBotones(pub, colocando);

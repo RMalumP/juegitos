@@ -6,8 +6,8 @@
 (function () {
   'use strict';
   var FORMAS = {
-    vertical: ['Tetris', 'Brk', 'Flap', 'Word', 'Pac', 'Frog', 'Hundir', 'G2048', 'Mem', 'Sim', 'C4', 'Ttt', 'Snk', 'Sud', 'Dice'],
-    ancho: ['Inv', 'Ast', 'Pong', 'Mine', 'Sol', 'Carta', 'BJ', 'Roul', 'Poker', 'Bingo', 'Sala'],
+    vertical: ['Tetris', 'Brk', 'Pin', 'Flap', 'Word', 'Ahor', 'Pac', 'Frog', 'Hundir', 'G2048', 'Mem', 'Sim', 'C4', 'Ttt', 'Domino', 'Oca', 'Snk', 'Sud', 'Dice'],
+    ancho: ['Inv', 'Ast', 'Pong', 'Mine', 'Sol', 'Carta', 'BJ', 'Roul', 'Poker', 'Uno', 'Bingo', 'Sala'],
     completo: ['Chess', 'Parchis']
   };
   var raiz = document.documentElement;
