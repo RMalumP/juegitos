@@ -73,8 +73,29 @@
     }
     var s = document.createElement('div'); s.className = 'ocC t-salida ocSalida'; s.style.gridRow = FILAS + 1; s.style.gridColumn = '1 / ' + (COLS + 1);
     s.innerHTML = '<span class=ocI>🚩</span><span class=ocSalTxt>SALIDA</span>'; tablero.appendChild(s);
+    tablero.insertAdjacentHTML('beforeend', camino());
     for (var i = 0; i < 4; i++) { var f = document.createElement('div'); f.className = 'ocFicha'; f.style.background = COLORES[i][0]; f.style.display = 'none'; tablero.appendChild(f); fichas.push(f); }
   })();
+  /* el recorrido en espiral: muros entre casillas vecinas que no se siguen, y una línea con flechas de la salida al centro */
+  function camino() {
+    var num = {}, muros = '', flechas = '', puntos = ['0.5,' + (FILAS + 0.5)];
+    for (var c = 1; c <= O.FINAL; c++) num[POS[c].f + ',' + POS[c].c] = c;
+    function muro(x1, y1, x2, y2) { muros += 'M' + x1 + ' ' + y1 + 'L' + x2 + ' ' + y2; }
+    for (c = 1; c <= O.FINAL; c++) {
+      var p = POS[c], der = num[p.f + ',' + (p.c + 1)], aba = num[(p.f + 1) + ',' + p.c];
+      if (der && Math.abs(der - c) !== 1) muro(p.c + 1, p.f, p.c + 1, p.f + 1);
+      if (aba && Math.abs(aba - c) !== 1) muro(p.c, p.f + 1, p.c + 1, p.f + 1);
+      if (p.f === FILAS - 1 && c !== 1) muro(p.c, FILAS, p.c + 1, FILAS);                 // la salida solo da a la casilla 1
+      puntos.push((p.c + 0.5) + ',' + (p.f + 0.5));
+    }
+    for (var i = 1; i < puntos.length - 1; i++) {                           // una flecha en el borde entre cada casilla y la siguiente
+      var a = puntos[i].split(',').map(Number), b = puntos[i + 1].split(',').map(Number);
+      var ang = Math.atan2(b[1] - a[1], b[0] - a[0]) * 180 / Math.PI;
+      flechas += '<path transform="translate(' + (a[0] + b[0]) / 2 + ' ' + (a[1] + b[1]) / 2 + ') rotate(' + ang + ')" d="M-.07 -.09L.07 0L-.07 .09"/>';
+    }
+    return '<svg class=ocCamino viewBox="0 0 ' + COLS + ' ' + (FILAS + 1) + '" aria-hidden=true><polyline class=ocLinea points="' + puntos.join(' ') + '"/>' +
+      '<g class=ocFlechas>' + flechas + '</g><path class=ocMuros d="' + muros + '"/></svg>';
+  }
   function medir() {                                                       // la casilla más grande que quepa (7 × 10 con la salida)
     var z = q('.ocZona'), W = z.clientWidth - 6, H = z.clientHeight - 6;
     var u = Math.max(18, Math.floor(Math.min(W / COLS, H / (FILAS + 1))));
