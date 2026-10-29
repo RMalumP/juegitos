@@ -3,8 +3,8 @@
    con cubilete y el turno por colores del otro. Modos: local (cada asiento es una persona o la CPU; todos ven el mismo tablero, así que no hace
    falta pasar el móvil a escondidas) y online (js/online/j-oca.js → Oca.online: el anfitrión tira los dados por todos y juega por las CPU).
    La ficha avanza casilla a casilla y luego salta (oca, puente, dados, laberinto, calavera). 💾 Guardar la partida local (js/partida.js).
-   Dos tableros a elegir (cada cual el suyo, también online): la espiral dibujada aquí o el clásico de Heraclio Fournier (img/oca-clasico.jpg,
-   la imagen del proyecto «juegoOca» de GitHub), con el centro y los límites de cada casilla medidos sobre la foto. */
+   Dos tableros a elegir (cada cual el suyo, también online): la espiral dibujada aquí o el clásico (img/oca-clasico.jpg; el tablero se atribuye a
+   Heraclio Fournier), con el centro y los límites de cada casilla medidos sobre la foto. */
 (function () {
   'use strict';
   var O = window.OcaEngine;
@@ -58,7 +58,7 @@
     '<div class=ocAsientos></div>' +
     '<div class=ocRow data-k=dados>Dados:<button class=ocOpt data-v=1>1 dado</button><button class=ocOpt data-v=2>2 dados</button></div>' +
     '<div class=ocRow data-k=tablero>Tablero:<button class=ocOpt data-v=espiral>🌀 Espiral</button><button class=ocOpt data-v=clasico>🖼️ Clásico</button></div>' +
-    '<div class=ocCred>Tablero clásico: <b>Heraclio Fournier</b> (imagen del proyecto «juegoOca» en GitHub)</div>' +
+    '<div class=ocCred>Créditos: el tablero se atribuye a Heraclio Fournier</div>' +
     '<div class=ocRow data-k=oca59>Oca 59:<button class=ocOpt data-v=rebota>Pasa a la 63 y retrocede</button><button class=ocOpt data-v=gana>Gana</button></div>' +
     '<button class=ocBig data-r=jugar>▶ Jugar</button><button class=ocBig data-r=online>🌐 Online · 2 a 4 (con CPU)</button>' +
     '<button class=ocOpt data-r=reglas>📖 Reglas</button><div class=ocReglas></div></div>' +
@@ -114,7 +114,7 @@
     var lim = '', pts = [(CLA.W * 0.08) + ',' + (CLA.H + CLA.SAL / 2)];
     for (var c = 1; c <= O.FINAL; c++) { lim += '<polygon data-c=' + c + ' points="' + CLA.lim[c] + '"/>'; pts.push(CLA.cen[c][0] + ',' + CLA.cen[c][1]); }
     return '<div class=ocCla><img alt="Tablero clásico del juego de la oca (Heraclio Fournier)" draggable=false>' +
-      '<div class="ocClaSal t-salida"><span class=ocI>🚩</span><span class=ocSalTxt>SALIDA</span><span class=ocClaCred>Tablero: Heraclio Fournier</span></div>' +
+      '<div class="ocClaSal t-salida"><span class=ocI>🚩</span><span class=ocSalTxt>SALIDA</span><span class=ocClaCred>Créditos: el tablero se atribuye a Heraclio Fournier</span></div>' +
       '<svg class=ocLim viewBox="0 0 ' + CLA.W + ' ' + CLA.T + '" aria-hidden=true><polyline class=ocClaLinea points="' + pts.join(' ') + '"/>' + lim + '</svg></div>';
   }
   function ponerTablero() {
