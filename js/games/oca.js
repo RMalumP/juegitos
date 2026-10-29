@@ -133,6 +133,7 @@
   function pintar() {
     var e = vista();
     q('.ocInfo').textContent = !U.modo || !e ? '' : (U.modo === 'online' ? '🌐 ' + ((window.Sala && window.Sala.sala) || 'online') + ' · ' : '') + (e.dados === 2 ? '2 dados' : '1 dado');
+    tablero.classList.toggle('guia', !e || e.tiros.some(function (t) { return !t; }));   // la línea del recorrido, solo hasta que todos han tirado una vez
     pintarJugs(e); pintarFichas(e); pintarPie(e);
     if (e && e.fase === 'fin' && !U.anim) mostrarFin(e); else q('.ocFin').style.display = 'none';
     if (U.hist) pintarHist(e);

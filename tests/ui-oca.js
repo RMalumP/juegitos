@@ -30,6 +30,8 @@ const W = '#ocaWrap';
   let e = await E();
   ok(e.modo === 'local' && e.vista.n === 2 && e.jug[0].nombre === 'Tú' && e.jug[1].cpu, 'partida local: tú contra la CPU');
   ok(e.vista.pos.every(c => c === 0), 'las fichas empiezan en la salida');
+  const linea = () => pg.locator(W + ' .ocLinea').isVisible();
+  ok(await pg.locator(W + ' .ocMuros').isVisible() && await linea(), 'al empezar se ven los muros de la espiral y la línea del recorrido');
   // la ficha anima: durante la animación la posición mostrada va por detrás de la real
   e = await jugarHasta(x => x.vista.turno === 0 && !x.anim);
   await pg.locator(W + ' .ocTirar').click();
@@ -39,6 +41,8 @@ const W = '#ocaWrap';
   await pg.waitForFunction(() => !window.ocaEstado().anim, null, { timeout: 15000 });
   e = await E();
   ok(JSON.stringify(e.vis) === JSON.stringify(e.vista.pos), 'al acabar la animación, las fichas están en su casilla');
+  e = await jugarHasta(x => x.vista.tiros.every(t => t > 0) && !x.anim);
+  ok(e.vista.fase !== 'jugando' || (!(await linea()) && await pg.locator(W + ' .ocMuros').isVisible()), 'tras la primera ronda se quita la línea y quedan los muros');
   await pg.evaluate(() => { window.ocaRapido = true; });
   e = await jugarHasta(x => x.vista.nj >= 8 && x.vista.turno === 0 && !x.anim);
   await pg.evaluate(() => { window.ocaRapido = false; });
