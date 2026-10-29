@@ -32,6 +32,7 @@ const ARCHIVOS = [
   'icons/xp-512.png',
   'icons/xp-maskable-512.png',
   'icons/xp.svg',
+  'img/oca-clasico.jpg',
   'index.html',
   'js/bingo/engine.js',
   'js/controls-toggle.js',

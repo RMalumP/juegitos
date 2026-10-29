@@ -106,3 +106,15 @@ test('partidas al azar terminan y restaurar valida', () => {
   const e = O.crear({ n: 2 }); e.pos[0] = 70; assert.strictEqual(O.restaurar(e), null);
   assert.strictEqual(O.tipo(5), 'oca'); assert.strictEqual(O.tipo(58), 'calavera'); assert.strictEqual(O.tipo(63), 'jardin'); assert.strictEqual(O.tipo(7), '');
 });
+
+test('tablero clásico: las 4 fichas de cada casilla caen dentro de su contorno', () => {
+  const src = require('fs').readFileSync(require('path').join(__dirname, '../js/games/oca.js'), 'utf8');
+  const cen = src.match(/cen: '([^']*)'/)[1].split(' ').map(p => p.split(',').map(Number));
+  const lim = src.match(/lim: '([^']*)'/)[1].split(';').map(l => l.split(' ').map(p => p.split(',').map(Number)));
+  assert.strictEqual(cen.length, 63); assert.strictEqual(lim.length, 63);
+  const dentro = ([x, y], P) => { let c = false; for (let i = 0, j = P.length - 1; i < P.length; j = i++) { const [x1, y1] = P[i], [x2, y2] = P[j]; if ((y1 > y) !== (y2 > y) && x < (x2 - x1) * (y - y1) / (y2 - y1) + x1) c = !c; } return c; };
+  cen.forEach(([x, y, dx, dy], k) => {
+    for (const sx of [-1, 1]) for (const sy of [-1, 1]) assert.ok(dentro([x + sx * dx, y + sy * dy], lim[k]), 'casilla ' + (k + 1));
+    lim.forEach((P, j) => { if (j !== k) assert.ok(!dentro([x, y], P), 'el centro de la ' + (k + 1) + ' no cae en la ' + (j + 1)); });
+  });
+});

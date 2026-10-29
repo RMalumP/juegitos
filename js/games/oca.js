@@ -2,7 +2,9 @@
    Mezcla de los dos juegos de la oca que nos pasaron: el tablero en espiral, la CPU, los dichos y el registro de jugadas de uno, y los dados
    con cubilete y el turno por colores del otro. Modos: local (cada asiento es una persona o la CPU; todos ven el mismo tablero, así que no hace
    falta pasar el móvil a escondidas) y online (js/online/j-oca.js → Oca.online: el anfitrión tira los dados por todos y juega por las CPU).
-   La ficha avanza casilla a casilla y luego salta (oca, puente, dados, laberinto, calavera). 💾 Guardar la partida local (js/partida.js). */
+   La ficha avanza casilla a casilla y luego salta (oca, puente, dados, laberinto, calavera). 💾 Guardar la partida local (js/partida.js).
+   Dos tableros a elegir (cada cual el suyo, también online): la espiral dibujada aquí o el clásico de Heraclio Fournier (img/oca-clasico.jpg,
+   la imagen del proyecto «juegoOca» de GitHub), con el centro y los límites de cada casilla medidos sobre la foto. */
 (function () {
   'use strict';
   var O = window.OcaEngine;
@@ -16,10 +18,20 @@
   var OCA_SVG = '<svg viewBox="0 0 24 24" aria-hidden=true><path d="M7 18.5c-3.2 0-4.6-2.6-3.3-5 1.3-2.3 4.9-2.1 7.8-1.6 1.6.3 2.8-.5 2.8-2.2V6.4C14.3 4.4 15.8 3 17.4 3S20 4.2 20 5.6c0 1-.6 1.6-1.4 2-.7.4-1.1 1-1.1 1.9v2.8c0 4.2-3.8 6.2-8.2 6.2z" fill=#fff stroke=#333 stroke-width=1.2 stroke-linejoin=round /><path d="M19.7 4.7l3 1.2-3 .9z" fill=#f39c12 stroke=#a35a00 stroke-width=.5 /><circle cx=17.7 cy=5 r=.75 fill=#111 /><path d="M6.5 14.6c2 .5 4.3.2 5.6-1" fill=none stroke=#888 stroke-width=1 stroke-linecap=round /><path d="M8.5 18.5v3h-1.6M11.5 18.5v3h-1.6" fill=none stroke=#f39c12 stroke-width=1.2 stroke-linecap=round /></svg>';
   var PUNTOS = { 1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8] };
   var HUECO = [[0.29, 0.33], [0.71, 0.33], [0.29, 0.74], [0.71, 0.74]];    // sitio de cada ficha dentro de la casilla
-  var CONF0 = { asientos: ['tu', 'cpu', 'no', 'no'], dados: 1, oca59: 'rebota' };
+  var CONF0 = { asientos: ['tu', 'cpu', 'no', 'no'], dados: 1, oca59: 'rebota', tablero: 'espiral' };
+  /* tablero clásico: imagen de 660 × 654 y debajo una franja de 70 para la salida. Por casilla (1 a 63): su punto más interior y
+     cuánto se separan en ella las 4 fichas sin salirse (x,y,dx,dy), y su contorno */
+  var CLA = { W: 660, H: 654, SAL: 70,
+    cen: '54,604,24,19 241,591,12,18 296,591,12,18 351,591,12,18 406,591,12,18 461,591,12,18 516,593,12,18 573,617,18,15 622,567,18,16 597,512,20,11 597,459,20,11 621,405,20,11 621,352,20,11 598,301,20,11 599,248,20,11 598,195,20,11 598,142,20,11 623,87,18,16 574,34,18,17 517,36,12,18 463,36,12,18 412,35,12,18 359,36,12,18 306,34,12,18 253,34,12,18 200,34,12,18 147,34,12,18 90,32,17,16 41,85,18,17 65,145,20,11 65,200,20,11 42,255,21,11 64,310,20,11 64,365,20,11 42,419,20,12 38,475,18,16 88,528,18,17 146,500,12,18 201,500,12,18 255,500,12,18 309,500,12,18 363,500,12,18 417,526,12,18 477,528,22,17 533,470,19,22 507,409,20,11 531,353,20,12 531,298,20,11 532,242,20,12 531,181,17,20 476,128,22,17 414,125,13,18 359,151,12,18 304,126,12,18 248,126,12,18 186,123,22,17 135,189,20,24 131,254,20,12 154,311,21,12 132,375,19,22 186,435,22,17 248,409,13,18 362,297,24,24',
+    lim: '211,647 11,646 10,562 211,562;267,563 267,646 217,647 215,563;322,563 322,646 271,647 270,563;377,563 377,646 326,647 325,563;432,563 432,646 381,647 380,563;487,563 487,646 436,647 435,563;542,564 542,646 491,647 490,563;545,563 565,563 632,630 622,646 545,646;562,555 568,539 651,540 652,589 646,610 637,624 634,627;651,536 568,536 567,487 651,486;651,483 568,483 567,434 650,433;651,430 568,430 567,382 651,381;651,378 568,377 567,329 651,328;651,325 569,325 568,276 651,275;567,263 569,222 652,223 651,272 569,272;651,219 569,219 568,170 651,169;652,166 569,166 568,117 652,116;563,99 635,27 639,30 652,58 652,113 569,113;633,24 561,96 544,90 546,6 600,6 620,14;491,89 492,7 541,6 541,90;439,89 439,7 488,6 489,89;436,7 436,89 387,90 386,7;383,7 383,89 334,90 333,6;330,6 330,89 281,90 280,6;277,6 277,89 228,90 227,6;224,6 224,89 175,90 174,6;171,6 171,89 122,90 121,6;118,6 118,89 103,94 32,22 61,6;30,25 101,96 95,116 11,115 12,57 19,38;95,171 12,171 11,120 95,119;94,226 12,226 11,175 95,174;10,263 12,229 96,230 94,281 12,281;94,336 11,336 10,285 94,284;94,391 12,391 10,340 94,339;10,444 12,393 95,395 94,446;99,462 27,535 24,532 10,499 11,449 94,449;117,472 116,556 63,555 42,547 30,538 101,466;172,472 172,555 122,556 120,472;226,472 226,555 176,556 175,472;280,472 280,555 230,556 229,472;334,472 334,555 284,556 283,472;388,472 388,555 338,556 337,472;391,555 391,472 441,472 442,556;445,555 446,472 475,472 555,553 550,556;477,470 478,438 561,438 562,541 559,549;561,435 478,435 477,383 561,383;546,380 478,379 477,328 561,327 562,379;561,324 478,324 477,273 561,272;561,269 478,269 478,217 561,216;521,214 478,213 477,184 559,103 563,111 562,213;557,100 476,181 444,180 445,96 549,96;441,97 441,179 389,180 388,97;333,178 333,97 384,97 385,180;330,97 330,179 278,180 278,96;274,97 274,179 223,180 222,96;219,96 218,180 189,180 108,98 115,95;185,223 101,222 101,110 106,101 186,182;184,281 102,281 101,227 185,226;100,336 102,283 186,285 184,338;186,345 185,378 103,458 100,451 100,343 184,341;106,461 187,381 219,382 218,465 113,465;275,381 275,464 223,465 222,381;192,187 472,187 472,465 280,465 280,372 192,372' };
+  CLA.T = CLA.H + CLA.SAL;
+  CLA.cen = CLA.cen.split(' ').map(function (p) { return p.split(',').map(Number); }); CLA.cen.unshift(null);
+  CLA.lim = CLA.lim.split(';'); CLA.lim.unshift(null);
   var U = { modo: null, conf: null, jug: [], est: null, vista: null, vis: [], visNj: 0, cola: [], anim: false, animT: [], timer: null, pausa: false, online: null, p: -1, finVisto: '', eraMio: false, hist: false };
   try { U.conf = JSON.parse(localStorage.getItem('ocaConf')); } catch (e) { U.conf = null; }
   if (!U.conf || !Array.isArray(U.conf.asientos) || U.conf.asientos.length !== 4) U.conf = JSON.parse(JSON.stringify(CONF0));
+  if (U.conf.tablero !== 'clasico') U.conf.tablero = 'espiral';
+  function clasico() { return U.conf.tablero === 'clasico'; }
   function vib(p) { if (typeof window.vibrate === 'function') window.vibrate(p); }
   function rapido() { return !!window.ocaRapido; }
   function esc(t) { return String(t).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
@@ -40,11 +52,13 @@
   raiz.classList.add('ocWrap');
   raiz.innerHTML = '<div class=ocHeader><span class=ocTit>JUEGO DE LA OCA</span><span class=ocInfo></span></div>' +
     '<div class=ocJugs></div><div class=ocZona><div class=ocTablero></div></div>' +
-    '<div class=ocPie><div class=ocUlt></div><div class=ocFila><div class=ocDados></div><button type=button class=ocTirar>🎲 Tirar</button><button type=button class=ocVerHist title="Historial de jugadas" aria-label="Historial de jugadas">📜</button></div><div class=ocEstado></div></div>' +
+    '<div class=ocPie><div class=ocUlt></div><div class=ocFila><div class=ocDados></div><button type=button class=ocTirar>🎲 Tirar</button><button type=button class=ocVerHist title="Historial de jugadas" aria-label="Historial de jugadas">📜</button><button type=button class=ocVerTab title="Cambiar de tablero (espiral o clásico)" aria-label="Cambiar de tablero">🗺️</button></div><div class=ocEstado></div></div>' +
     '<div class=ocHist><div class=ocHistCab><b>📜 Jugadas</b><button type=button class=ocOpt data-r=cerrarHist>✕</button></div><ol></ol></div>' +
     '<div class=ocMenu><h1>' + OCA_SVG + ' JUEGO DE LA OCA</h1><div class=ocSub>De 2 a 4 jugadores. Tira los dados y llega la primera a la casilla 63 con la cuenta exacta. «De oca a oca y tiro porque me toca».</div>' +
     '<div class=ocAsientos></div>' +
     '<div class=ocRow data-k=dados>Dados:<button class=ocOpt data-v=1>1 dado</button><button class=ocOpt data-v=2>2 dados</button></div>' +
+    '<div class=ocRow data-k=tablero>Tablero:<button class=ocOpt data-v=espiral>🌀 Espiral</button><button class=ocOpt data-v=clasico>🖼️ Clásico</button></div>' +
+    '<div class=ocCred>Tablero clásico: <b>Heraclio Fournier</b> (imagen del proyecto «juegoOca» en GitHub)</div>' +
     '<div class=ocRow data-k=oca59>Oca 59:<button class=ocOpt data-v=rebota>Pasa a la 63 y retrocede</button><button class=ocOpt data-v=gana>Gana</button></div>' +
     '<button class=ocBig data-r=jugar>▶ Jugar</button><button class=ocBig data-r=online>🌐 Online · 2 a 4 (con CPU)</button>' +
     '<button class=ocOpt data-r=reglas>📖 Reglas</button><div class=ocReglas></div></div>' +
@@ -73,7 +87,7 @@
     }
     var s = document.createElement('div'); s.className = 'ocC t-salida ocSalida'; s.style.gridRow = FILAS + 1; s.style.gridColumn = '1 / ' + (COLS + 1);
     s.innerHTML = '<span class=ocI>🚩</span><span class=ocSalTxt>SALIDA</span>'; tablero.appendChild(s);
-    tablero.insertAdjacentHTML('beforeend', camino());
+    tablero.insertAdjacentHTML('beforeend', camino() + clasicoHTML());
     for (var i = 0; i < 4; i++) { var f = document.createElement('div'); f.className = 'ocFicha'; f.style.background = COLORES[i][0]; f.style.display = 'none'; tablero.appendChild(f); fichas.push(f); }
   })();
   /* el recorrido en espiral: muros entre casillas vecinas que no se siguen, y una línea con flechas de la salida al centro */
@@ -96,17 +110,46 @@
     return '<svg class=ocCamino viewBox="0 0 ' + COLS + ' ' + (FILAS + 1) + '" aria-hidden=true><polyline class=ocLinea points="' + puntos.join(' ') + '"/>' +
       '<g class=ocFlechas>' + flechas + '</g><path class=ocMuros d="' + muros + '"/></svg>';
   }
+  function clasicoHTML() {                                                 // la imagen (se carga al elegirlo), la salida, los límites y el recorrido
+    var lim = '', pts = [(CLA.W * 0.08) + ',' + (CLA.H + CLA.SAL / 2)];
+    for (var c = 1; c <= O.FINAL; c++) { lim += '<polygon data-c=' + c + ' points="' + CLA.lim[c] + '"/>'; pts.push(CLA.cen[c][0] + ',' + CLA.cen[c][1]); }
+    return '<div class=ocCla><img alt="Tablero clásico del juego de la oca (Heraclio Fournier)" draggable=false>' +
+      '<div class="ocClaSal t-salida"><span class=ocI>🚩</span><span class=ocSalTxt>SALIDA</span><span class=ocClaCred>Tablero: Heraclio Fournier</span></div>' +
+      '<svg class=ocLim viewBox="0 0 ' + CLA.W + ' ' + CLA.T + '" aria-hidden=true><polyline class=ocClaLinea points="' + pts.join(' ') + '"/>' + lim + '</svg></div>';
+  }
+  function ponerTablero() {
+    var cl = clasico(), img = tablero.querySelector('.ocCla img');
+    if (cl && !img.getAttribute('src')) img.src = 'img/oca-clasico.jpg';
+    tablero.classList.toggle('clasico', cl);
+    medir(); pintarFichas(vista());
+  }
   function medir() {                                                       // la casilla más grande que quepa (7 × 10 con la salida)
     var z = q('.ocZona'), W = z.clientWidth - 6, H = z.clientHeight - 6;
+    if (clasico()) {                                                       // el clásico, tan grande como quepa sin deformarlo
+      var a = Math.max(160, Math.floor(Math.min(W, H * CLA.W / CLA.T)));
+      tablero.style.width = a + 'px'; tablero.style.height = Math.round(a * CLA.T / CLA.W) + 'px'; tablero.style.setProperty('--u', (a * 0.1).toFixed(1) + 'px');
+      return;
+    }
     var u = Math.max(18, Math.floor(Math.min(W / COLS, H / (FILAS + 1))));
     tablero.style.width = u * COLS + 'px'; tablero.style.height = u * (FILAS + 1) + 'px'; tablero.style.setProperty('--u', u + 'px');
   }
   function centro(c, i, n) {                                               // posición (en %) de la ficha i en la casilla c
+    if (clasico()) {
+      if (c <= 0) return [(CLA.W * 0.08 + i * CLA.W * 0.075) / CLA.W * 100, (CLA.H + CLA.SAL / 2) / CLA.T * 100];
+      var m = CLA.cen[c], hx = HUECO[i][0] < 0.5 ? -1 : 1, hy = HUECO[i][1] < 0.5 ? -1 : 1;
+      return [(m[0] + hx * m[2]) / CLA.W * 100, (m[1] + hy * m[3]) / CLA.T * 100];
+    }
     if (c <= 0) { var x = (COLS - n) / 2 + i + 0.5; return [x / COLS * 100, (FILAS + 0.5) / (FILAS + 1) * 100]; }
     var p = POS[c], h = HUECO[i];
     return [(p.c + h[0]) / COLS * 100, (p.f + h[1]) / (FILAS + 1) * 100];
   }
   function pintarFichas(e) {
+    var marca = tablero.querySelector('.ocLim .turno'), t = e && e.fase === 'jugando' && !U.anim ? e.turno : -1;
+    if (marca) { marca.classList.remove('turno'); marca.style.stroke = ''; }
+    if (t >= 0 && U.vis[t] > 0) {                                          // en el clásico, el contorno de la casilla de quien tira
+      marca = tablero.querySelector('.ocLim [data-c="' + U.vis[t] + '"]');
+      if (marca) { marca.classList.add('turno'); marca.style.stroke = COLORES[t][0]; }
+    }
     fichas.forEach(function (f, i) {
       if (!e || i >= e.n) { f.style.display = 'none'; return; }
       var xy = centro(U.vis[i] || 0, i, e.n);
@@ -188,6 +231,7 @@
     });
   }
   q('.ocVerHist').addEventListener('click', function () { U.hist = !U.hist; q('.ocHist').style.display = U.hist ? 'flex' : 'none'; if (U.hist) pintarHist(vista()); });
+  q('.ocVerTab').addEventListener('click', function () { U.conf.tablero = clasico() ? 'espiral' : 'clasico'; guardarConf(); pintarMenu(); ponerTablero(); });
   q('[data-r=cerrarHist]').addEventListener('click', function () { U.hist = false; q('.ocHist').style.display = 'none'; });
 
   /* ---------- animación: dados, casilla a casilla y saltos ---------- */
@@ -292,7 +336,7 @@
   }
   raiz.querySelectorAll('.ocMenu [data-k]').forEach(function (row) {
     row.querySelectorAll('[data-v]').forEach(function (b) {
-      b.addEventListener('click', function () { var k = row.dataset.k; U.conf[k] = k === 'dados' ? +b.dataset.v : b.dataset.v; guardarConf(); pintarMenu(); });
+      b.addEventListener('click', function () { var k = row.dataset.k; U.conf[k] = k === 'dados' ? +b.dataset.v : b.dataset.v; guardarConf(); pintarMenu(); if (k === 'tablero') ponerTablero(); });
     });
   });
   q('.ocMenu [data-r=jugar]').addEventListener('click', function () { empezar(); });
@@ -363,9 +407,9 @@
     salir: function () { if (U.modo === 'online') menu(); },
     activo: function () { return U.modo === 'online'; }
   } };
-  window.initOca = function () { if (!U.modo && !restaurar()) menu(); medir(); };
+  window.initOca = function () { if (!U.modo && !restaurar()) menu(); ponerTablero(); };
   window.pauseOca = function () { U.pausa = true; clearTimeout(U.timer); };
   window.resumeOca = function () { U.pausa = false; medir(); if (U.modo) pintar(); avanzar(); };
-  window.ocaEstado = function () { var e = vista(); return { modo: U.modo, p: U.p, anim: U.anim || U.cola.length > 0, vista: e && O.copiar(e), vis: U.vis.slice(), jug: U.jug, est: U.est && O.copiar(U.est) }; };
-  menu();
+  window.ocaEstado = function () { var e = vista(); return { tablero: U.conf.tablero, modo: U.modo, p: U.p, anim: U.anim || U.cola.length > 0, vista: e && O.copiar(e), vis: U.vis.slice(), jug: U.jug, est: U.est && O.copiar(U.est) }; };
+  menu(); ponerTablero();
 })();

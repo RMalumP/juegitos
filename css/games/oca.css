@@ -29,7 +29,21 @@
 .ocCamino{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:2;overflow:visible}
 .ocLinea{fill:none;stroke:#c0392b;stroke-width:.07;stroke-opacity:.38;stroke-linejoin:round;stroke-linecap:round}
 .ocFlechas path{fill:none;stroke:#a5281b;stroke-width:.045;stroke-linecap:round;stroke-linejoin:round;opacity:.85}
-.ocTablero:not(.guia) .ocLinea,.ocTablero:not(.guia) .ocFlechas{display:none}
+.ocTablero:not(.guia) .ocLinea,.ocTablero:not(.guia) .ocFlechas,.ocTablero:not(.guia) .ocClaLinea{display:none}
+/* tablero clásico (Heraclio Fournier): la imagen arriba y la franja de la salida debajo (660 × 654 + 70) */
+.ocTablero.clasico{display:block;background:#c2410c}
+.ocTablero.clasico>.ocC,.ocTablero.clasico>.ocCamino{display:none}
+.ocCla{display:none;position:absolute;inset:0}
+.ocTablero.clasico .ocCla{display:block}
+.ocCla img{position:absolute;left:0;top:0;width:100%;height:calc(100% * 654 / 724);display:block;user-select:none;-webkit-user-select:none;pointer-events:none}
+.ocClaSal{position:absolute;left:0;right:0;bottom:0;height:calc(100% * 70 / 724);background:#2b5d3b;border-top:2px solid #163b23;display:flex;align-items:center;justify-content:flex-end;gap:5px;padding-right:6px;box-sizing:border-box}
+.ocClaSal .ocI{font-size:calc(var(--u) * .4)}
+.ocClaCred{font-size:calc(var(--u) * .2);color:#bfe0c8;font-style:italic;white-space:nowrap}
+.ocLim{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:2}
+.ocLim polygon{fill:none;stroke:none;stroke-width:5;stroke-linejoin:round}
+.ocTablero.guia .ocLim polygon{stroke:#ffffffaa;stroke-width:2}
+.ocTablero .ocLim polygon.turno{stroke-width:5;fill:#ffffff33;stroke-opacity:1}
+.ocClaLinea{fill:none;stroke:#c0392b;stroke-width:6;stroke-opacity:.45;stroke-linejoin:round;stroke-linecap:round}
 .ocMuros{fill:none;stroke:#3b230c;stroke-width:.09;stroke-linecap:square}
 .ocFicha{position:absolute;width:calc(var(--u) * .4);height:calc(var(--u) * .4);margin:calc(var(--u) * -.2) 0 0 calc(var(--u) * -.2);border-radius:50%;border:2px solid #222;box-shadow:0 2px 3px #0009,inset 0 -3px 4px #0004,inset 0 2px 3px #fff8;transition:left .13s ease-out,top .13s ease-out;z-index:3;font-size:calc(var(--u) * .2);display:flex;align-items:center;justify-content:center;line-height:1;pointer-events:none}
 .ocFicha.salta{transition:left .38s cubic-bezier(.3,1.4,.6,1),top .38s cubic-bezier(.3,1.4,.6,1);transform:scale(1.25);z-index:4}
@@ -50,7 +64,7 @@
 .ocTirar{font:700 clamp(14px,4vw,17px) Arial,sans-serif;color:#3a2600;background:linear-gradient(#ffe48a,#f5b52e);border:2px solid #fff3c4;border-radius:8px;padding:9px 16px;cursor:pointer;box-shadow:0 2px 0 #7a5200}
 .ocTirar:disabled{filter:grayscale(.8) brightness(.7);cursor:default}
 .ocTirar:not(:disabled):hover{filter:brightness(1.08)}
-.ocVerHist{font-size:18px;background:#0005;border:1px solid #ffffff44;border-radius:7px;padding:6px 8px;cursor:pointer;color:#fff}
+.ocVerHist,.ocVerTab{font-size:18px;background:#0005;border:1px solid #ffffff44;border-radius:7px;padding:6px 8px;cursor:pointer;color:#fff}
 .ocEstado{min-height:1.3em;font-size:clamp(12px,3.6vw,15px);font-weight:700;color:#ffe08a;text-align:center;border-bottom:3px solid var(--col,transparent);padding-bottom:1px}
 .ocHist{position:absolute;left:6px;right:6px;bottom:6px;max-height:60%;z-index:15;display:none;flex-direction:column;background:#0b3320f2;border:1px solid #3c9a64;border-radius:8px;padding:6px 8px;box-shadow:0 4px 14px #000a}
 .ocHistCab{display:flex;justify-content:space-between;align-items:center;font-size:13px;margin-bottom:4px}
@@ -60,6 +74,7 @@
 .ocMenu{display:flex}.ocFin{display:none}
 .ocMenu h1,.ocFin h1{font-size:clamp(19px,6vw,28px);letter-spacing:2px;color:#fff;margin:0;display:flex;align-items:center;gap:6px;justify-content:center}
 .ocMenu h1 svg{width:1.2em;height:1.2em}
+.ocCred{color:#9fc9ad;font-size:10px;max-width:340px;margin-top:-4px}
 .ocSub{color:#cfe8d6;font-size:12px;line-height:1.45;max-width:340px}
 .ocAsientos{display:flex;flex-direction:column;gap:4px}
 .ocRow{display:flex;align-items:center;gap:5px;flex-wrap:wrap;justify-content:center;font-size:11px;color:#cfe8d6}
