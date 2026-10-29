@@ -57,3 +57,10 @@
 .hunC.hund.sc1{background:#8c2a1c}.hunC.hund.sc2{background:#511009}.hunC.hund.sc3{background:#7a3a22}
 
 #hunOwnBox.grande .hunGrid{touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+/* barcos enemigos que quedan por hundir (botón «🚢 Quedan») */
+#hunRest{display:flex;flex-wrap:wrap;gap:5px;justify-content:center;max-width:420px;margin-top:6px}
+.hunRestT{width:100%;text-align:center;font-size:11px;color:#ffe08a}
+.hunRestB{background:#0e3a63;border:2px solid #1d5a8a;border-radius:4px;padding:3px 7px;display:flex;flex-direction:column;align-items:center}
+.hunRestB .hunPuntos{letter-spacing:1px;font-size:11px;color:#9fd0ff}.hunRestB .hunNom{font-size:9px}
+.hunRestB.hundido{opacity:.45;border-style:dashed}.hunRestB.hundido .hunPuntos{color:#c0392b;text-decoration:line-through}
+.hunBtn.rest.sel{border-color:#ffe08a}
