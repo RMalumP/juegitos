@@ -23,7 +23,7 @@
     parchis:  { nombre: 'Parchís',  icono: '🔵', min: 2, max: 4,  win: 'parchis', winId: 'winParchis' },
     ruleta:   { nombre: 'Ruleta',   icono: '🎯', min: 2, max: 6,  win: 'roul', winId: 'winRoul' },
     blackjack:{ nombre: 'Blackjack',icono: '🎰', min: 2, max: 6,  win: 'bj', winId: 'winBJ' },
-    poker:    { nombre: 'Póquer',   icono: '♠️', min: 2, max: 6,  win: 'poker', winId: 'winPoker' },
+    poker:    { nombre: 'Póquer',   icono: '♠️', min: 2, max: 8,  win: 'poker', winId: 'winPoker' },
     hundir:   { nombre: 'Hundir la flota', icono: '🚢', min: 2, max: 2, win: 'hundir', winId: 'winHundir' },
     c4:       { nombre: 'Conecta 4', icono: '🔴', min: 2, max: 2, win: 'c4', winId: 'winC4' },
     ttt:      { nombre: 'Tres en raya', icono: '❌', min: 2, max: 2, win: 'ttt', winId: 'winTtt' },

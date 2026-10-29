@@ -6,7 +6,7 @@ const JUEGOS = [
   { id: 'parchis', nombre: 'Parchís', max: 4, win: 'winParchis', abrir: pg => pg.evaluate(() => window.openGame('parchis')) },
   { id: 'ruleta', nombre: 'Ruleta', max: 6, win: 'winRoul', abrir: pg => pg.evaluate(() => window.openGame('roul')) },
   { id: 'blackjack', nombre: 'Blackjack', max: 6, win: 'winBJ', abrir: pg => pg.evaluate(() => window.openGame('bj')) },
-  { id: 'poker', nombre: 'Póquer', max: 6, win: 'winPoker', abrir: pg => pg.evaluate(() => window.openGame('poker')) },
+  { id: 'poker', nombre: 'Póquer', max: 8, win: 'winPoker', abrir: pg => pg.evaluate(() => window.openGame('poker')) },
   { id: 'hundir', nombre: 'Hundir la flota', max: 2, win: 'winHundir', abrir: pg => pg.evaluate(() => window.openGame('hundir')) },
   { id: 'c4', nombre: 'Conecta 4', max: 2, win: 'winC4', abrir: pg => pg.evaluate(() => window.openGame('c4')) },
   { id: 'ttt', nombre: 'Tres en raya', max: 2, win: 'winTtt', abrir: pg => pg.evaluate(() => window.openGame('ttt')) },
@@ -19,7 +19,8 @@ const LB = j => '#' + j.win + ' .olLobby[data-j=' + j.id + ']';
 (async () => {
   const env = await entorno(9452, 9451);
   let n = 0;
-  async function nuevo(nombre) { const ctx = await env.contexto(); const pg = await env.pagina(ctx, nombre); await pg.locator('#startScreen').evaluate(e => { e.style.display = 'none'; }); return pg; }
+  let abiertos = [];                                                       // cada juego cierra sus navegadores al acabar (con 8 jugadores se acumulaban demasiados)
+  async function nuevo(nombre) { const ctx = await env.contexto(); abiertos.push(ctx); const pg = await env.pagina(ctx, nombre); await pg.locator('#startScreen').evaluate(e => { e.style.display = 'none'; }); return pg; }
   async function conectar(pg, j, modo, sala, nombre) {
     await j.abrir(pg);
     const boton = j.win === 'winChess' ? pg.frameLocator('#chessFrame').locator('#tabConectar') : pg.locator('#' + j.win + ' [data-conectar]');   // en Ajedrez/Damas está dentro del iframe, entre Damas y Personalizado
@@ -61,6 +62,7 @@ const LB = j => '#' + j.win + ' .olLobby[data-j=' + j.id + ']';
     await G.waitForFunction(() => window.Sala.estado.phase === 'jugando', null, { timeout: 15000 });
     ok(await H.locator(LB(j)).isHidden() && await G.locator(LB(j)).isHidden(), j.nombre + ': al empezar el lobby desaparece en todos los móviles');
     ok((await H.evaluate(() => window.Sala.estado.asientos)).length === j.max - 0 || (await H.evaluate(() => window.Sala.estado.asientos)).length >= 2, j.nombre + ': la partida arranca con los asientos');
+    for (const c of abiertos) await c.close().catch(() => {}); abiertos = [];
   }
   await env.cerrar(); fin();
 })().catch(e => { console.error(e); process.exit(1); });
