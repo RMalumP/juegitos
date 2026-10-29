@@ -73,6 +73,20 @@ async function dispararPrimero(pg) {
   e = await est(pg);
   ok(e.fase === 'jugando', 'cpu: con las dos flotas colocadas empieza la batalla');
   ok(await pg.locator('#hunEnemy').isVisible() && await pg.locator('#hunOwn .barco').count() === 17, 'cpu: se ven las aguas enemigas y mis 17 casillas de barco');
+  // ---------- barcos que quedan por hundir ----------
+  ok(await boton(pg, 'Quedan 5/5').count() === 1, 'quedan: el botón cuenta los 5 barcos enemigos a flote');
+  await boton(pg, 'Quedan').click(); await wait(60);
+  ok(await pg.locator('#hunRest').isVisible() && await pg.locator('#hunRest .hunRestB').count() === 5, 'quedan: al tocarlo se ve la lista de los 5 barcos');
+  const destructor = (await est(pg)).pt.flotas[1].find(b => b.l === 2);
+  for (const c of [0, 1].map(k => (destructor.r + (destructor.h ? 0 : k)) * 10 + destructor.c + (destructor.h ? k : 0))) {
+    for (let t = 0; t < 100 && (await pg.locator('#hunEnemy .hunC').nth(c).isDisabled()) && !(await est(pg)).pt.shots[0].some(s => s[0] === c); t++) await wait(20);
+    await pg.locator('#hunEnemy .hunC').nth(c).click(); await wait(40);
+  }
+  for (let t = 0; t < 100 && (await pg.locator('#hunRest .hunRestB.hundido').count()) === 0; t++) await wait(20);
+  ok(await pg.locator('#hunRest .hunRestB.hundido').count() === 1 && (await txt(pg, '#hunRest')).includes('quedan por hundir 4'), 'quedan: al hundir el destructor queda tachado y la cuenta baja a 4');
+  ok(await boton(pg, 'Quedan 4/5').count() === 1, 'quedan: el botón también baja a 4/5');
+  await boton(pg, 'Quedan').click(); await wait(40);
+  ok(!(await pg.locator('#hunRest').isVisible()), 'quedan: al tocarlo otra vez se oculta la lista');
   let turnos = 0;
   while (!(await pg.locator('#hunFin').isVisible()) && turnos < 400) {
     if (!(await dispararPrimero(pg))) await wait(25);

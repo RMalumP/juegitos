@@ -1,6 +1,6 @@
 # Juegos Windows XP
 
-Escritorio estilo Windows XP con juegos clásicos (Buscaminas, Tetris, Ajedrez, Parchís, Póquer, Hundir la flota, 2048, Breakout, Pinball, UNO, Conecta 4, Dominó, Memoria, Simon, Flappy, Wordle, Ahorcado…)
+Escritorio estilo Windows XP con juegos clásicos (Buscaminas, Tetris, Ajedrez, Parchís, Póquer, Hundir la flota, 2048, Breakout, Pinball, UNO, Conecta 4, Dominó, Juego de la Oca, Memoria, Simon, Flappy, Wordle, Ahorcado…)
 
 **Hundir la flota** admite tableros de 6×6 a 15×15 y flotas a medida (plantillas Clásica, Rápida, Grande y Armada, o un editor de barcos de 1 a 6 casillas) contra la CPU, con 2 jugadores en un móvil y online. **Teclas reasignables** («⌨ Reasignar» en el menú de la ventana) en Breakout, 2048, Flappy y Hundir (que además se juega entero con teclado: cursor, colocar/disparar, girar con R). En Hundir los barcos pegados se distinguen por contorno y tono. **Botón «atrás» del móvil**: minimiza el juego abierto, cierra el menú de inicio o vuelve al juego desde la pantalla de conexión; sin nada que cerrar, sale de la web. **Wordle**: «Del día» no es aleatoria (la palabra sale de la fecha del dispositivo y cambia a medianoche; es la misma para todos); «Libre» elige una palabra al azar cada vez y no cuenta para las estadísticas. **Ahorcado**: «Solo» saca una palabra al azar de las del Wordle; con «2 jugadores» en un móvil uno escribe la palabra (oculta, sin tildes y con Ñ; también puede pedir una al azar), pasa el móvil y se turnan llevando el marcador; online (2–6) uno escribe y los demás la adivinan por turnos., **Bingo** local y online, y la app **Sala online** para jugar con amigos cada uno desde su móvil. Es una PWA instalable y funciona sin conexión (el online necesita https y que los móviles se encuentren por internet una vez).
 
@@ -15,6 +15,10 @@ Baraja de **108 cartas** (por color un 0, dos de cada número del 1 al 9 y dos +
 - **🤖 Contra la CPU:** de 1 a 7 rivales, fácil, normal o difícil. Cuenta victorias y guarda el récord de turnos para ganar.
 - **📱 Pasar el móvil** (como el Póquer): de 2 a 8 personas en un móvil, con CPU opcionales; una tapa oculta la mano entre turnos.
 - **🌐 Online:** de 2 a 8 personas más asientos de CPU; el anfitrión reparte y valida, y cada uno recibe solo su mano.
+
+## Juego de la Oca
+
+Tablero de 63 casillas en espiral, de **2 a 4 jugadores**, con **1 o 2 dados**. Oca a oca y vuelves a tirar; puente (6 ↔ 12) y dados (26 ↔ 53) y vuelves a tirar; posada (19) pierde 1 turno; cárcel (52), 2; pozo (31), sin tirar hasta que otro caiga en él o pasen 3 turnos; laberinto (42) a la 30; calavera (58) a la salida; a la 63 hay que llegar justo (lo que sobra se retrocede). Desde la oca 59 se pasa a la 63 y se tira para retroceder lo que salga (o, si se elige en el menú, se gana directamente). Con 2 dados, un 9 en la primera tirada lleva a los dados (5 y 4 → 53, 6 y 3 → 26) y se vuelve a tirar, y desde la casilla 60 se tira con un solo dado. La ficha avanza casilla a casilla, con los dichos de cada casilla y un historial de jugadas (📜). En local, cada asiento es una persona o la **CPU** (todos ven el mismo tablero); **online**, de 2 a 4 personas y el anfitrión puede añadir CPU hasta llenar la mesa. 💾 Guardar.
 
 ## Bingo
 
@@ -53,6 +57,7 @@ Cada juego con online tiene un botón **🌐 Conectar** en su barra de menú que
 | Parchís | 2–4 (+ bots opcionales) | el anfitrión ejecuta el motor y publica una «foto»; los invitados mandan «tirar» y «mover ficha N» |
 | Ruleta | 2–6 | **el juego original**: tapete completo (números, split, calle, trío, esquina, seisena, docenas, columnas, dobles, cero y 00), rueda, historial, deshacer, repetir; europea o americana. El anfitrión ejecuta el juego, los invitados lo reflejan y mandan sus apuestas |
 | Blackjack | 2–6 | **el juego original**: 6 barajas, dividir (hasta 4 manos), doblar, blackjack 3:2, la banca pide hasta 17; la carta oculta de la banca nunca llega a los invitados |
+| Juego de la Oca | 2–4 (+ CPU hasta 4) | el anfitrión tira los dados por todos (nadie puede trucarlos) y por las CPU; los invitados solo mandan «tirar»; opciones: CPU, 1 o 2 dados y qué pasa en la oca 59; si alguien recarga, vuelve a su ficha |
 | Dominó | 2–4 (+ hasta 2 CPU) | el anfitrión es el árbitro y juega por las CPU; cada uno recibe solo su mano; opciones: 0–2 CPU (sin pasar de 4), 1 mano / a 50 / a 100 y, con 4, por parejas (con 2 personas y 2 CPU, juntas o rivales) |
 | Ahorcado | 2–6 | en cada ronda uno escribe la palabra y los demás la adivinan por turnos (acertar repite turno, fallar lo pasa). La palabra solo la tiene el anfitrión: los demás reciben los huecos hasta el final. Puntos: 1 por letra, 2 más a quien la completa y 3 a quien la escribió si los ahorca |
 | Simon | 2–6 | todos ven la misma secuencia a la vez y la repiten; quien falla o no contesta a tiempo queda eliminado y gana el último en pie. El anfitrión comprueba cada respuesta y elige la velocidad |
@@ -69,7 +74,7 @@ Las reglas del bingo y del póquer están en `js/bingo/engine.js` y `js/online/c
 
 El icono **📡 Multijugador** del escritorio (junto a Guardar y Cargar, no en el menú de inicio) abre una ventana donde se crea o se entra en una sala con nombre + contraseña (también por **QR** o enlace). El símbolo **📶** de la barra inferior muestra el estado (gris sin sala, ámbar conectando, verde conectado) y abre la misma ventana; si plegas la barra con ▾, el símbolo se queda flotando junto al botón ▲. Los juegos no tienen pantalla de conexión propia: usan `window.Sala`.
 
-**Partidas a medias.** Cada juego con partida larga tiene un botón **💾 Guardar** (en la barra de menú de la ventana; en Sudoku, entre los botones de abajo): 2048, Sudoku, Memoria, Conecta 4, 3 en raya y Hundir la flota (contra la CPU o 2 jugadores en un móvil; al recuperar una de 2 jugadores sale antes «Pasa el móvil»), Buscaminas, Solitario, Blackjack, Ruleta, Póker, Dados, Dominó, UNO y Parchís (en Parchís, el botón está junto a «Nueva partida»). Las partidas online no se guardan. La partida se guarda en el móvil (`partida_<juego>` en `localStorage`, vía `js/partida.js`) y se recupera sola al abrir ese juego tras volver a abrir la app, **una sola vez**: al recuperarla se borra (para tenerla otra vez hay que volver a pulsar Guardar). También se borra al terminar la partida o empezar otra. En **Ajedrez y Damas**, el 💾 hace lo mismo para todo el tablero (ajedrez, damas y personalizado, con relojes), y **⬇️ / ⬆️** guardan y cargan la partida en un archivo `.json` (si hay una partida iniciada, pregunta antes de sobrescribirla). Todo entra también en *Guardar/Cargar datos*.
+**Partidas a medias.** Cada juego con partida larga tiene un botón **💾 Guardar** (en la barra de menú de la ventana; en Sudoku, entre los botones de abajo): 2048, Sudoku, Memoria, Conecta 4, 3 en raya y Hundir la flota (contra la CPU o 2 jugadores en un móvil; al recuperar una de 2 jugadores sale antes «Pasa el móvil»), Buscaminas, Solitario, Blackjack, Ruleta, Póker, Dados, Dominó, UNO, Juego de la Oca y Parchís (en Parchís, el botón está junto a «Nueva partida»). Las partidas online no se guardan. La partida se guarda en el móvil (`partida_<juego>` en `localStorage`, vía `js/partida.js`) y se recupera sola al abrir ese juego tras volver a abrir la app, **una sola vez**: al recuperarla se borra (para tenerla otra vez hay que volver a pulsar Guardar). También se borra al terminar la partida o empezar otra. En **Ajedrez y Damas**, el 💾 hace lo mismo para todo el tablero (ajedrez, damas y personalizado, con relojes), y **⬇️ / ⬆️** guardan y cargan la partida en un archivo `.json` (si hay una partida iniciada, pregunta antes de sobrescribirla). Todo entra también en *Guardar/Cargar datos*.
 
 **Contra la máquina en Ajedrez y Damas.** El selector **🤖 Rival** de cada tablero elige 2 jugadores o la máquina (fácil, normal o difícil) y con qué color juegas. En una partida online siempre juegan las dos personas. Los relojes se pausan al minimizar, cambiar de juego o de pestaña.
 
@@ -127,6 +132,9 @@ js/online/j-simon.js          Simon online (2 a 6 a la vez; el anfitrión compru
 js/online/domino-engine.js    Dominó: reglas (pozo, tranque, parejas, puntos), árbitro e IA (sin DOM, con tests)
 js/games/domino.js            Dominó: mesa en serpiente, local de 2 a 4 (personas y CPU, «pasa el móvil») e interfaz online
 js/online/j-domino.js         Dominó online (el anfitrión es el árbitro, reparte las manos en privado y juega por las CPU)
+js/online/oca-engine.js       Juego de la Oca: reglas (1 o 2 dados, casillas especiales, turnos perdidos, rebote en la 63) y árbitro (sin DOM, con tests)
+js/games/oca.js               Juego de la Oca: tablero en espiral, ficha animada, local de 2 a 4 (personas y CPU) e interfaz online
+js/online/j-oca.js            Juego de la Oca online (el anfitrión tira los dados por todos y juega por las CPU)
 js/games/g2048-engine.js      2048: reglas puras (con tests)
 js/games/mem-engine.js         Memoria (parejas): reglas puras (con tests)
 js/games/wordle-engine.js      Wordle: evaluación de letras (repetidas como el original), palabra del día (con tests)
@@ -166,8 +174,10 @@ Si cambias archivos de la aplicación: sube `APP_VERSION` (y `APP_FECHA`) en `js
 | `npm run test:domino` | Dominó local: contra 3 CPU por parejas hasta el final, guardar y recuperar, sin scroll horizontal y 2 personas + CPU en un móvil con «pasa el móvil» |
 | `npm run test:domino-online` | Dominó online: 2 personas + 2 CPU por parejas, manos privadas, jugadas fuera de turno ignoradas, recarga del invitado, final y lobby; luego 3 personas sin CPU |
 | `npm run test:simon` | Simon multijugador: 3 en un móvil con «pasa el móvil» (eliminación, ganador, otra vez) y online con 3 navegadores (velocidad, plazo, respuestas ignoradas, recarga y revancha) |
+| `npm run test:oca` | Juego de la Oca local: contra la CPU hasta el final con la ficha animada, tablero entero sin scroll horizontal, historial, guardar y recuperar, 2 personas + 2 CPU con 2 dados y la barra espaciadora en el ordenador |
+| `npm run test:oca-online` | Juego de la Oca online: 2 personas + 1 CPU con 2 dados, tiradas fuera de turno ignoradas, el mismo tablero en los dos, recarga del invitado, final y lobby; luego 3 personas sin CPU |
 | `npm run test:fase4` | Memoria (parejas y 2 jugadores), Simon (bot), Flappy (bot) y Wordle (palabras, colores, estadísticas y recarga) |
-| `npm run test:escritorio` | ordenador (1920×1080 y 1366×768): factor --ui, menú de inicio grande, juegos verticales que no se ensanchan, las 28 ventanas caben y el puntero funciona con el zoom; móvil sin cambios |
+| `npm run test:escritorio` | ordenador (1920×1080 y 1366×768): factor --ui, menú de inicio grande, juegos verticales que no se ensanchan, las 32 ventanas caben y el puntero funciona con el zoom; móvil sin cambios |
 | `npm run test:enlace` | entrar por enlace solo con el nombre, símbolo con la barra plegada y que los iconos del escritorio no se solapen |
 | `npm run test:reconexion` | un jugador y el Bolero recargan a mitad de partida |
 | `npm run test:regresion` | todos los juegos del escritorio abren sin errores |
