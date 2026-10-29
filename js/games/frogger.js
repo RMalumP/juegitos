@@ -53,6 +53,9 @@
     if(!l.dive)return false;
     return ((gtime*0.45+it.ph)%1)>0.62;
   }
+  /* cajas de colisión ajustadas a lo que se ve: la rana ocupa el 56 % central de
+     su casilla y cada coche deja un margen de 0,06 por lado (el emoji llena ~88 %) */
+  var FROG_HW=0.28,CAR_PAD=0.06,LAND_TOL=0.2;
   function laneAt(row){for(var i=0;i<lanes.length;i++)if(lanes[i].row===row)return lanes[i];return null;}
   function mult(){return Math.min(1+(level-1)*0.09,2.2);}
 
@@ -117,12 +120,31 @@
     updateHUD();
   }
 
+  /* plataforma (tronco/tortuga a flote) bajo la rana: su centro debe caer encima;
+     al aterrizar se admite un pequeño margen (tol) para no morir por un píxel */
+  function platformAt(lane,col,tol){
+    var c=col+0.5;
+    for(var j=0;j<lane.items.length;j++){var p=lane.items[j];if(c>=p.x-tol&&c<p.x+lane.len+tol&&!submerged(lane,p))return p;}
+    return null;
+  }
+  /* al aterrizar en el río la rana se planta en el tramo del tronco más cercano,
+     así queda entera encima y no medio en el agua */
+  function landOn(lane){
+    var p=platformAt(lane,frog.col,LAND_TOL);
+    if(!p)return;
+    var k=Math.max(0,Math.min(lane.len-1,Math.round(frog.col-p.x)));
+    frog.col=p.x+k;
+  }
   function moveFrog(dx,dy){
     if(!running||over||paused||dying)return;
-    var nr=frog.row+dy,nc=Math.round(frog.col)+dx;
+    var nr=frog.row+dy,onRiver=RIVER.indexOf(nr)>=0;
+    /* en el río se conserva la posición fina para seguir alineada con el tronco;
+       en tierra la rana vuelve a la rejilla */
+    var nc=(onRiver&&RIVER.indexOf(frog.row)>=0?frog.col:Math.round(frog.col))+dx;
     if(nr<0||nr>ROWS-1)return;
     nc=Math.max(0,Math.min(COLS-1,nc));
     frog.row=nr;frog.col=nc;vibrate(12);
+    if(onRiver)landOn(laneAt(nr));
     if(nr<maxRow){maxRow=nr;score+=10;updateHUD();}
     if(nr===HOME)reachHome(nc);
   }
@@ -143,12 +165,10 @@
     if(dying){deathTimer--;if(deathTimer<=0){dying=false;if(lives>0)resetFrog();}return;}
     var lane=laneAt(frog.row),c=frog.col+0.5;
     if(lane){
-      if(lane.kind==="car"){
-        for(var i=0;i<lane.items.length;i++){var ci=lane.items[i];if(c>=ci.x&&c<ci.x+lane.len){die();return;}}
+      if(lane.kind==="car"){ /* choque cuando los dibujos se tocan de verdad */
+        for(var i=0;i<lane.items.length;i++){var ci=lane.items[i];if(c+FROG_HW>ci.x+CAR_PAD&&c-FROG_HW<ci.x+lane.len-CAR_PAD){die();return;}}
       }else{ /* río: hay que ir sobre un tronco/tortuga */
-        var on=null;
-        for(var j=0;j<lane.items.length;j++){var p=lane.items[j];if(c>=p.x&&c<p.x+lane.len&&!submerged(lane,p)){on=p;break;}}
-        if(!on){die();return;}
+        if(!platformAt(lane,frog.col,0)){die();return;}
         frog.col+=lane.dir*lane.speed*m*dt;
         if(frog.col+0.5<0||frog.col+0.5>COLS){die();return;}
       }
@@ -177,13 +197,31 @@
     x.fillText(em,CELL/2,CELL/2+1);
     sprites[key]=c;return c;
   }
+  /* tronco continuo del largo del carril (el emoji 🪵 es un tocón vertical y
+     dejaba huecos de agua que en realidad eran tronco) */
+  var logs={};
+  function getLog(len){
+    var c=logs[len];if(c)return c;
+    c=document.createElement("canvas");c.width=len*CELL;c.height=CELL;
+    var x=c.getContext("2d"),m=CELL*0.06,top=CELL*0.2,h=CELL*0.6,r=h/2,w=len*CELL-2*m;
+    var g=x.createLinearGradient(0,top,0,top+h);
+    g.addColorStop(0,"#b07a45");g.addColorStop(0.5,"#8a5a2b");g.addColorStop(1,"#5e3b1a");
+    x.fillStyle=g;x.beginPath();
+    x.moveTo(m+r,top);x.lineTo(m+w-r,top);x.arc(m+w-r,top+r,r,-Math.PI/2,Math.PI/2);
+    x.lineTo(m+r,top+h);x.arc(m+r,top+r,r,Math.PI/2,Math.PI*1.5);x.fill();
+    x.strokeStyle="rgba(60,35,12,.55)";x.lineWidth=1;
+    for(var i=0;i<len*2;i++){var lx=m+r+(i+0.5)*(w-2*r)/(len*2);x.beginPath();x.moveTo(lx-3,top+h*0.32);x.lineTo(lx+3,top+h*0.32);x.moveTo(lx+1,top+h*0.68);x.lineTo(lx+6,top+h*0.68);x.stroke();}
+    x.fillStyle="#e2b47c";x.beginPath();x.ellipse(m+w-r,top+r,r*0.55,r*0.85,0,0,Math.PI*2);x.fill();
+    x.strokeStyle="#a8743f";x.beginPath();x.ellipse(m+w-r,top+r,r*0.3,r*0.5,0,0,Math.PI*2);x.stroke();
+    logs[len]=c;return c;
+  }
   function buildBg(){
     bgCanvas=document.createElement("canvas");bgCanvas.width=W;bgCanvas.height=H;
     var x=bgCanvas.getContext("2d");
     for(var r=0;r<ROWS;r++){x.fillStyle=rowBg(r);x.fillRect(0,r*CELL,W,CELL);}
   }
   function prewarm(){
-    ["🐸","🪷","🌊","💥","🪵"].forEach(function(e){getSprite(e,false);});
+    ["🐸","🪷","🌊","💥"].forEach(function(e){getSprite(e,false);});
     ["🚗","🚙","🚌","🚚","🏎️","🐢","🐍"].forEach(function(e){getSprite(e,false);getSprite(e,true);});
   }
   function emoji(s,col,row){ctx.drawImage(getSprite(s,false),col*CELL,row*CELL);}
@@ -198,17 +236,17 @@
       var l=lanes[li],items=l.items,isLog=l.sprite==="🪵";
       for(var ii=0;ii<items.length;ii++){
         var it=items[ii],sub=submerged(l,it);
+        if(isLog){if(it.x>-l.len&&it.x<COLS)ctx.drawImage(getLog(l.len),it.x*CELL,l.row*CELL);continue;}
         for(var k=0;k<l.len;k++){
           var cx=it.x+k;
           if(cx<=-1||cx>=COLS)continue;
           if(sub)emoji("🌊",cx,l.row);            /* tortuga sumergida */
-          else if(isLog)emoji(l.sprite,cx,l.row);  /* tronco: sin dirección */
           else emojiDir(l.sprite,cx,l.row,l.dir);
         }
       }
     }
     /* rana */
-    if(dying)emoji("💥",Math.round(frog.col),frog.row);
+    if(dying)emoji("💥",frog.col,frog.row);
     else emoji("🐸",frog.col,frog.row);
   }
 
