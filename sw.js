@@ -124,7 +124,7 @@ const ARCHIVOS = [
 ];
 
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(SHELL).then(c => Promise.all(ARCHIVOS.map(a => c.add(a).catch(() => null)))).then(() => self.skipWaiting()));
+  e.waitUntil(caches.open(SHELL).then(c => Promise.all(ARCHIVOS.map(a => c.add(new Request(a, { cache: 'reload' })).catch(() => null)))).then(() => self.skipWaiting()));
 });
 self.addEventListener('activate', e => {
   e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k.startsWith('juegitos-') && k !== SHELL && k !== EXTRA).map(k => caches.delete(k)))).then(() => self.clients.claim()));
@@ -143,7 +143,8 @@ function redPrimero(req, nombre, ms) {
     let hecho = false;
     const usarCache = () => cache.match(req, { ignoreSearch: true }).then(r => r || (req.mode === 'navigate' ? cache.match('index.html', { ignoreSearch: true }) : null));
     const t = setTimeout(() => usarCache().then(r => { if (r && !hecho) { hecho = true; resolver(r); } }), ms);
-    fetch(req).then(r => {
+    // sin pasar por la caché HTTP del navegador (GitHub Pages deja reutilizar cada archivo 10 min): con una versión nueva no se mezclan archivos viejos
+    fetch(req.mode === 'navigate' ? req : new Request(req, { cache: 'no-cache' })).then(r => {
       clearTimeout(t);
       if (r && r.ok) cache.put(req, r.clone());
       if (!hecho) { hecho = true; resolver(r); }
