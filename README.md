@@ -158,6 +158,7 @@ Si cambias archivos de la aplicación: sube `APP_VERSION` (y `APP_FECHA`) en `js
 | `npm run test:ui` | bingo local: Bolero con y sin cartones propios, recarga, marcas falsas, comprobar cartones |
 | `npm run test:online` | Bolero (con cartón propio) + 3 jugadores en navegadores distintos usando el icono Multijugador: cartones numerados, comprobar, cantos y dos partidas completas |
 | `npm run test:niveles` | niveles y dificultades de los juegos de arcade: Snake (4 dificultades), Invaders/Pac-Man/Frogger/Asteroids/Tetris (15 niveles) y Pong (10 niveles de CPU) |
+| `npm run test:pacman` | fantasmas de Pac-Man: objetivos de Blinky/Pinky/Inky/Clyde, inversión al cambiar de modo y al asustarse, ojos, Cruise Elroy y salida escalonada de la casa |
 | `npm run test:tetris` | control de Tetris: toque corto = 1 casilla, DAS/ARR, última dirección, caída, guardar, lock delay, pausa, gestos táctiles y Opciones (escritorio con botones plegados y sin gestos / móvil con ambos) |
 | `npm run test:teclas` | teclas reasignables (defecto, reasignar, intercambio, restablecer, recarga) y Hundir jugado solo con teclado |
 | `npm run test:atras` | botón «atrás» del móvil: minimiza juegos, cierra menú/modales, vuelve desde Conectar y sale sin capas |
