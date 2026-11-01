@@ -80,6 +80,23 @@ const fs = require('fs'), path = require('path');
   });
   ok(Math.abs(lento.d - 0.6) < 0.05, 'Asustados van al 60 % de su velocidad (' + lento.d.toFixed(2) + ')');
 
+  // ---- Regresión: tras comer una píldora de energía los fantasmas siguen moviéndose (no se quedan clavados)
+  for (const nivel of [1, 9, 15]) {
+    const mov = await pg.evaluate(n => {
+      const P = window.__pac; sim.nuevo(n); sim.pasos(250);
+      const T = P.T(); T.x = 1; T.y = 3; T.dir = { x: 0, y: 0 }; T.want = { x: 0, y: 0 };
+      const gs = P.w().filter(g => !g.inHouse);
+      const dist = gs.map(() => 0), prev = gs.map(g => [g.x, g.y]);
+      const N = 200;
+      for (let i = 0; i < N; i++) {
+        P.step(); T.alive = true; T.x = 1; T.y = 5;
+        gs.forEach((g, k) => { const d = Math.hypot(g.x - prev[k][0], g.y - prev[k][1]); if (d < 2) dist[k] += d; prev[k] = [g.x, g.y]; });
+      }
+      return gs.map((g, k) => ({ n: g.name, v: dist[k] / (N * g.speed), s: g.scared }));
+    }, nivel);
+    ok(mov.length > 0 && mov.every(m => m.v > 0.4), 'Nivel ' + nivel + ': los fantasmas asustados no se quedan parados (' + mov.map(m => m.n[0] + ':' + m.v.toFixed(2)).join(' ') + ')');
+  }
+
   // ---- Giros aleatorios al estar asustado: en un cruce, se observan varias salidas
   const dirs = await pg.evaluate(() => {
     const P = window.__pac; const set = new Set();
