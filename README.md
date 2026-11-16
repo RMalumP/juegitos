@@ -193,6 +193,6 @@ Si cambias archivos de la aplicación: sube `APP_VERSION` (y `APP_FECHA`) en `js
 | `npm run test:app` | botón Volver de la conexión, ocultar la barra oculta «Conectar», versión en créditos, «Instalar app» y aspecto del escritorio (sin texto suelto, barra de tareas entera) |
 | `npm run test:vibracion` | interruptor 📳, vibración en casillas y cartones, avisos online, recordar el ajuste y respaldo háptico de iPhone |
 | `npm run test:turn` | credenciales TURN del Worker y respaldo solo con STUN si falla |
-| `npm run test:pwa` | manifest, iconos, caché, sin conexión, botón de instalar y accesos directos |
+| `npm run test:pwa` | manifest, iconos, caché, sin conexión (abren los 33 juegos sin errores y la sala avisa de que el online no está disponible), botón de instalar y accesos directos |
 
 Pendiente de probar con móviles reales: varios teléfonos en una misma wifi y wifi ↔ 4G con el relé (el Worker solo responde desde `https://rmalump.github.io`).
