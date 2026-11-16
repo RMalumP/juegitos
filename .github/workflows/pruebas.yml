@@ -22,3 +22,4 @@ jobs:
       - run: npm run test:regresion
       - run: npm run test:mejoras
       - run: npm run test:guardar
+      - run: npm run test:pacman

@@ -64,3 +64,15 @@
 .hunRestB .hunPuntos{letter-spacing:1px;font-size:11px;color:#9fd0ff}.hunRestB .hunNom{font-size:9px}
 .hunRestB.hundido{opacity:.45;border-style:dashed}.hunRestB.hundido .hunPuntos{color:#c0392b;text-decoration:line-through}
 .hunBtn.rest.sel{border-color:#ffe08a}
+/* PC y pantallas horizontales: los dos tableros uno al lado del otro y del mismo tamaño.
+   En móvil #hunTableros no existe para el diseño (display:contents) y todo queda como antes. */
+#hunTableros{display:contents}
+.escritorio #hunTableros{display:flex;flex:1;min-height:0;width:100%;flex-wrap:wrap;justify-content:center;align-content:safe center;align-items:flex-start;gap:clamp(16px,4cqw,48px);padding:0 12px;box-sizing:border-box;container-type:size;overflow-y:auto}
+.escritorio #hunEnemyBox,.escritorio #hunOwnBox{width:min-content}
+.escritorio #hunTableros .hunGrid,.escritorio #hunOwnBox:not(.grande) .hunGrid{width:min(calc((100cqw - clamp(16px,4cqw,48px) - 12px) / 2),calc(100cqh - 34px),calc(var(--hn,10) * 52px))}
+.escritorio #hunOwnBox.grande .hunGrid{width:min(100cqw,calc(100cqh - 34px),calc(var(--hn,10) * 52px))}
+.escritorio .hunGrid .hunC{font-size:clamp(10px,2.2cqh,18px)}
+.escritorio .hunEt{font-size:11px}
+.escritorio .hunTit{font-size:13px;margin-bottom:5px}
+.escritorio #hunStatus{max-width:720px;min-height:1.4em}
+.escritorio #hunRest,.escritorio #hunShips,.escritorio #hunBtns{max-width:720px}

@@ -2,8 +2,8 @@
 // puntero correcto con el zoom (Breakout, Tetris con gestos activados) y móvil sin cambios.
 const { entorno, wait, ok, fin } = require('./helpers');
 const JUEGOS = ['mine', 'tetris', 'inv', 'snk', 'pac', 'chess', 'parchis', 'ast', 'sud', 'sol', 'carta', 'bj', 'roul', 'poker', 'pong', 'frog', 'hundir', 'g2048', 'brk', 'pin', 'uno', 'c4', 'ttt', 'domino', 'oca', 'mem', 'sim', 'flap', 'word', 'ahor', 'dice', 'bingo'];
-const VERTICALES = ['tetris', 'brk', 'pin', 'flap', 'word', 'ahor', 'pac', 'frog', 'hundir', 'g2048', 'mem', 'sim', 'c4', 'ttt', 'domino', 'oca', 'snk', 'sud', 'dice'];
-const ANCHOS = ['inv', 'ast', 'pong', 'mine', 'sol', 'carta', 'bj', 'roul', 'poker', 'uno', 'bingo'];
+const VERTICALES = ['tetris', 'brk', 'pin', 'flap', 'word', 'ahor', 'pac', 'frog', 'g2048', 'mem', 'sim', 'c4', 'ttt', 'domino', 'oca', 'snk', 'sud', 'dice'];
+const ANCHOS = ['inv', 'ast', 'pong', 'mine', 'sol', 'carta', 'bj', 'roul', 'poker', 'uno', 'hundir', 'bingo'];
 const geo = pg => pg.evaluate(() => {
   const w = [...document.querySelectorAll('.win')].find(x => !x.classList.contains('hidden')); const b = w.getBoundingClientRect();
   return { l: b.left, t: b.top, w: b.width, h: b.height, tb: document.getElementById('taskbar').getBoundingClientRect().top, forma: w.getAttribute('data-forma') };

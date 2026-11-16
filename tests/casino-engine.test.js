@@ -71,3 +71,18 @@ test('póquer: 400 manos aleatorias con acciones legales conservan las fichas y 
     }
   }
 });
+test('póquer: reglas como en el offline (escalera real, enseñar al retirarse, all-in corto, ciegas marcadas)', () => {
+  assert.equal(C.nombreMano(C.mejorMano([8, 9, 10, 11, 12].map(r => carta(r, 0)))), 'Escalera real');
+  assert.equal(C.nombreMano(C.mejorMano([7, 8, 9, 10, 11].map(r => carta(r, 0)))), 'Escalera de color');
+  const s = Poker.nueva(J(2), { fichas: 100, ciegaG: 10 }); Poker.repartir(s, rngDe(9));
+  assert.ok(s.sb >= 0 && s.bb >= 0 && s.sb !== s.bb && s.sb === s.boton, 'heads-up: el repartidor pone la ciega pequeña');
+  const sale = s.jug[s.turno]; assert.equal(Poker.accion(s, sale.id, { a: 'fold', ver: true }).ok, true);
+  const v = Poker.vista(s), vj = v.jug.find(j => j.id === sale.id);
+  assert.equal(s.fase, 'showdown'); assert.equal(vj.hole.length, 2, 'quien se retira enseñando muestra sus cartas');
+  assert.ok(v.jug.find(j => j.id !== sale.id).hole === undefined, 'el ganador sin enfrentamiento no las enseña');
+  assert.equal(s.resultado.ganancias[s.jug.find(j => j.id !== sale.id).id], 15);
+  const t = Poker.nueva(J(2), { fichas: 100, ciegaG: 10 }); Poker.repartir(t, rngDe(3));
+  const corto = t.jug[t.turno], otro = t.jug[1 - t.turno]; corto.coins = 4;
+  assert.equal(Poker.accion(t, corto.id, { a: 'allin' }).ok, true, 'all-in por menos de lo que hay que igualar');
+  assert.equal(corto.allin, true); assert.ok(otro.coins >= 0);
+});
