@@ -108,6 +108,7 @@
   }
   async function conectar(modo) {
     const nombre = $('salaNombre').value.trim(), sala = $('salaSala').value.trim(), pass = $('salaPass').value.trim();
+    if (sinRed()) return aviso(SIN_RED);
     if (!nombre) return aviso('Escribe tu nombre.');
     aviso(''); S.ocupado = true; setRed('conectando'); pintar();
     try {
@@ -121,7 +122,7 @@
       S.objetivo = null; pintar();
       if (S.juego) irAlJuego();
       else { S.irAlEntrar = true; if (modo === 'crear') mostrarInicio(); }      // general (o sin saber aún el juego): al llegar el estado se decide
-    } catch (e) { setRed('off'); aviso((e && e.message) || 'No se pudo conectar.'); }
+    } catch (e) { setRed('off'); aviso(e && e.code === 'carga-peerjs' ? '📴 No se pudo conectar al servicio online (¿sin internet?). Los juegos siguen funcionando en local.' : (e && e.message) || 'No se pudo conectar.'); }
     S.ocupado = false; pintar();
   }
   async function recuperar() { // al abrir la página: se vuelve a la sala en la que se estaba
@@ -148,6 +149,14 @@
     const w = $('salaAviso'); if (w) { w.textContent = msg || ''; w.style.display = msg ? 'block' : 'none'; }
     const m = $('salaEntrarAviso'); if (m) { m.textContent = msg || ''; m.style.display = msg ? 'block' : 'none'; }
   }
+  // Sin internet el online no puede funcionar (PeerJS necesita red), pero todos los juegos siguen en local: se avisa claramente.
+  const SIN_RED = '📴 Sin conexión a internet: el modo online no está disponible ahora. Puedes seguir jugando en local (contra el ordenador o pasando el móvil).';
+  const sinRed = () => navigator.onLine === false;
+  function revisarRed() {
+    if (S.activo || S.ocupado) return;
+    const w = $('salaAviso');
+    if (sinRed()) aviso(SIN_RED); else if (w && w.textContent === SIN_RED) aviso('');
+  }
   const netTxt = n => (n === 'local' ? '📶 red local' : n === 'internet' ? '🌐 internet' : n === 'relay' ? '🔁 relé' : '');
   function pintar() {
     pintarBandeja();
@@ -156,6 +165,7 @@
     $('salaDentro').style.display = S.activo ? '' : 'none';
     ['salaCrear', 'salaUnir'].forEach(id => { $(id).disabled = S.ocupado; });
     $('salaJuegoFila').style.display = S.objetivo ? 'none' : '';
+    revisarRed();
     if ($('salaVolver')) $('salaVolver').textContent = S.objetivo && JUEGOS[S.objetivo] ? '← Volver a ' + JUEGOS[S.objetivo].nombre : (S.activo && S.juego && JUEGOS[S.juego] ? '← Volver a ' + JUEGOS[S.juego].nombre : '← Volver');
     $('salaConectarT').textContent = S.objetivo && JUEGOS[S.objetivo] ? JUEGOS[S.objetivo].icono + ' Sala de ' + JUEGOS[S.objetivo].nombre : '📡 Multijugador';
     if (!S.activo) return;
@@ -327,6 +337,7 @@
     $('salaCompartir').onclick = compartir;
     $('salaQRbtn').onclick = qr;
     $('salaIrJuego').onclick = irAlJuego;
+    addEventListener('online', revisarRed); addEventListener('offline', revisarRed);
     $('trayNet').onclick = abrir;
     if ($('btnSala')) $('btnSala').onclick = () => { S.objetivo = null; pintar(); abrir(); };
     document.querySelectorAll('[data-conectar]').forEach(b => { b.onclick = () => {
