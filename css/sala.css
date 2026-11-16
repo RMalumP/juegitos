@@ -96,6 +96,7 @@
 /* ----- Ruleta y Blackjack ORIGINALES en online: se ocultan los ajustes de partida local (jugadores, monedas, modo y «Nueva partida») ----- */
 .rulOnline #roulSetup,.rulOnline #roulNewGame{display:none!important}
 .bjOnline #bjNumPlayers,.bjOnline #bjNewGame,.bjOnline #bjPlayerTabs{display:none!important}
+#pkOverlayMsg{white-space:pre-line}.pkOnline #pkNewGame,.pkOnline #pkSave,.pkOnline #pkSetup,.pkOnline #pkPeek{display:none!important}.pkSeat.pkYo{box-shadow:inset 3px 0 0 #5af}
 
 /* ----- ocultar la barra superior de un juego también oculta su botón «🌐 Conectar» ----- */
 .win.barHidden [data-conectar]{display:none}

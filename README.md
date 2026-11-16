@@ -61,7 +61,7 @@ Cada juego con online tiene un botón **🌐 Conectar** en su barra de menú que
 | Dominó | 2–4 (+ hasta 2 CPU) | el anfitrión es el árbitro y juega por las CPU; cada uno recibe solo su mano; opciones: 0–2 CPU (sin pasar de 4), 1 mano / a 50 / a 100 y, con 4, por parejas (con 2 personas y 2 CPU, juntas o rivales) |
 | Ahorcado | 2–6 | en cada ronda uno escribe la palabra y los demás la adivinan por turnos (acertar repite turno, fallar lo pasa). La palabra solo la tiene el anfitrión: los demás reciben los huecos hasta el final. Puntos: 1 por letra, 2 más a quien la completa y 3 a quien la escribió si los ahorca |
 | Simon | 2–6 | todos ven la misma secuencia a la vez y la repiten; quien falla o no contesta a tiempo queda eliminado y gana el último en pie. El anfitrión comprueba cada respuesta y elige la velocidad |
-| Póquer | 2–6 | Texas Hold'em con ciegas, subidas, all-in y botes secundarios; las cartas privadas llegan solo a su dueño |
+| Póquer | 2–8 | Texas Hold'em con la mesa y las reglas del póquer offline (asientos D/SB/BB, panel de subida, enseñar cartas al retirarse, «Resultado de la mano»); botes secundarios; las cartas privadas llegan solo a su dueño |
 | UNO | 2–8 (+ CPU opcionales) | el anfitrión ejecuta el motor y juega por las CPU; publica lo público (carta de arriba, color, cuántas cartas tiene cada uno) y manda a cada uno solo su mano |
 
 Las reglas del bingo y del póquer están en `js/bingo/engine.js` y `js/online/casino-engine.js` (sin DOM, con tests). Ajedrez, Damas, Parchís, **Ruleta y Blackjack reutilizan los motores originales** (sin modificar `core.js`: se enganchan por sus nombres globales). Las fichas del casino son virtuales.
