@@ -55,7 +55,28 @@ function dimPng(f) { const b = fs.readFileSync(path.join(root, f)); return [b.re
   await pg.locator('#bingoWrap >> text=Sacar bola').click();
   ok(await pg.locator('.bgT.sal').count() === 1, 'sin conexión el bingo local funciona (carga diferida desde la caché)');
   await pg.evaluate(() => window.openGame('tetris')); await pg.waitForSelector('#winTetris:not(.hidden)');
-  ok(true, 'sin conexión también abren los demás juegos');
+  // todos los juegos del registro GAMES, sin conexión: abren sin errores de JS ni peticiones de la propia app fallidas
+  const errs = [], fallos = [];
+  pg.on('pageerror', e => errs.push(e.message));
+  pg.on('requestfailed', r => { if (r.url().startsWith(env.url)) fallos.push(r.url()); });
+  const ids = await pg.evaluate(() => Object.keys(GAMES));
+  const noAbren = [];
+  for (const id of ids) {
+    await pg.evaluate(g => openGame(g.toLowerCase()), id).catch(e => errs.push(id + ': ' + e.message.split('\n')[0]));
+    const abierto = await pg.waitForSelector('#win' + id + ':not(.hidden)', { timeout: 8000 }).then(() => true).catch(() => false);
+    if (!abierto) noAbren.push(id);
+    await wait(250);
+    await pg.evaluate(g => { const b = document.getElementById('btnClose' + g); if (b) b.click(); }, id);
+  }
+  ok(ids.length >= 25 && !noAbren.length, 'sin conexión abren los ' + ids.length + ' juegos' + (noAbren.length ? ' (no abren: ' + noAbren.join(', ') + ')' : ''));
+  ok(!errs.length, 'sin conexión ningún juego da errores de JS' + (errs.length ? ': ' + errs.slice(0, 5).join(' | ') : ''));
+  // la sala online avisa de que sin internet no hay online, y no intenta conectar
+  await pg.evaluate(() => openGame('sala')); await pg.waitForSelector('#winSala:not(.hidden)');
+  await pg.fill('#salaNombre', 'Ana'); await pg.click('#salaCrear');
+  const av = await pg.locator('#salaAviso').textContent();
+  ok(/Sin conexión a internet/.test(av) && /local/.test(av), 'sin conexión la sala avisa de que el online no está disponible y se puede jugar en local');
+  await pg.evaluate(() => document.getElementById('btnCloseSala').click());
+  ok(!fallos.length, 'sin conexión no falta ningún archivo propio' + (fallos.length ? ': ' + fallos.slice(0, 5).join(', ') : ''));
   await ctx.setOffline(false);
 
   // accesos directos
