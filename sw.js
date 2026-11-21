@@ -124,7 +124,11 @@ const ARCHIVOS = [
 ];
 
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(SHELL).then(c => Promise.all(ARCHIVOS.map(a => c.add(new Request(a, { cache: 'reload' })).catch(() => null)))).then(() => self.skipWaiting()));
+  // Cada archivo se reintenta una vez; si aun así falta alguno, la instalación falla a propósito: el navegador sigue con la versión anterior
+  // (completa) y lo vuelve a intentar en la próxima visita, en lugar de dejar una caché a la que le falta un juego sin conexión.
+  // './' es opcional: es el mismo index.html, que sí es obligatorio (y algunos servidores no sirven la carpeta).
+  const guardar = (c, a) => c.add(new Request(a, { cache: 'reload' }));
+  e.waitUntil(caches.open(SHELL).then(c => Promise.all(ARCHIVOS.map(a => guardar(c, a).catch(() => guardar(c, a)).catch(err => { if (a !== './') throw err; })))).then(() => self.skipWaiting()));
 });
 self.addEventListener('activate', e => {
   e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k.startsWith('juegitos-') && k !== SHELL && k !== EXTRA).map(k => caches.delete(k)))).then(() => self.clients.claim()));
@@ -138,6 +142,7 @@ async function conActualizacion(req, nombre, ignorarQuery) {
   return guardado || (await red) || (req.mode === 'navigate' ? cache.match('index.html', { ignoreSearch: true }) : Response.error());
 }
 
+function sinQuery(req) { const u = new URL(req.url); u.search = ''; u.hash = ''; return u.href; }
 function redPrimero(req, nombre, ms) {
   return caches.open(nombre).then(cache => new Promise(resolver => {
     let hecho = false;
@@ -146,7 +151,7 @@ function redPrimero(req, nombre, ms) {
     // sin pasar por la caché HTTP del navegador (GitHub Pages deja reutilizar cada archivo 10 min): con una versión nueva no se mezclan archivos viejos
     fetch(req.mode === 'navigate' ? req : new Request(req, { cache: 'no-cache' })).then(r => {
       clearTimeout(t);
-      if (r && r.ok) cache.put(req, r.clone());
+      if (r && r.ok) cache.put(sinQuery(req), r.clone());   // ?abrir=… y otros parámetros no crean entradas nuevas en la caché
       if (!hecho) { hecho = true; resolver(r); }
     }).catch(() => { clearTimeout(t); if (!hecho) usarCache().then(r => { hecho = true; resolver(r || Response.error()); }); });
   }));

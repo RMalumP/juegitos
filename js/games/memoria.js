@@ -23,6 +23,7 @@
       bt.className = 'memCarta' + (visible ? ' up' : '') + (est.halladas[i] ? ' ok' : '');
       bt.textContent = visible ? FIGURAS[est.cartas[i]] : '';
       bt.disabled = est.halladas[i];
+      bt.setAttribute('aria-label', 'Carta ' + (i + 1) + (visible ? ': ' + FIGURAS[est.cartas[i]] + (est.halladas[i] ? ' (pareja encontrada)' : '') : ', boca abajo'));   // para lectores de pantalla
     });
     $('memIntentos').textContent = est.intentos;
     $('memTiempo').textContent = fmt(seg);

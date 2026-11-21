@@ -4,6 +4,8 @@
 // Fase 2 (medios): M1 Bingo para el automático al cerrar · M2 Buscaminas no da por ganada una derrota · M3 pagos del Blackjack ·
 //  M4 cartas del Solitario en ordenador · M5 aviso de girar el móvil · M6 Breakout y Pinball paran el bucle en pausa ·
 //  M7 «Guardar datos» no copia la identidad online · M8 Snake con el almacenamiento bloqueado.
+// Fase 3 (menores): m1 botones INICIAR · m2 móviles de 320 px · m3 menú en 1366×768 · m4 tablas del Ajedrez · m5 compartir y QR de la sala ·
+//  m6 dos giros seguidos en Snake · m10 cargar datos sin espacio · m11 juego que no se descarga · a1-a3 accesibilidad.
 // Uso: node tests/ui-auditoria.js
 const { entorno, wait, ok, fin } = require('./helpers');
 const MALO = '<img src=x onerror="window.Q8=1">';
@@ -95,6 +97,14 @@ const MALO = '<img src=x onerror="window.Q8=1">';
     await sala(H, 'winC4', 'crear', 'Anfi', 'c4 abandono'); await sala(G, 'winC4', 'unir', 'Beto', 'c4 abandono');
     await H.waitForFunction(() => window.Sala.jug.length === 2, null, { timeout: 15000 });
     await H.waitForSelector('.olLobby[data-j=c4] .olGrande', { state: 'visible', timeout: 10000 });
+    // m5: compartir dice el juego de la sala y el QR no se apila
+    const m5 = await H.evaluate(async () => {
+      let d = null; Object.defineProperty(navigator, 'share', { configurable: true, value: x => { d = x; return Promise.resolve(); } });
+      window.Sala.compartir(); window.Sala.qr(); await new Promise(r => setTimeout(r, 600)); window.Sala.qr(); await new Promise(r => setTimeout(r, 300));
+      const n = document.querySelectorAll('#salaQR').length; document.querySelectorAll('#salaQR').forEach(e => e.remove());
+      return { titulo: d && d.title, texto: d && d.text, qr: n };
+    });
+    ok(/Conecta 4/.test(m5.titulo) && /Conecta 4/.test(m5.texto) && !/Bingo/.test(m5.texto) && m5.qr === 1, 'm5: compartir una sala de Conecta 4 lo dice («' + m5.titulo + '») y tocar QR dos veces deja un solo QR');
     await H.locator('.olLobby[data-j=c4] .olGrande').click();
     await H.waitForFunction(() => window.Sala.estado.phase === 'jugando', null, { timeout: 10000 });
     // el anfitrión expulsa al invitado durante la partida desde la ventana de la sala
@@ -206,6 +216,109 @@ const MALO = '<img src=x onerror="window.Q8=1">';
     await p.evaluate(() => { document.getElementById('startScreen').style.display = 'none'; window.openGame('snk'); }); await wait(500);
     await p.click('#snk-startBtn'); await wait(400);
     ok(await p.evaluate(() => getComputedStyle(document.getElementById('snkStartScreen')).display === 'none'), 'M8: Snake arranca aunque el navegador bloquee el almacenamiento');
+    await c.close();
+  }
+
+  // ---------- Fase 3 (menores y accesibilidad) ----------
+  {
+    const c = await env.contexto({ viewport: { width: 390, height: 844 } }); const p = await env.pagina(c, 'menores'); p.on('dialog', d => d.accept());
+    await p.evaluate(() => { localStorage.clear(); document.getElementById('startScreen').style.display = 'none'; });
+    // m1: botón INICIAR con estilo en Invaders, Pac-Man y Snake
+    const est = [];
+    for (const [g, id] of [['inv', 'inv-startBtn'], ['pac', 'pac-startBtn'], ['snk', 'snk-startBtn']]) {
+      await p.evaluate(g => window.openGame(g), g); await wait(400);
+      est.push(await p.evaluate(id => { const s = getComputedStyle(document.getElementById(id)); return /Courier/.test(s.fontFamily) && s.backgroundColor !== 'rgb(255, 255, 255)' && s.backgroundColor !== 'rgb(239, 239, 239)'; }, id));
+    }
+    ok(est.every(Boolean), 'm1: el botón «INICIAR JUEGO» de Invaders, Pac-Man y Snake tiene su estilo');
+    // m6: Snake guarda dos giros seguidos (derecha → arriba → izquierda en el mismo paso)
+    await p.evaluate(() => window.openGame('snk')); await p.click('#snk-startBtn'); await wait(100);
+    await p.keyboard.press('ArrowUp'); await p.keyboard.press('ArrowLeft');
+    const sn0 = await p.evaluate(() => window.snkEstado()); await wait(450);
+    const sn1 = await p.evaluate(() => window.snkEstado());
+    ok(sn0.cola === 2 && sn1.dir.x === -1 && sn1.dir.y === 0, 'm6: Snake no pierde el segundo de dos giros rápidos (cola ' + sn0.cola + ', dirección final ' + JSON.stringify(sn1.dir) + ')');
+    await p.evaluate(() => window.pauseSnk && window.pauseSnk());
+    // a1: cartas de Memoria con nombre
+    await p.evaluate(() => window.openGame('mem')); await p.waitForSelector('.memCarta');
+    ok(await p.evaluate(() => [...document.querySelectorAll('.memCarta')].every(b => /^Carta \d+/.test(b.getAttribute('aria-label') || ''))), 'a1: las cartas de Memoria tienen nombre para lectores de pantalla');
+    // a2: campos numéricos con etiqueta
+    ok(await p.evaluate(() => ['pkSB', 'pkBB', 'pkCoins', 'bjStartChips', 'roulStartCoins'].every(id => (document.getElementById(id).getAttribute('aria-label') || '').length > 3)), 'a2: los campos de Póquer, Blackjack y Ruleta tienen etiqueta');
+    // a3: contraste (WCAG AA) en 2048 y en la tecla ENVIAR del Wordle
+    const contraste = (sel) => p.evaluate(sel => {
+      const rgb = t => t.match(/[\d.]+/g).slice(0, 3).map(Number), lum = c => { c = c.map(v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }); return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]; };
+      const e = document.querySelector(sel), s = getComputedStyle(e), a = lum(rgb(s.color)), b = lum(rgb(s.backgroundColor));
+      return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+    }, sel);
+    await p.evaluate(() => window.openGame('word')); await p.waitForSelector('.wrdTecla.wide'); const cw = await contraste('.wrdTecla.wide');
+    await p.evaluate(() => window.openGame('g2048')); await p.waitForSelector('.g48Lab'); const cl = await contraste('.g48Box');
+    const cv = await p.evaluate(() => { const d = document.createElement('div'); d.className = 'g48T v8'; d.textContent = '8'; d.id = 'pruebaV8'; document.getElementById('g48Wrap').appendChild(d); return true; }) && await contraste('#pruebaV8');
+    ok(cw >= 4.5 && cl >= 4.5 && cv >= 4.5, 'a3: contraste suficiente en ENVIAR (' + cw.toFixed(1) + '), marcador (' + cl.toFixed(1) + ') y fichas del 2048 (' + cv.toFixed(1) + ')');
+    // m4: Ajedrez: tablas por material insuficiente y por triple repetición
+    await p.evaluate(() => window.openGame('chess')); await p.waitForFunction(() => { try { return typeof document.getElementById('chessFrame').contentWindow.executeChessMove === 'function'; } catch (e) { return false; } }, null, { timeout: 15000 });
+    const m4 = await p.evaluate(() => {
+      const w = document.getElementById('chessFrame').contentWindow;
+      return w.eval(`(function(){
+        const vacio=()=>Array.from({length:8},()=>Array(8).fill(' '));
+        chess.board=vacio(); chess.board[7][4]='K'; chess.board[0][4]='k'; chess.board[6][4]='r';
+        chess.kings={w:[7,4],b:[0,4]}; chess.castling={K:false,Q:false,k:false,q:false}; chess.enPassant=null; chess.turn='w'; chess.history=[]; chess.viewIndex=-1; chess.gameOver=false; chess.captured={w:[],b:[]};
+        executeChessMove(7,4,6,4);
+        const a={fin:chess.gameOver,res:chess.history[0].result,motivo:chess.history[0].drawReason,txt:document.getElementById('chessGameOver').textContent};
+        return a;})()`);
+    });
+    ok(m4.fin && m4.res === '½-½' && m4.motivo === 'Material insuficiente' && /Material insuficiente/.test(m4.txt), 'm4: rey contra rey acaba en tablas por material insuficiente («' + m4.txt + '»)');
+    const m4b = await p.evaluate(() => {
+      const w = document.getElementById('chessFrame').contentWindow;
+      return w.eval(`(function(){
+        const vacio=()=>Array.from({length:8},()=>Array(8).fill(' '));
+        chess.board=vacio(); chess.board[7][4]='K'; chess.board[0][4]='k'; chess.board[7][0]='R'; chess.board[0][7]='r';
+        chess.kings={w:[7,4],b:[0,4]}; chess.castling={K:false,Q:false,k:false,q:false}; chess.enPassant=null; chess.turn='w'; chess.history=[]; chess.viewIndex=-1; chess.gameOver=false; chess.captured={w:[],b:[]};
+        const ida=[[7,0,6,0],[0,7,1,7],[6,0,7,0],[1,7,0,7]]; let n=0;
+        for(let v=0;v<3&&!chess.gameOver;v++)for(const m of ida){ if(chess.gameOver)break; executeChessMove(m[0],m[1],m[2],m[3]); n++; }
+        const u=chess.history[chess.history.length-1];
+        return {fin:chess.gameOver,n:n,motivo:u.drawReason};})()`);
+    });
+    ok(m4b.fin && m4b.motivo === 'Triple repetición', 'm4: repetir la misma posición tres veces acaba en tablas (' + m4b.n + ' jugadas)');
+    await c.close();
+  }
+  {
+    // m2: móvil de 320 px: nada montado en Tetris, Asteroids y Ajedrez
+    const c = await env.contexto({ viewport: { width: 320, height: 568 } }); const p = await env.pagina(c, '320');
+    await p.evaluate(() => { localStorage.clear(); document.getElementById('startScreen').style.display = 'none'; });
+    const dentro = (cont, hijos) => p.evaluate(([cont, hijos]) => { const r = document.querySelector(cont).getBoundingClientRect(); return hijos.every(h => { const e = document.querySelector(h).getBoundingClientRect(); return e.top >= r.top - 1 && e.bottom <= r.bottom + 1; }); }, [cont, hijos]);
+    await p.evaluate(() => window.openGame('tetris')); await wait(600);
+    const t1 = await dentro('#tetOverlay', ['#tet-ov-title', '#tet-ov-btn']);
+    await p.evaluate(() => window.openGame('ast')); await wait(600);
+    const t2 = await dentro('#astStartScreen', ['#astStartScreen h1']);
+    await p.evaluate(() => window.openGame('chess')); await p.waitForFunction(() => { try { return !!document.getElementById('chessFrame').contentDocument.querySelector('.title-bar h1'); } catch (e) { return false; } }, null, { timeout: 15000 }); await wait(500);
+    const h1 = await p.evaluate(() => document.getElementById('chessFrame').contentDocument.querySelector('.title-bar h1').getBoundingClientRect().height);
+    ok(t1 && t2 && h1 < 40, 'm2: en 320 px el título y el botón de Tetris y Asteroids caben en su cartel, y «Mesa de Juegos» ocupa una línea (' + Math.round(h1) + ' px)');
+    await c.close();
+  }
+  {
+    // m3: el menú «¿Qué quieres jugar?» enseña los 33 juegos en 1366×768
+    const c = await env.contexto({ viewport: { width: 1366, height: 768 }, hasTouch: false }); const p = await env.pagina(c, 'menu');
+    await wait(400);
+    const r = await p.evaluate(() => { const b = document.querySelector('.sBody').getBoundingClientRect(), bs = [...document.querySelectorAll('.choiceBtn')]; return { t: bs.length, v: bs.filter(e => { const x = e.getBoundingClientRect(); return x.bottom <= b.bottom + 1 && x.top >= b.top - 1; }).length }; });
+    ok(r.t === r.v, 'm3: en 1366×768 se ven los ' + r.t + ' juegos del menú (' + r.v + ' visibles)');
+    await c.close();
+  }
+  {
+    // m10: cargar datos con el almacenamiento lleno: no cambia nada y avisa; m11: un juego que no se descarga lo dice y se puede reintentar
+    // (sin service worker: si llega a guardar dice.js en caché, el bloqueo de la red no sirve y la prueba fallaba a veces)
+    const c = await env.contexto({ viewport: { width: 390, height: 844 }, serviceWorkers: 'block' }); const p = await env.pagina(c, 'cargar');
+    await p.evaluate(() => { localStorage.clear(); localStorage.setItem('snkBest', '7'); document.getElementById('startScreen').style.display = 'none';
+      const o = Storage.prototype.setItem; Storage.prototype.setItem = function (k, v) { if (k === 'zzLleno') throw new DOMException('lleno', 'QuotaExceededError'); return o.call(this, k, v); }; });
+    const fs = require('fs'), os = require('os'), path = require('path'), arch = path.join(os.tmpdir(), 'juegitos-carga-' + process.pid + '.json');
+    fs.writeFileSync(arch, JSON.stringify({ app: 'Juegos Windows XP', type: 'mesaDeJuegos-save', version: 1, data: { snkBest: '99', zzLleno: 'x' } }));
+    await p.setInputFiles('#loadDataInput', arch); await p.waitForSelector('#dataModal.show'); await p.click('#dataOk'); await wait(400);
+    const m10 = await p.evaluate(() => ({ best: localStorage.getItem('snkBest'), msg: document.getElementById('dataMsg').textContent, show: document.getElementById('dataModal').classList.contains('show') }));
+    fs.unlinkSync(arch);
+    ok(m10.best === '7' && m10.show && /No se han podido cargar/.test(m10.msg), 'm10: con el almacenamiento lleno la carga no deja nada a medias y avisa');
+    await p.click('#dataOk');
+    await p.route('**/js/games/dice.js', r => r.abort());
+    await p.evaluate(() => window.openGame('dice')); await p.waitForSelector('#winDice .lazyError', { timeout: 5000 }).catch(() => {});
+    const err = await p.locator('#winDice .lazyError').count();
+    await p.unroute('**/js/games/dice.js'); await p.locator('#winDice .lazyError button').click().catch(() => {}); await wait(800);
+    ok(err === 1 && await p.locator('#winDice .lazyError').count() === 0 && await p.evaluate(() => window.initDice && !window.initDice.__lazy), 'm11: si un juego no se descarga se avisa en su ventana, y «Reintentar» lo carga');
     await c.close();
   }
 
