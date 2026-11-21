@@ -54,8 +54,15 @@ async function hastaElFinal(pgs, max) {
   const mala = pg.locator('#unoMano .unoCarta.no').first();
   if (await mala.count()) { await mala.click({ force: true }); await wait(50); ok((await pg.evaluate(() => window.unoEstado().s.ev)) === antes, 'una carta que no encaja no se puede jugar'); }
   // sin marcar las cartas que se pueden echar (en mi turno, con las CPU quietas)
-  await pg.waitForFunction(() => document.getElementById('unoEstado').classList.contains('mio'), null, { timeout: 10000 });
-  await pg.evaluate(() => window.unoRetardo(1e6));
+  // Se paran las CPU justo en mi turno de jugar carta (no al elegir color). Si el turno pasa mientras tanto (una jugada ya programada), se reintenta:
+  // antes era una carrera y la prueba fallaba a veces.
+  for (let k = 0; k < 8; k++) {
+    await pg.evaluate(() => window.unoRetardo(20));
+    await pg.waitForFunction(() => document.getElementById('unoEstado').classList.contains('mio') && window.unoEstado().s.turno === 0 && /^(jugando|color)$/.test(window.unoEstado().s.fase), null, { timeout: 10000 });
+    if (await pg.evaluate(() => window.unoEstado().s.fase === 'color')) { await pg.locator('#unoAcc .unoB', { hasText: 'Elegir color' }).click(); await pg.locator('.unoElB').first().click(); await wait(100); continue; }   // si sale un comodín al empezar, primero se elige color
+    await pg.evaluate(() => window.unoRetardo(1e6)); await wait(150);
+    if (await pg.evaluate(() => window.unoEstado().s.turno === 0 && window.unoEstado().s.fase === 'jugando' && document.getElementById('unoEstado').classList.contains('mio'))) break;
+  }
   await pg.locator('#unoMarcar').click(); await wait(50);
   ok(await pg.locator('#unoMano .unoCarta.puede, #unoMano .unoCarta.no').count() === 0 && await pg.locator('#unoMano .unoCarta:not(:disabled)').count() > 0, 'con «Marcar: no» ninguna carta se resalta y se pueden tocar todas');
   const ilegal = await pg.evaluate(() => { const s = window.unoEstado().s, js = window.UnoEngine.jugables(s, 0); return s.turno === 0 ? s.manos[0].findIndex((c, i) => !js.includes(i)) : -1; });
@@ -141,15 +148,17 @@ async function hastaElFinal(pgs, max) {
   ok(await G.locator('#unoRivales .unoRival', { hasText: 'CPU' }).count() === 1, 'online: el asiento de la CPU se ve en la mesa');
   // jugada ilegal del invitado: el anfitrión la rechaza
   const manoAntes = (await G.evaluate(() => window.unoEstado().mano)).join();
+  // se guardan todos los avisos: otro aviso (p. ej. el del servidor de relé) podía tapar éste y la prueba fallaba a veces
+  await G.evaluate(() => { window.__avisos = []; const t = window.Sala.toast; window.Sala.toast = m => { window.__avisos.push(String(m)); t(m); }; });
   await G.evaluate(() => window.Sala.enviar('host', { tipo: 'accion', a: 'jugar', i: 99 }));
-  await G.waitForFunction(() => /turno|no se puede|robar/i.test((document.getElementById('salaToast') || {}).textContent || ''), null, { timeout: 5000 }).catch(() => {});
-  ok(/turno|no se puede|robar/i.test(await G.evaluate(() => (document.getElementById('salaToast') || {}).textContent || '')) && (await G.evaluate(() => window.unoEstado().mano)).join() === manoAntes, 'online: el anfitrión rechaza una jugada imposible del invitado y le avisa');
+  await G.waitForFunction(() => window.__avisos.some(m => /turno|no se puede|robar/i.test(m)), null, { timeout: 5000 }).catch(() => {});
+  ok(await G.evaluate(() => window.__avisos.some(m => /turno|no se puede|robar/i.test(m))) && (await G.evaluate(() => window.unoEstado().mano)).join() === manoAntes, 'online: el anfitrión rechaza una jugada imposible del invitado y le avisa');
   // unas jugadas y el anfitrión recarga
   for (let i = 0; i < 40; i++) { await Promise.all([H, G].map(paso)); await wait(20); }
   const evR = await H.evaluate(() => window.Sala.estado.uno.ev);
-  await H.reload(); await wait(300);
+  await H.reload(); await wait(300);   // (si el anfitrión acaba de ganar la ronda, recupera la partida con la mano vacía: antes la prueba esperaba cartas y fallaba a veces)
   await H.evaluate(() => { document.getElementById('startScreen').style.display = 'none'; window.PasarMovil.retardo = 0; });
-  await H.waitForFunction(() => window.unoEstado && window.unoEstado().modo === 'online' && window.unoEstado().mano.length > 0, null, { timeout: 25000 });
+  await H.waitForFunction(() => window.unoEstado && window.unoEstado().modo === 'online' && (window.unoEstado().mano.length > 0 || !/^(jugando|color)$/.test(window.Sala.estado.uno.fase)), null, { timeout: 25000 });
   await H.evaluate(() => window.unoOnlineRetardo(30));
   ok((await H.evaluate(() => window.Sala.estado.uno.ev)) >= evR, 'online: el anfitrión recarga y recupera la partida');
   ok(await hastaElFinal([H, G], 4000), 'online: la partida llega al final en los dos móviles');

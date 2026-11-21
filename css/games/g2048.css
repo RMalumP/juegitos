@@ -24,3 +24,7 @@
 #g48BtnUp{grid-area:1/2}#g48BtnLeft{grid-area:2/1}#g48BtnDown{grid-area:2/2}#g48BtnRight{grid-area:2/3}
 .g48CtrlToggle{color:#776e65;background:#bbada0;border-color:#8f7a66}
 .g48CtrlToggle:active{color:#f9f6f2;background:#8f7a66}
+
+/* Contraste suficiente para leer los números y los textos (WCAG AA): texto oscuro sobre las fichas claras y fondos algo más oscuros en marcadores y botones. */
+.g48T{color:#5f574f}.v8,.v16,.v32,.v64,.v128,.v256,.v512,.v1024,.v2048{color:#3c2f1e}.v64{background:#f8714f}.v4096,.vmax{color:#f9f6f2}
+.g48Box{background:#776e65}.g48Lab{color:#f9f6f2}.g48Sz,#g48OverB button,.g48CtrlBtn{background:#6f5f4f}#g48Hint{color:#776e65}.g48CtrlToggle{color:#3c2f1e}

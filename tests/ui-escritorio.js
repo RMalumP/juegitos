@@ -17,7 +17,8 @@ const geo = pg => pg.evaluate(() => {
     const ui = +(await pg.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--ui')));
     ok(Math.abs(ui - Math.max(1, Math.min(1.8, H / 760))) < 0.02, W + '×' + H + ': el factor --ui sigue a la altura (' + ui + ')');
     const sb = await pg.evaluate(() => { const b = document.getElementById('startBox').getBoundingClientRect(); return { w: b.width, h: b.height, cols: getComputedStyle(document.querySelector('.gameChoice')).gridTemplateColumns.split(' ').length }; });
-    ok(sb.cols === 5 && sb.w >= 650 && sb.h <= H - 40, W + '×' + H + ': el menú de inicio es grande (' + Math.round(sb.w) + '×' + Math.round(sb.h) + ', 5 columnas) y cabe');
+    const cols = H <= 900 ? 7 : 5;                                        // con poca altura, 7 columnas para que quepan los 33 juegos sin desplazarse
+    ok(sb.cols === cols && sb.w >= 650 && sb.h <= H - 40, W + '×' + H + ': el menú de inicio es grande (' + Math.round(sb.w) + '×' + Math.round(sb.h) + ', ' + cols + ' columnas) y cabe');
     await pg.locator('#startScreen').evaluate(e => { e.style.display = 'none'; });
     let malas = [];
     for (const j of JUEGOS) {

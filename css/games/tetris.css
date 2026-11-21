@@ -6,3 +6,7 @@
 .tetLevelCell{color:#e8d44d;cursor:pointer;touch-action:manipulation;background:#0d0d1a;border:2px solid #444466;border-radius:3px;justify-content:center;align-items:center;width:clamp(24px,7vw,30px);height:clamp(24px,7vw,30px);font-family:Courier New,monospace;font-size:clamp(11px,3vw,13px);display:flex}
 .tetLevelCell:active{color:#0d0d1a;background:#e8d44d}
 .tetLevelCell.selected{background:#2a2810;border-color:#e8d44d}
+
+/* Móviles muy estrechos (320 px): el cartel de inicio cabe dentro del tablero (y, si aun así no cabe, se desplaza dentro de él en lugar de montarse sobre el marcador y los botones). */
+#tetOverlay{justify-content:safe center;overflow-y:auto}
+@media (max-width:360px){#tetOverlay{gap:5px;padding:4px 2px}#tet-ov-title{font-size:14px;letter-spacing:2px}#tet-ov-sub{font-size:8px;line-height:1.4}.tetLevelCell{width:20px;height:20px;font-size:10px}#tetLevelGrid{gap:3px}#tet-ov-btn{padding:5px 12px;font-size:11px;letter-spacing:2px}}

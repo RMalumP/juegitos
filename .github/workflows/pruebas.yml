@@ -24,3 +24,4 @@ jobs:
       - run: npm run test:guardar
       - run: npm run test:pacman
       - run: npm run test:auditoria
+      - run: npm run test:uno

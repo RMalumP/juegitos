@@ -18,3 +18,6 @@
 #wrdOver.show{display:flex}#wrdOver h1{font-size:clamp(22px,7vw,32px)}#wrdOver .sub{color:#bbb;font-size:12px;line-height:1.5;max-width:320px}
 #wrdOverB{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
 #wrdOverB button{background:#538d4e;color:#fff;border:none;border-radius:5px;padding:10px 16px;font-weight:700;cursor:pointer}#wrdOverB #wrdAgain{background:#fff;color:#121213}
+
+/* Contraste suficiente (WCAG AA) en las teclas sin usar, también en «ENVIAR» y «⌫». */
+.wrdTecla{background:#6e7071}

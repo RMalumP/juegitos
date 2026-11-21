@@ -205,12 +205,13 @@
   // El enlace (y el QR) llevan sala y contraseña: quien lo abre solo tiene que poner su nombre.
   function enlace() {
     const base = location.href.split('#')[0].split('?')[0];
-    return base + '#s=' + encodeURIComponent(S.sala + (S.pass ? '\n' + S.pass : ''));
+    return base + '#s=' + encodeURIComponent(S.sala + (S.pass ? '\n' + S.pass + (S.juego ? '\n' + S.juego : '') : ''));   // el juego solo sirve para el icono de la tarjeta
   }
   function compartir() {
     if (!S.activo) return;
-    const url = enlace(), texto = 'Bingo en Juegos XP: sala «' + S.sala + '». Abre el enlace y pon tu nombre.';
-    if (navigator.share) navigator.share({ title: 'Juegos XP · Bingo', text: texto, url }).catch(() => {});
+    const d = JUEGOS[S.juego], nom = d ? d.nombre : 'Juegos XP';    // el juego de la sala (o la sala general)
+    const url = enlace(), texto = (d ? d.icono + ' ' + nom + ' en Juegos XP' : 'Juegos XP') + ': sala «' + S.sala + '». Abre el enlace y pon tu nombre.';
+    if (navigator.share) navigator.share({ title: 'Juegos XP · ' + nom, text: texto, url }).catch(() => {});
     else if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(texto + '\n' + url).then(() => toast('Enlace copiado'), () => prompt('Copia este enlace:', url));
     else prompt('Copia este enlace:', url);
   }
@@ -227,13 +228,14 @@
     const url = enlace();
     cargarQR().then(() => {
       const q = window.qrcode(0, 'M'); q.addData(url); q.make();
+      const viejo = $('salaQR'); if (viejo) viejo.remove();            // un solo QR aunque se toque varias veces
       const ov = document.createElement('div'); ov.id = 'salaQR';
       ov.innerHTML = '<div class="salaQRcaja"><div class="salaQRt">Escanea con la cámara</div>' + q.createSvgTag({ cellSize: 4, margin: 2, scalable: true }) + '<div class="salaQRp">Sala «' + esc(S.sala) + '» · toca para cerrar</div></div>';
       const svg = ov.querySelector('svg'); if (svg) { svg.style.width = '100%'; svg.style.height = 'auto'; }
       ov.onclick = () => ov.remove(); document.body.appendChild(ov);
     }).catch(e => toast(e.message));
   }
-  function aplicarEnlace() { // #s=sala\nclave: entra directamente en la sala y solo pregunta el nombre
+  function aplicarEnlace() { // #s=sala\nclave[\njuego]: entra directamente en la sala y solo pregunta el nombre
     const m = /^#s=(.+)$/.exec(location.hash || ''); if (!m) return false;
     try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { /* nada */ }
     let p; try { p = decodeURIComponent(m[1]).split('\n'); } catch (e) { return false; }
@@ -242,12 +244,12 @@
     if (S.activo) { abrir(); return true; }
     $('salaSala').value = sala; $('salaPass').value = pass;
     if (!pass) { abrir(); return true; }       // enlace sin contraseña: se rellena la ventana y se pide
-    pedirNombre(sala, pass); return true;
+    pedirNombre(sala, pass, JUEGOS[p[2]] ? p[2] : null); return true;
   }
-  function pedirNombre(sala, pass) {
+  function pedirNombre(sala, pass, juego) {
     const viejo = $('salaEntrar'); if (viejo) viejo.remove();
     const o = document.createElement('div'); o.id = 'salaEntrar';
-    o.innerHTML = '<div class="salaQRcaja salaEntrarCaja"><div class="salaQRt">🎱 Entrar en la sala</div><div class="salaEntrarSala">' + esc(sala) + '</div>' +
+    o.innerHTML = '<div class="salaQRcaja salaEntrarCaja"><div class="salaQRt">' + (juego ? JUEGOS[juego].icono : '📡') + ' Entrar en la sala</div><div class="salaEntrarSala">' + esc(sala) + '</div>' +
       '<label>Tu nombre<input id="salaEntrarNombre" maxlength="24" autocomplete="off"></label><div id="salaEntrarAviso"></div>' +
       '<div class="salaBtns"><button id="salaEntrarOk" type="button">Entrar</button><button id="salaEntrarNo" type="button">Cancelar</button></div></div>';
     document.body.appendChild(o);
