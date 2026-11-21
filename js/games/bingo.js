@@ -490,6 +490,8 @@
     new MutationObserver(function () { if (!w.classList.contains('hidden')) render(); }).observe(w, { attributes: true, attributeFilter: ['class'] });
     render();
   }
+  // Al cerrar o minimizar la ventana (o abrir otro juego) se para el modo automático en local; en el online el Bolero sigue cantando para los demás.
+  window.pauseBingo = function () { if (B.auto && !online()) { pararAuto(); render(); } };
   window.initBingo = init;
   window.initBingo.__lazy = false;
   window.BingoUI = { estado: B, render: render, sacar: sacar };

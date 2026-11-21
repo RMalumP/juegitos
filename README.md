@@ -181,7 +181,7 @@ Si cambias archivos de la aplicación: sube `APP_VERSION` (y `APP_FECHA`) en `js
 | `npm run test:escritorio` | ordenador (1920×1080 y 1366×768): factor --ui, menú de inicio grande, juegos verticales que no se ensanchan, las 32 ventanas caben y el puntero funciona con el zoom; móvil sin cambios |
 | `npm run test:enlace` | entrar por enlace solo con el nombre, símbolo con la barra plegada y que los iconos del escritorio no se solapen |
 | `npm run test:reconexion` | un jugador y el Bolero recargan a mitad de partida |
-| `npm run test:auditoria` | fallos de la auditoría de la v2.23.1: nombres con HTML rechazados y pintados como texto, y abandono a mitad de partida (UNO sigue con una CPU, Conecta 4 vuelve al lobby, expulsar durante la partida) |
+| `npm run test:auditoria` | fallos de la auditoría de la v2.23.1: nombres con HTML rechazados y pintados como texto, abandono a mitad de partida (UNO sigue con una CPU, Conecta 4 vuelve al lobby, expulsar durante la partida); Bingo para el automático al cerrar, derrota del Buscaminas, pagos del Blackjack, cartas del Solitario en ordenador, aviso de girar el móvil, Breakout y Pinball sin dibujar en pausa, «Guardar datos» sin la identidad online y Snake sin almacenamiento |
 | `npm run test:regresion` | todos los juegos del escritorio abren sin errores |
 | `npm run test:salas` | las 6 salas por juego: botón Conectar, límite de jugadores, «sala llena», «es de otro juego» y empezar |
 | `npm run test:tablero` | Ajedrez y Damas online: jugadas, turnos, jugadas ilegales, colores, rendición, recarga |

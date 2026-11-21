@@ -673,7 +673,9 @@
   }
   function pausar(p) {
     if (!running || over) return; paused = p;
-    if (p) { tecla.l = tecla.r = tecla.p = false; punteros = {}; actualizarControles(); carga = 0; } else last = 0;
+    // en pausa (también al minimizar o cerrar) el bucle se detiene del todo; al reanudar se vuelve a pedir
+    cancelAnimationFrame(raf); raf = null;
+    if (p) { tecla.l = tecla.r = tecla.p = false; punteros = {}; actualizarControles(); carga = 0; } else { last = 0; acc = 0; raf = requestAnimationFrame(bucle); }
     dibujar();
   }
   function mostrarRecord() { var r = $('pinRecord'); if (r) r.textContent = best ? 'Récord: ' + best : ''; }

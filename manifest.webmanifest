@@ -7,7 +7,7 @@
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "orientation": "any",
+  "orientation": "portrait",
   "background_color": "#008080",
   "theme_color": "#245edb",
   "categories": ["games", "entertainment"],

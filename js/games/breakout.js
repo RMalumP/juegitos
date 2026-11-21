@@ -157,7 +157,8 @@
     $('brkStart').style.display = 'none'; $('brkOver').classList.remove('show');
     construirNivel(); hud(); running = true; last = 0; cancelAnimationFrame(raf); raf = requestAnimationFrame(bucle);
   }
-  function pausar(p) { if (!running || over) return; paused = p; if (!p) { last = 0; } dibujar(); }
+  // En pausa (también al minimizar o cerrar) el bucle se detiene del todo: se dibuja el cartel una vez y no se piden más fotogramas.
+  function pausar(p) { if (!running || over) return; paused = p; cancelAnimationFrame(raf); raf = null; if (!p) { last = 0; acc = 0; raf = requestAnimationFrame(bucle); } dibujar(); }
   window.pauseBrk = function () { pausar(true); };
   window.initBrk = function () { if (!running) { balls = []; bricks = []; dibujar(); } };
   window.brkStartNew = function () { $('brkStart').style.display = 'flex'; running = false; over = false; cancelAnimationFrame(raf); };
