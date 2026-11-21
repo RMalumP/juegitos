@@ -112,12 +112,15 @@
   var NULOS = { ahorcado: ['ah'], blackjack: ['bj', 'bjF'], poker: ['mesa', 'resultado'], c4: ['du'], ttt: ['du'], hundir: ['hf'], ruleta: ['rul', 'rulF'],
     ajedrez: ['colores', 'jugadas', 'resultado', 'reloj'], damas: ['colores', 'jugadas', 'resultado', 'reloj'], uno: ['uno', 'unoAsientos'], domino: ['dm', 'dmAs'],
     oca: ['oc', 'ocAs'], parchis: ['mesa', 'g', 'resultado'], simon: ['si'] };
-  var fuera = {}, offDesde = {};
+  var fuera = {}, offDesde = {}, vistos = {};
   function avisarTodos(texto) { var sala = S(); sala.toast(texto); sala.enviar('todos', { tipo: 'evento', k: 'olAviso', texto: texto }).catch(function () {}); }
   function revisarAbandonos() {
     var sala = S(), est = sala.estado, j = sala.juego;
+    sala.jug.forEach(function (p) { vistos[p.id] = true; });
     if (!sala.activo || !sala.host || !j || !REG[j] || !est.asientos || est.phase === 'lobby') { fuera = {}; offDesde = {}; return; }
+    // Solo cuenta como «se ha ido» quien ya hemos visto en la lista de esta página: al recargar, la lista tarda un momento en llegar.
     var presentes = {}, cerrada = false; sala.jug.forEach(function (p) { presentes[p.id] = p; });
+    if (!presentes[sala.uid]) return;
     est.asientos.forEach(function (a) {
       if (cerrada || !a || !a.id || a.id === sala.uid) return;
       var p = presentes[a.id], clave = est.ronda + ':' + a.id;
@@ -128,7 +131,7 @@
         if (!o.avisado && Date.now() - o.t > 60000) { o.avisado = true; sala.toast('⏳ ' + a.nombre + ' lleva un minuto desconectado. Puedes esperarle o expulsarle desde la ventana de la sala (📶).'); }
         return;
       }
-      if (fuera[clave]) return;
+      if (fuera[clave] || !vistos[a.id]) return;
       fuera[clave] = true; delete offDesde[a.id];
       if (est.phase === 'fin') { avisarTodos('👋 ' + a.nombre + ' ha salido de la sala.'); return; }
       var sigue = false;
