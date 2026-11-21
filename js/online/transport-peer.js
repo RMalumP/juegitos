@@ -269,11 +269,11 @@ function alHola(conn, d) {
     // Jugador conocido que vuelve (recarga o corte): se comprueba su token secreto, no hace falta la contraseña.
     if (j.token !== token) { rechazar(conn, 'datos'); return; }
     const nom = String(d.nombre || '').trim();
-    if (nom && nom.length <= 24) j.nombre = nom;
+    if (nom && nom.length <= 24 && !/[<>]/.test(nom)) j.nombre = nom;
     const vieja = s.conns.get(id); if (vieja && vieja !== conn) cerrarConn(vieja);
   } else {
     const nombre = String(d.nombre || '').trim();
-    if (!nombre || nombre.length > 24) { rechazar(conn, 'datos'); return; }
+    if (!nombre || nombre.length > 24 || /[<>]/.test(nombre)) { rechazar(conn, 'datos'); return; } // < y > fuera: un nombre nunca puede ser HTML
     if (d.pw !== s.prueba) { rechazar(conn, 'contrasena'); return; } // el anfitrión valida la contraseña
     if (s.estado.phase !== 'lobby') { rechazar(conn, 'partida-en-curso'); return; }
     if (s.juego && d.juego && d.juego !== s.juego) { rechazar(conn, 'otro-juego'); return; }

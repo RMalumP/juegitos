@@ -131,7 +131,15 @@
   function alCerrar() { salir(); }
   function alEvento(m) { if (m.k === 'aviso' && en()) S.toast(m.texto); }
 
-  L.registrar('uno', { opciones: opciones, preparar: preparar, alEstado: alEstado, alCerrar: alCerrar });
+  // Un jugador sale a mitad de partida: una CPU ocupa su asiento y la partida sigue (lo llama el lobby en el anfitrión).
+  function alAbandono(id) {
+    var p = R.ids.indexOf(id); if (!esHost() || !R.activo || !R.s || p < 0 || R.cpus[p]) return false;
+    R.cpus[p] = true; R.ids[p] = 'cpu:fuera' + p;
+    var as = (S.estado.unoAsientos || []).map(function (a, i) { return i === p ? { id: R.ids[p], nombre: a.nombre, cpu: true } : a; });
+    S.enviar('todos', { tipo: 'estado', unoAsientos: as }).catch(function () {});
+    publicar(); return true;
+  }
+  L.registrar('uno', { opciones: opciones, preparar: preparar, alEstado: alEstado, alCerrar: alCerrar, alAbandono: alAbandono });
   S.on('msg', alMensaje); S.on('evento', alEvento);
   S.on('rol', function (r) { if (R.activo && r && r.uno && ui()) ui().mano(r.uno.mano); });
   window.unoOnlineRetardo = function (ms) { R.retardo = ms; };

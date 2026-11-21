@@ -157,11 +157,20 @@
     if (!en()) return;
     if (est.phase === 'lobby' || !est.dm || !est.dmAs) { salir(); return; }
     if (!R.activo || R.ronda !== est.ronda) { iniciar(est); return; }
+    R.as = est.dmAs;
     if (!esHost()) esperarUI().then(function (ui) { if (R.activo) ui.publico(est.dm); }).catch(function () {});
     pintarBarra();
   }
 
-  L.registrar('domino', { opciones: opciones, preparar: preparar, alEstado: alEstado, alCerrar: salir });
+  // Un jugador sale a mitad de partida: una CPU ocupa su asiento y la partida sigue (lo llama el lobby en el anfitrión).
+  function alAbandono(id) {
+    var p = -1; R.as.forEach(function (a, i) { if (a.id && a.id === id) p = i; });
+    if (!esHost() || !R.activo || !R.pt || p < 0) return false;
+    R.as = R.as.map(function (a, i) { return i === p ? { id: null, nombre: a.nombre, cpu: true } : a; });
+    S.enviar('todos', { tipo: 'estado', dmAs: R.as }).catch(function () {});
+    publicar(); return true;
+  }
+  L.registrar('domino', { opciones: opciones, preparar: preparar, alEstado: alEstado, alCerrar: salir, alAbandono: alAbandono });
   S.on('msg', alMensaje);
   S.on('rol', function (r) {                                              // mi mano (también al recargar la página)
     if (!R.activo || esHost() || !r || !r.domino || !Array.isArray(r.domino.mano) || r.domino.ronda !== R.ronda) return;

@@ -173,6 +173,20 @@
   function alEstado(est) { if (!en()) return; esperarFrame().then(function (w) { enganchar(w); sincronizar(w, est); }).catch(function (e) { S.toast(e.message); }); }
   function alCerrar() { st.activa = false; st.iniciado = false; st.tablero = false; st.ronda = -1; var b = L.barra('winParchis'); if (b) b.classList.remove('on'); esperarFrame().then(function (w) { var d = w.document; d.body.classList.remove('ol'); d.getElementById('game').classList.add('hidden'); d.getElementById('setup').classList.remove('hidden'); d.getElementById('overlay').classList.remove('show'); }).catch(function () {}); }
 
-  L.registrar('parchis', { opciones: opciones, preparar: preparar, alEstado: alEstado, alCerrar: alCerrar });
+  // Un jugador sale a mitad de partida: un bot ocupa su asiento y la partida sigue (lo llama el lobby en el anfitrión).
+  function alAbandono(id) {
+    var mesa = S.estado.mesa, idx = -1; if (!S.host || !jugando() || !mesa) return false;
+    mesa.forEach(function (x, i) { if (x.id === id) idx = i; });
+    if (idx < 0) return false;
+    S.enviar('todos', { tipo: 'estado', mesa: mesa.map(function (x, i) { return i === idx ? { id: null, nombre: x.nombre, color: x.color, cpu: true } : x; }) }).catch(function () {});
+    esperarFrame().then(function (w) {
+      var g = G(w); if (!g || !g.seats[idx]) return;
+      g.seats[idx].cpu = true;
+      if (!g.finished && g.turn === idx && !g.busy) { if (g.phase === 'roll') w.maybeCpu(); else if (g.phase === 'move') setTimeout(w.cpuMove, 600); }
+      programarFoto(w);
+    }).catch(function () {});
+    return true;
+  }
+  L.registrar('parchis', { opciones: opciones, preparar: preparar, alEstado: alEstado, alCerrar: alCerrar, alAbandono: alAbandono });
   S.on('msg', alMensaje);
 })();
