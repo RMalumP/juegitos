@@ -107,6 +107,7 @@
     esperarUI().then(function (ui) { if (r.activo) ui.estado(S.host ? r.est : est.si); }).catch(function () {});
     pintarBarra();
   }
-  L.registrar('simon', { opciones: opciones, preparar: preparar, alEstado: alEstado, alCerrar: salir });
+  // Si alguien sale a mitad, no hace falta nada: quien no responde a tiempo queda eliminado y la partida sigue.
+  L.registrar('simon', { opciones: opciones, preparar: preparar, alEstado: alEstado, alCerrar: salir, alAbandono: function () { return 'nada'; } });
   S.on('msg', alMensaje);
 })();

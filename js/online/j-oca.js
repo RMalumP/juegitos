@@ -125,10 +125,19 @@
     if (!en()) return;
     if (est.phase === 'lobby' || !est.oc || !est.ocAs) { salir(); return; }
     if (!R.activo || R.ronda !== est.ronda) { iniciar(est); return; }
+    R.as = est.ocAs;
     if (!esHost()) esperarUI().then(function (ui) { if (R.activo) ui.publico(est.oc); }).catch(function () {});
     pintarBarra();
   }
 
-  L.registrar('oca', { opciones: opciones, preparar: preparar, alEstado: alEstado, alCerrar: salir });
+  // Un jugador sale a mitad de partida: una CPU ocupa su asiento y la partida sigue (lo llama el lobby en el anfitrión).
+  function alAbandono(id) {
+    var p = -1; R.as.forEach(function (a, i) { if (a.id && a.id === id) p = i; });
+    if (!esHost() || !R.activo || !R.pt || p < 0) return false;
+    R.as = R.as.map(function (a, i) { return i === p ? { id: null, nombre: a.nombre, cpu: true } : a; });
+    S.enviar('todos', { tipo: 'estado', ocAs: R.as }).catch(function () {});
+    publicar(); return true;
+  }
+  L.registrar('oca', { opciones: opciones, preparar: preparar, alEstado: alEstado, alCerrar: salir, alAbandono: alAbandono });
   S.on('msg', alMensaje);
 })();

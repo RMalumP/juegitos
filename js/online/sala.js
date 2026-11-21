@@ -110,6 +110,7 @@
     const nombre = $('salaNombre').value.trim(), sala = $('salaSala').value.trim(), pass = $('salaPass').value.trim();
     if (sinRed()) return aviso(SIN_RED);
     if (!nombre) return aviso('Escribe tu nombre.');
+    if (/[<>]/.test(nombre)) return aviso('El nombre no puede llevar los signos < ni >.');
     aviso(''); S.ocupado = true; setRed('conectando'); pintar();
     try {
       const T = await cargarTransporte();
@@ -183,9 +184,9 @@
     S.jug.slice().sort((a, b) => a.orden - b.orden).forEach(j => {
       const f = document.createElement('div'); f.className = 'salaJug' + (j.conectado ? '' : ' off');
       f.innerHTML = '<span class="salaPunto"></span><span class="salaJNom">' + esc(j.nombre) + (j.yo ? ' (tú)' : '') + '</span><span class="salaJTag">' + (j.esAnfitrion ? '👑' : '') + (netTxt(j.net) ? ' ' + netTxt(j.net) : '') + '</span>';
-      if (S.host && !j.esAnfitrion && S.estado.phase === 'lobby') {
+      if (S.host && !j.esAnfitrion) {                                  // también durante la partida (p. ej. si alguien se ha ido sin salir)
         const x = document.createElement('button'); x.className = 'salaX'; x.textContent = '✕'; x.title = 'Expulsar';
-        x.onclick = () => { if (confirm('¿Expulsar a ' + j.nombre + '?')) S.T.expulsar(j.id).catch(e => toast(e.message)); };
+        x.onclick = () => { if (confirm('¿Expulsar a ' + j.nombre + '?' + (S.estado.phase && S.estado.phase !== 'lobby' ? ' Si la partida no puede seguir sin él, se volverá al lobby.' : ''))) S.T.expulsar(j.id).catch(e => toast(e.message)); };
         f.appendChild(x);
       }
       lista.appendChild(f);

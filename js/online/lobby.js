@@ -106,9 +106,42 @@
     if (!b) { b = mk('div', 'olBarra'); var ref = win.querySelector('.menuBar') || win.querySelector('.winReopen'); ref.parentNode.insertBefore(b, ref.nextSibling); }
     return b;
   }
+  // Abandono a mitad de partida (fallo C2): si un jugador sentado sale de la sala (o el anfitrión le expulsa), el anfitrión avisa a todos y,
+  // si el juego sabe seguir sin él (alAbandono devuelve true: p. ej. una CPU ocupa su asiento), la partida continúa; si no, se vuelve al lobby.
+  // Si solo se ha desconectado, se le espera, pero al minuto se avisa al anfitrión de que puede expulsarle desde la ventana de la sala.
+  var NULOS = { ahorcado: ['ah'], blackjack: ['bj', 'bjF'], poker: ['mesa', 'resultado'], c4: ['du'], ttt: ['du'], hundir: ['hf'], ruleta: ['rul', 'rulF'],
+    ajedrez: ['colores', 'jugadas', 'resultado', 'reloj'], damas: ['colores', 'jugadas', 'resultado', 'reloj'], uno: ['uno', 'unoAsientos'], domino: ['dm', 'dmAs'],
+    oca: ['oc', 'ocAs'], parchis: ['mesa', 'g', 'resultado'], simon: ['si'] };
+  var fuera = {}, offDesde = {};
+  function avisarTodos(texto) { var sala = S(); sala.toast(texto); sala.enviar('todos', { tipo: 'evento', k: 'olAviso', texto: texto }).catch(function () {}); }
+  function revisarAbandonos() {
+    var sala = S(), est = sala.estado, j = sala.juego;
+    if (!sala.activo || !sala.host || !j || !REG[j] || !est.asientos || est.phase === 'lobby') { fuera = {}; offDesde = {}; return; }
+    var presentes = {}, cerrada = false; sala.jug.forEach(function (p) { presentes[p.id] = p; });
+    est.asientos.forEach(function (a) {
+      if (cerrada || !a || !a.id || a.id === sala.uid) return;
+      var p = presentes[a.id], clave = est.ronda + ':' + a.id;
+      if (p) {                                                              // sigue en la sala: ¿lleva mucho desconectado?
+        if (p.conectado) { delete offDesde[a.id]; return; }
+        if (!offDesde[a.id]) offDesde[a.id] = { t: Date.now(), avisado: false };
+        var o = offDesde[a.id];
+        if (!o.avisado && Date.now() - o.t > 60000) { o.avisado = true; sala.toast('⏳ ' + a.nombre + ' lleva un minuto desconectado. Puedes esperarle o expulsarle desde la ventana de la sala (📶).'); }
+        return;
+      }
+      if (fuera[clave]) return;
+      fuera[clave] = true; delete offDesde[a.id];
+      if (est.phase === 'fin') { avisarTodos('👋 ' + a.nombre + ' ha salido de la sala.'); return; }
+      var sigue = false;
+      try { sigue = !!(REG[j].alAbandono && REG[j].alAbandono(a.id, a.nombre)); } catch (e) { console.error(e); }
+      if (sigue) avisarTodos('👋 ' + a.nombre + ' ha salido de la sala. ' + (sigue === 'nada' ? 'La partida sigue sin él.' : 'Una CPU juega en su lugar.'));
+      else { cerrada = true; avisarTodos('👋 ' + a.nombre + ' ha salido de la sala: la partida se cierra. Podéis empezar otra desde el lobby.'); volverAlLobby(NULOS[j] || []); }
+    });
+  }
+  setInterval(function () { if (S().activo && S().host) revisarAbandonos(); }, 5000);   // para el aviso de desconexión larga
   function registrar(j, reg) { REG[j] = reg; if (S().activo && S().juego === j) alEstado(S().estado); else todos(); }
 
-  S().on('estado', alEstado); S().on('jug', todos); S().on('con', todos);
+  S().on('estado', alEstado); S().on('jug', function () { revisarAbandonos(); todos(); }); S().on('con', todos);
+  S().on('evento', function (m) { if (m && m.k === 'olAviso' && typeof m.texto === 'string' && !S().host) S().toast(m.texto); });
   S().on('cierre', function () { ultimaFase = {}; Object.keys(REG).forEach(function (j) { if (REG[j].alCerrar) { try { REG[j].alCerrar(); } catch (e) { console.error(e); } } }); todos(); });
   window.JuegosOnline = { barra: barra, cargarAdaptador: cargarAdaptador, mostrar: mostrar, registrar: registrar, render: todos, volverAlLobby: volverAlLobby, empezar: empezar, mk: mk, esc: esc, boton: boton };
   todos();
