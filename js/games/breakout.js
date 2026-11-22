@@ -8,7 +8,7 @@
   var COLORES = ['#e74c3c', '#e67e22', '#f1c40f', '#2ecc71', '#1abc9c', '#3498db', '#9b59b6', '#ecf0f1'];
   var level = 1, startLevel = 1, score = 0, lives = 3, best = 0;
   var bricks = [], balls = [], caps = [], paddle = { x: W / 2, w: 56 }, objetivoX = null, pegada = true;
-  var ancha = 0, lenta = 0, fuego = 0;                                   // temporizadores (fotogramas) de las cápsulas
+  var ancha = 0, lenta = 0, fuego = 0, doble = 0, encoge = 0, rapida = 0, barrera = false;                                   // temporizadores (fotogramas) de las cápsulas
   var running = false, paused = false, over = false, raf = null, aviso = '', avisoT = 0;
   var teclas = { l: false, r: false };
   try { best = parseInt(localStorage.getItem('brkBest'), 10) || 0; } catch (e) { /* sin ajustes */ }
@@ -44,10 +44,11 @@
     }
     return g;
   }
-  function velBase() { return Math.min(3.4 + 0.26 * level, 7.2); }
-  function palaBase() { return 56 - Math.min(level - 1, 10) * 1.5; }       // la pala se estrecha con los niveles
+  var CAPS = ['W', 'M', 'S', 'F', 'G', 'D', 'W', 'M', 'E', 'R'];       // G barrera, D puntos dobles; E y R son malas
+  function velBase() { return Math.min(3.4 + 0.26 * level, 7.2) * (rapida > 0 ? 1.3 : 1); }
+  function palaBase() { return (56 - Math.min(level - 1, 10) * 1.5) * (encoge > 0 ? 0.65 : 1); }       // la pala se estrecha con los niveles
   function construirNivel() {
-    bricks = []; caps = []; balls = []; ancha = 0; lenta = 0; fuego = 0; paddle.w = palaBase(); pegada = true;
+    bricks = []; caps = []; balls = []; ancha = 0; lenta = 0; fuego = 0; doble = 0; encoge = 0; rapida = 0; barrera = false; paddle.w = palaBase(); pegada = true;
     patron(level).forEach(function (fila, r) { fila.forEach(function (v, c) { if (v) bricks.push({ x: c * BW, y: TOP + r * BH, hp: v < 0 ? 999 : v, max: v < 0 ? 1 : v, ind: v < 0, r: r }); }); });
     if (!bricks.some(function (b) { return !b.ind; })) bricks.push({ x: 0, y: TOP, hp: 1, max: 1, r: 0 });
     nuevaBola();
@@ -66,9 +67,9 @@
     if (br.ind && !fuerte) { vib(4); return; }
     br.hp = fuerte ? 0 : br.hp - 1; vib(8);
     if (br.hp <= 0) {
-      score += 10 * br.max + (br.ind ? 20 : 0); hud(); br.muerto = true;
+      score += (10 * br.max + (br.ind ? 20 : 0)) * (doble > 0 ? 2 : 1); hud(); br.muerto = true;
       var rnd = Math.random();
-      if (rnd < 0.15) caps.push({ x: br.x + BW / 2, y: br.y, t: ['W', 'M', 'S', 'F'][Math.floor(Math.random() * 4)] });
+      if (rnd < 0.15) caps.push({ x: br.x + BW / 2, y: br.y, t: CAPS[Math.floor(Math.random() * CAPS.length)] });
       else if (rnd < 0.18) caps.push({ x: br.x + BW / 2, y: br.y, t: 'L' });
     } else score += 2;
   }
@@ -78,6 +79,7 @@
       b.x += b.vx / n; b.y += b.vy / n;
       if (b.x < R) { b.x = R; b.vx = Math.abs(b.vx); } else if (b.x > W - R) { b.x = W - R; b.vx = -Math.abs(b.vx); }
       if (b.y < R) { b.y = R; b.vy = Math.abs(b.vy); }
+      if (barrera && b.vy > 0 && b.y + R >= H - 4) { b.vy = -Math.abs(b.vy); b.y = H - 4 - R; barrera = false; vib(10); }
       if (b.vy > 0 && b.y + R >= PY && b.y - R <= PY + PH && b.x >= paddle.x - paddle.w / 2 - R && b.x <= paddle.x + paddle.w / 2 + R) {
         var rel = clamp((b.x - paddle.x) / (paddle.w / 2), -1, 1), s = Math.hypot(b.vx, b.vy) || velBase();
         hitsPala++; var t = velActual(b).t; s = Math.max(s, t);
@@ -96,7 +98,11 @@
     }
   }
   function efecto(t) {
-    if (t === 'F') { fuego = 60 * 6; aviso = 'BOLA DE FUEGO'; }
+    if (t === 'G') { barrera = true; aviso = 'BARRERA'; }
+    else if (t === 'D') { doble = 60 * 12; aviso = 'PUNTOS x2'; }
+    else if (t === 'E') { encoge = 60 * 8; ancha = 0; aviso = '¡PALA PEQUEÑA!'; }
+    else if (t === 'R') { rapida = 60 * 8; aviso = '¡BOLA RÁPIDA!'; balls.forEach(function (b) { b.vx *= 1.3; b.vy *= 1.3; }); }
+    else if (t === 'F') { fuego = 60 * 6; aviso = 'BOLA DE FUEGO'; }
     else if (t === 'W') { ancha = 60 * 14; aviso = 'PALA ANCHA'; }
     else if (t === 'S') { lenta = 60 * 10; aviso = 'BOLA LENTA'; balls.forEach(function (b) { var f = 0.7; b.vx *= f; b.vy *= f; }); }
     else if (t === 'L') { lives = Math.min(lives + 1, 6); hud(); aviso = '+1 VIDA'; }
@@ -112,7 +118,7 @@
     if (teclas.r) objetivoX = (objetivoX == null ? paddle.x : objetivoX) + 6;
     if (objetivoX != null) { paddle.x += clamp(objetivoX - paddle.x, -14, 14); objetivoX = clamp(objetivoX, paddle.w / 2, W - paddle.w / 2); }
     if (ancha > 0) { ancha--; paddle.w = Math.min(88, paddle.w + 2); } else paddle.w = Math.max(palaBase(), paddle.w - 2);
-    if (lenta > 0) lenta--; if (fuego > 0) fuego--; if (avisoT > 0) avisoT--;
+    if (lenta > 0) lenta--; if (fuego > 0) fuego--; if (doble > 0) doble--; if (encoge > 0) encoge--; if (rapida > 0) rapida--; if (avisoT > 0) avisoT--;
     paddle.x = clamp(paddle.x, paddle.w / 2, W - paddle.w / 2);
     if (pegada) { if (balls[0]) { balls[0].x = paddle.x; balls[0].y = PY - R - 1; } }
     else balls.forEach(pasoBola);
@@ -126,7 +132,7 @@
     if (!balls.length) {
       lives--; hud(); vib(120); hitsPala = 0;
       if (lives <= 0) return finPartida();
-      ancha = 0; lenta = 0; fuego = 0; caps = []; nuevaBola();
+      ancha = 0; lenta = 0; fuego = 0; doble = 0; encoge = 0; rapida = 0; barrera = false; caps = []; nuevaBola();
     } else if (!bricks.some(function (b) { return !b.ind; })) {
       level++; score += 100; hud(); aviso = 'NIVEL ' + level; avisoT = 100; vib([0, 40, 60, 40]); hitsPala = 0; construirNivel(); hud();
     }
@@ -157,9 +163,10 @@
       }
     });
     caps.forEach(function (c) {
-      ctx.fillStyle = c.t === 'L' ? '#e74c3c' : c.t === 'F' ? '#e67e22' : c.t === 'W' ? '#3498db' : c.t === 'M' ? '#f1c40f' : '#9b59b6';
-      ctx.fillRect(c.x - 9, c.y - 6, 18, 12); ctx.fillStyle = '#fff'; ctx.font = 'bold 10px Courier New'; ctx.textAlign = 'center'; ctx.fillText(c.t === 'L' ? '♥' : c.t, c.x, c.y + 4);
+      ctx.fillStyle = c.t === 'L' ? '#e74c3c' : c.t === 'F' ? '#e67e22' : c.t === 'G' ? '#16a085' : c.t === 'D' ? '#b7950b' : c.t === 'E' ? '#7b241c' : c.t === 'R' ? '#d35400' : c.t === 'W' ? '#3498db' : c.t === 'M' ? '#f1c40f' : '#9b59b6';
+      ctx.fillRect(c.x - 9, c.y - 6, 18, 12); ctx.fillStyle = '#fff'; ctx.font = 'bold 10px Courier New'; ctx.textAlign = 'center'; ctx.fillText(c.t === 'L' ? '♥' : c.t === 'D' ? '×2' : c.t, c.x, c.y + 4);
     });
+    if (barrera) { ctx.fillStyle = '#1abc9c'; ctx.fillRect(0, H - 4, W, 3); }
     ctx.fillStyle = '#ecf0f1'; ctx.fillRect(paddle.x - paddle.w / 2, PY, paddle.w, PH);
     ctx.fillStyle = fuego > 0 ? '#ff9f43' : '#fff'; balls.forEach(function (b) { ctx.beginPath(); ctx.arc(b.x, b.y, R, 0, Math.PI * 2); ctx.fill(); });
     ctx.textAlign = 'center';
@@ -176,7 +183,7 @@
 
   /* ---------- partida ---------- */
   function nueva() {
-    level = startLevel; fuego = 0; score = 0; lives = 3; over = false; paused = false; hitsPala = 0; objetivoX = null; paddle.x = W / 2;
+    level = startLevel; fuego = 0; doble = 0; encoge = 0; rapida = 0; barrera = false; score = 0; lives = 3; over = false; paused = false; hitsPala = 0; objetivoX = null; paddle.x = W / 2;
     $('brkStart').style.display = 'none'; $('brkOver').classList.remove('show');
     construirNivel(); hud(); running = true; last = 0; cancelAnimationFrame(raf); raf = requestAnimationFrame(bucle);
   }

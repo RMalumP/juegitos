@@ -166,7 +166,7 @@ Si cambias archivos de la aplicación: sube `APP_VERSION` (y `APP_FECHA`) en `js
 | `npm run test:hundir-online` | Hundir la flota online con 2 navegadores: reglas, colocación secreta, validación del anfitrión, privacidad, recarga, partida completa, rendición y revancha |
 | `npm run test:guardar` | botón 💾 Guardar de Blackjack, Ruleta, Póker, Hundir la flota (CPU y 2 jugadores), Parchís y Dados: guarda, se recupera una sola vez al reabrir la app, se borra al terminar o con «Nueva partida» y la barra de menús cabe en 360 px |
 | `npm run test:2048` | 2048: jugadas con teclado y ratón, deshacer, tamaños 4×4/5×5/6×6, victoria y récord por tamaño |
-| `npm run test:breakout` | Breakout: 15 niveles de inicio con dificultad creciente (ladrillos de varios golpes e indestructibles), bot que rompe ladrillos, vidas y fin de partida |
+| `npm run test:breakout` | Breakout: 15 niveles de inicio con dificultad creciente y 8 cápsulas (barrera, puntos x2, bola de fuego, algunas malas) (ladrillos de varios golpes e indestructibles), bot que rompe ladrillos, vidas y fin de partida |
 | `npm run test:pinball` | Pinball: lanzador con muelle, flippers con teclado y con las mitades de la pantalla, bumpers y dianas, pausa, 3 bolas y récord |
 | `npm run test:ahorcado` | Ahorcado: solo (palabra del Wordle, fallos, victoria, derrota y racha), 2 jugadores en un móvil (validar la palabra, pasar el móvil, marcador) y online con 3 navegadores (privacidad de la palabra, turnos, jugadas fuera de turno, puntos, siguiente ronda y recarga) |
 | `npm run test:uno` | UNO: partida completa contra la CPU, guardar y recuperar, pasar el móvil con la tapa, y online con 2 navegadores + 1 CPU (privacidad de las manos, jugada imposible, recarga del anfitrión, final, revancha y lobby) |
