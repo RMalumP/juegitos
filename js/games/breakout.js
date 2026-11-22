@@ -20,6 +20,7 @@
   function dureza(l, r, c) {
     var h = Math.imul(r * 31 + c * 17 + l * 57 + 11, 2654435761); h = Math.imul(h ^ (h >>> 15), 2246822519); h ^= h >>> 13; var u = (h >>> 0) % 1000 / 1000;
     var pInd = l >= 5 ? Math.min(0.03 * (l - 4), 0.16) : 0, pTres = l >= 4 ? Math.min(0.05 * (l - 3), 0.3) : 0, pDos = Math.min(0.12 * l, 0.5);
+    if (l < 2) return 1;
     if (u < pInd) return -1;
     if (u < pInd + pTres) return 3;
     if (u < pInd + pTres + pDos) return 2;
