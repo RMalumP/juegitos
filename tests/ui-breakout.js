@@ -17,6 +17,16 @@ const { entorno, wait, ok, fin } = require('./helpers');
     cuenta[n] = (await est()).bricks;
   }
   ok(Object.values(cuenta).every(v => v >= 10), 'niveles: todos los patrones tienen ladrillos (' + JSON.stringify(cuenta) + ')');
+  // progresión: sin ladrillos duros en el 1; duros desde el 2 e indestructibles desde el 5 que no cuentan para pasar de nivel
+  const prog = {};
+  for (const n of [1, 2, 5, 15]) {
+    await pg.evaluate(() => window.brkStartNew());
+    await pg.click('#brkLevelGrid .brkLevelCell:nth-child(' + n + ')'); await pg.click('#brk-startBtn'); await wait(120);
+    const s = await est(); prog[n] = [s.duros, s.indestructibles];
+  }
+  ok(prog[1][0] === 0 && prog[1][1] === 0, 'nivel 1: todos los ladrillos se rompen de un golpe');
+  ok(prog[2][0] > 0 && prog[5][0] > prog[2][0] || prog[15][0] > prog[2][0], 'los ladrillos de varios golpes aumentan con el nivel ' + JSON.stringify(prog));
+  ok(prog[2][1] === 0 && prog[15][1] > 0, 'hay ladrillos indestructibles en los niveles altos ' + JSON.stringify(prog));
   ok(cuenta[15] > cuenta[1], 'niveles: el nivel 15 tiene más ladrillos que el 1');
 
   // partida normal: un bot sigue la bola
