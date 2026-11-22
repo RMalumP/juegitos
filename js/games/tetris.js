@@ -57,7 +57,10 @@
   var gravAcc = 0, lockT = 0, lockResets = 0, lowestY = 0, grounded = false, congelado = false;
   var musicOn = true, sfxOn = true, ac = null, musicTimer = null, musicIdx = 0, musicRunning = false;
 
-  function tetBase(l) { return Math.max(80, Math.round(1e3 * Math.pow(0.85, l - 1))); }
+  /* Gravedad: ms por fila. Antes se frenaba en 80 ms (nivel 17) y de ahí no se complicaba; ahora sigue acelerando hasta 1 ms (20G, nivel ~43). */
+  function tetBase(l) { return Math.max(1, Math.round(1e3 * Math.pow(0.85, l - 1))); }
+  /* Tiempo para fijar la pieza: baja de 500 ms a 200 ms entre los niveles 15 y 40 */
+  function tetLock(l) { return Math.round(LOCK_MS - 300 * Math.min(1, Math.max(0, (l - 15) / 25))); }
   function opt(k, def) { return (window.Opciones && window.Opciones.get(k)) || def; }
   function hayTactil() { return !!(window.Opciones && window.Opciones.tactil()); }
   function vib(p) { if (typeof window.vibrate === 'function') window.vibrate(p); }
@@ -242,11 +245,11 @@
     Input.actualizar(dt);
     if (congelado) { dibujar(); return; }
     var gi = tetBase(level), soft = Input.soft();
-    if (soft) gi = Math.max(gi / opt('sdf', 20), 12);
+    if (soft) gi = Math.min(gi, Math.max(gi / opt('sdf', 20), 12));
     gravAcc += dt;
     while (gravAcc >= gi) { gravAcc -= gi; if (!bajarUno(soft)) { gravAcc = 0; break; } }
     grounded = !cabe(cur.t, cur.r, cur.x, cur.y + 1);
-    if (grounded) { lockT += dt; if (lockT >= LOCK_MS) fijar(); } else lockT = 0;
+    if (grounded) { lockT += dt; if (lockT >= tetLock(level)) fijar(); } else lockT = 0;
   }
   function bucle(now) {
     if (!playing) return;
