@@ -1,4 +1,4 @@
-/* breakout.js — Juegos XP: Breakout con 15 niveles (patrones de ladrillos, ladrillos de 2-3 golpes y cápsulas).
+/* breakout.js — Juegos XP: Breakout con 15 niveles de dificultad creciente (ladrillos de 2-3 golpes desde el nivel 2, indestructibles desde el 5, bola más rápida, pala más estrecha y cápsulas).
    Pala con el dedo/ratón (arrastrar) o teclado (← → / A D); toque o Espacio lanzan la bola; P pausa. Récord en localStorage (brkBest). */
 (function () {
   'use strict';
@@ -8,7 +8,7 @@
   var COLORES = ['#e74c3c', '#e67e22', '#f1c40f', '#2ecc71', '#1abc9c', '#3498db', '#9b59b6', '#ecf0f1'];
   var level = 1, startLevel = 1, score = 0, lives = 3, best = 0;
   var bricks = [], balls = [], caps = [], paddle = { x: W / 2, w: 56 }, objetivoX = null, pegada = true;
-  var ancha = 0, lenta = 0;                                   // temporizadores (fotogramas) de las cápsulas
+  var ancha = 0, lenta = 0, fuego = 0;                                   // temporizadores (fotogramas) de las cápsulas
   var running = false, paused = false, over = false, raf = null, aviso = '', avisoT = 0;
   var teclas = { l: false, r: false };
   try { best = parseInt(localStorage.getItem('brkBest'), 10) || 0; } catch (e) { /* sin ajustes */ }
@@ -16,6 +16,15 @@
   function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
 
   /* ---------- niveles ---------- */
+  // Dureza de cada ladrillo (1 = normal, 2-3 = golpes necesarios, -1 = indestructible); sube con el nivel y es siempre la misma para un nivel.
+  function dureza(l, r, c) {
+    var h = Math.imul(r * 31 + c * 17 + l * 57 + 11, 2654435761); h = Math.imul(h ^ (h >>> 15), 2246822519); h ^= h >>> 13; var u = (h >>> 0) % 1000 / 1000;
+    var pInd = l >= 5 ? Math.min(0.03 * (l - 4), 0.16) : 0, pTres = l >= 4 ? Math.min(0.05 * (l - 3), 0.3) : 0, pDos = Math.min(0.12 * l, 0.5);
+    if (u < pInd) return -1;
+    if (u < pInd + pTres) return 3;
+    if (u < pInd + pTres + pDos) return 2;
+    return 1;
+  }
   function patron(l) {                                        // matriz filas×10 con la vida de cada ladrillo (0 = hueco)
     var filas = Math.min(4 + Math.floor((l - 1) / 3), 8), forma = (l - 1) % 6, g = [];
     for (var r = 0; r < filas; r++) {
@@ -27,18 +36,19 @@
         else if (forma === 3) v = r % 2 === 0 ? 1 : (c % 3 === 1 ? 0 : 1);              // rayas con huecos
         else if (forma === 4) v = Math.abs(c - 4.5) + Math.abs(r - (filas - 1) / 2) <= filas / 2 + 1.5 ? 1 : 0;   // rombo
         else if (forma === 5) v = c === 0 || c === COLS - 1 || r % 2 === 0 ? 1 : 0;     // marco
-        if (v && l >= 4 && r < Math.min(Math.floor((l - 1) / 3), 3)) v = l >= 10 && r === 0 ? 3 : 2;   // arriba, ladrillos duros
+        if (v) v = dureza(l, r, c);
         fila.push(v);
       }
       g.push(fila);
     }
     return g;
   }
-  function velBase() { return Math.min(3.6 + 0.14 * level, 6); }
+  function velBase() { return Math.min(3.4 + 0.26 * level, 7.2); }
+  function palaBase() { return 56 - Math.min(level - 1, 10) * 1.5; }       // la pala se estrecha con los niveles
   function construirNivel() {
-    bricks = []; caps = []; balls = []; ancha = 0; lenta = 0; paddle.w = 56; pegada = true;
-    patron(level).forEach(function (fila, r) { fila.forEach(function (v, c) { if (v) bricks.push({ x: c * BW, y: TOP + r * BH, hp: v, max: v, r: r }); }); });
-    if (!bricks.length) bricks.push({ x: 0, y: TOP, hp: 1, max: 1, r: 0 });
+    bricks = []; caps = []; balls = []; ancha = 0; lenta = 0; fuego = 0; paddle.w = palaBase(); pegada = true;
+    patron(level).forEach(function (fila, r) { fila.forEach(function (v, c) { if (v) bricks.push({ x: c * BW, y: TOP + r * BH, hp: v < 0 ? 999 : v, max: v < 0 ? 1 : v, ind: v < 0, r: r }); }); });
+    if (!bricks.some(function (b) { return !b.ind; })) bricks.push({ x: 0, y: TOP, hp: 1, max: 1, r: 0 });
     nuevaBola();
   }
   function nuevaBola() { balls = [{ x: paddle.x, y: PY - R - 1, vx: 0, vy: 0 }]; pegada = true; }
@@ -51,17 +61,18 @@
   /* ---------- física ---------- */
   function velActual(b) { var s = Math.hypot(b.vx, b.vy), t = velBase() * (lenta > 0 ? 0.7 : 1) * (1 + Math.min(0.15, (hitsPala * 0.004))); return { s: s, t: t }; }
   var hitsPala = 0;
-  function golpeLadrillo(br) {
-    br.hp--; vib(8);
+  function golpeLadrillo(br, fuerte) {
+    if (br.ind && !fuerte) { vib(4); return; }
+    br.hp = fuerte ? 0 : br.hp - 1; vib(8);
     if (br.hp <= 0) {
-      score += 10 * br.max; hud(); br.muerto = true;
+      score += 10 * br.max + (br.ind ? 20 : 0); hud(); br.muerto = true;
       var rnd = Math.random();
-      if (rnd < 0.14) caps.push({ x: br.x + BW / 2, y: br.y, t: ['W', 'M', 'S'][Math.floor(Math.random() * 3)] });
-      else if (rnd < 0.17) caps.push({ x: br.x + BW / 2, y: br.y, t: 'L' });
+      if (rnd < 0.15) caps.push({ x: br.x + BW / 2, y: br.y, t: ['W', 'M', 'S', 'F'][Math.floor(Math.random() * 4)] });
+      else if (rnd < 0.18) caps.push({ x: br.x + BW / 2, y: br.y, t: 'L' });
     } else score += 2;
   }
   function pasoBola(b) {
-    var n = 2;                                                 // dos subpasos: la bola nunca atraviesa un ladrillo
+    var n = velBase() > 5 ? 3 : 2;                              // subpasos: la bola nunca atraviesa un ladrillo
     for (var k = 0; k < n; k++) {
       b.x += b.vx / n; b.y += b.vy / n;
       if (b.x < R) { b.x = R; b.vx = Math.abs(b.vx); } else if (b.x > W - R) { b.x = W - R; b.vx = -Math.abs(b.vx); }
@@ -75,6 +86,7 @@
         var br = bricks[i]; if (br.muerto) continue;
         var cx = clamp(b.x, br.x, br.x + BW), cy = clamp(b.y, br.y, br.y + BH), dx = b.x - cx, dy = b.y - cy;
         if (dx * dx + dy * dy < R * R) {
+          if (fuego > 0 && !br.ind) { golpeLadrillo(br, true); continue; }   // bola de fuego: atraviesa los ladrillos
           if (Math.abs(dx) > Math.abs(dy)) b.vx = (dx > 0 ? 1 : -1) * Math.abs(b.vx); else b.vy = (dy > 0 ? 1 : -1) * Math.abs(b.vy);
           if (dx === 0 && dy === 0) b.vy = -b.vy;
           golpeLadrillo(br); break;
@@ -83,7 +95,8 @@
     }
   }
   function efecto(t) {
-    if (t === 'W') { ancha = 60 * 14; aviso = 'PALA ANCHA'; }
+    if (t === 'F') { fuego = 60 * 6; aviso = 'BOLA DE FUEGO'; }
+    else if (t === 'W') { ancha = 60 * 14; aviso = 'PALA ANCHA'; }
     else if (t === 'S') { lenta = 60 * 10; aviso = 'BOLA LENTA'; balls.forEach(function (b) { var f = 0.7; b.vx *= f; b.vy *= f; }); }
     else if (t === 'L') { lives = Math.min(lives + 1, 6); hud(); aviso = '+1 VIDA'; }
     else if (t === 'M') {
@@ -97,8 +110,8 @@
     if (teclas.l) objetivoX = (objetivoX == null ? paddle.x : objetivoX) - 6;
     if (teclas.r) objetivoX = (objetivoX == null ? paddle.x : objetivoX) + 6;
     if (objetivoX != null) { paddle.x += clamp(objetivoX - paddle.x, -14, 14); objetivoX = clamp(objetivoX, paddle.w / 2, W - paddle.w / 2); }
-    if (ancha > 0) { ancha--; paddle.w = Math.min(88, paddle.w + 2); } else paddle.w = Math.max(56, paddle.w - 2);
-    if (lenta > 0) lenta--; if (avisoT > 0) avisoT--;
+    if (ancha > 0) { ancha--; paddle.w = Math.min(88, paddle.w + 2); } else paddle.w = Math.max(palaBase(), paddle.w - 2);
+    if (lenta > 0) lenta--; if (fuego > 0) fuego--; if (avisoT > 0) avisoT--;
     paddle.x = clamp(paddle.x, paddle.w / 2, W - paddle.w / 2);
     if (pegada) { if (balls[0]) { balls[0].x = paddle.x; balls[0].y = PY - R - 1; } }
     else balls.forEach(pasoBola);
@@ -112,8 +125,8 @@
     if (!balls.length) {
       lives--; hud(); vib(120); hitsPala = 0;
       if (lives <= 0) return finPartida();
-      ancha = 0; lenta = 0; caps = []; nuevaBola();
-    } else if (!bricks.length) {
+      ancha = 0; lenta = 0; fuego = 0; caps = []; nuevaBola();
+    } else if (!bricks.some(function (b) { return !b.ind; })) {
       level++; score += 100; hud(); aviso = 'NIVEL ' + level; avisoT = 100; vib([0, 40, 60, 40]); hitsPala = 0; construirNivel(); hud();
     }
   }
@@ -128,17 +141,26 @@
   function dibujar() {
     ctx.fillStyle = '#05070f'; ctx.fillRect(0, 0, W, H);
     bricks.forEach(function (b) {
-      ctx.fillStyle = b.max === 3 ? (b.hp === 3 ? '#7f8c8d' : b.hp === 2 ? '#95a5a6' : '#bdc3c7') : COLORES[b.r % COLORES.length];
-      if (b.max === 2 && b.hp === 1) ctx.globalAlpha = 0.6;
-      ctx.fillRect(b.x + 1, b.y + 1, BW - 2, BH - 2); ctx.globalAlpha = 1;
-      if (b.max > 1) { ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.strokeRect(b.x + 2.5, b.y + 2.5, BW - 5, BH - 5); }
+      var x = b.x + 1, y = b.y + 1, w = BW - 2, h = BH - 2;
+      if (b.ind) {                                           // indestructible: metal con remaches
+        ctx.fillStyle = '#4a5560'; ctx.fillRect(x, y, w, h); ctx.fillStyle = '#8795a1'; ctx.fillRect(x, y, w, 2); ctx.fillRect(x, y, 2, h);
+        ctx.fillStyle = '#2c343b'; ctx.fillRect(x, y + h - 2, w, 2); ctx.fillRect(x + w - 2, y, 2, h);
+        ctx.fillStyle = '#c3ccd4'; [5, w - 6].forEach(function (o) { ctx.fillRect(x + o - 1, y + 3, 2, 2); ctx.fillRect(x + o - 1, y + h - 5, 2, 2); }); return;
+      }
+      ctx.fillStyle = b.max === 3 ? (b.hp === 3 ? '#5d6d7e' : b.hp === 2 ? '#85929e' : '#aeb6bf') : b.max === 2 ? (b.hp === 2 ? '#c0392b' : '#e6a39b') : COLORES[b.r % COLORES.length];
+      ctx.fillRect(x, y, w, h);
+      if (b.max > 1) {                                       // duros: borde blanco, puntos = golpes que faltan y grietas al dañarlos
+        ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.strokeRect(x + 1.5, y + 1.5, w - 3, h - 3);
+        ctx.fillStyle = b.max === 3 ? '#fff' : '#ffeaa7'; for (var k = 0; k < b.hp; k++) ctx.fillRect(x + w / 2 - b.hp * 3 + k * 6 + 1, y + h / 2 - 1.5, 3, 3);
+        if (b.hp < b.max) { ctx.strokeStyle = '#000'; ctx.beginPath(); ctx.moveTo(x + 6, y + 1); ctx.lineTo(x + 10, y + h / 2); ctx.lineTo(x + 7, y + h - 1); ctx.stroke(); }
+      }
     });
     caps.forEach(function (c) {
-      ctx.fillStyle = c.t === 'L' ? '#e74c3c' : c.t === 'W' ? '#3498db' : c.t === 'M' ? '#f1c40f' : '#9b59b6';
+      ctx.fillStyle = c.t === 'L' ? '#e74c3c' : c.t === 'F' ? '#e67e22' : c.t === 'W' ? '#3498db' : c.t === 'M' ? '#f1c40f' : '#9b59b6';
       ctx.fillRect(c.x - 9, c.y - 6, 18, 12); ctx.fillStyle = '#fff'; ctx.font = 'bold 10px Courier New'; ctx.textAlign = 'center'; ctx.fillText(c.t === 'L' ? '♥' : c.t, c.x, c.y + 4);
     });
     ctx.fillStyle = '#ecf0f1'; ctx.fillRect(paddle.x - paddle.w / 2, PY, paddle.w, PH);
-    ctx.fillStyle = '#fff'; balls.forEach(function (b) { ctx.beginPath(); ctx.arc(b.x, b.y, R, 0, Math.PI * 2); ctx.fill(); });
+    ctx.fillStyle = fuego > 0 ? '#ff9f43' : '#fff'; balls.forEach(function (b) { ctx.beginPath(); ctx.arc(b.x, b.y, R, 0, Math.PI * 2); ctx.fill(); });
     ctx.textAlign = 'center';
     if (pegada && running && !paused) { ctx.fillStyle = '#9fb3c8'; ctx.font = '11px Courier New'; ctx.fillText('toca o pulsa ESPACIO para lanzar', W / 2, PY - 30); }
     if (avisoT > 0) { ctx.fillStyle = '#f1c40f'; ctx.font = 'bold 16px Courier New'; ctx.fillText(aviso, W / 2, H / 2); }
@@ -153,7 +175,7 @@
 
   /* ---------- partida ---------- */
   function nueva() {
-    level = startLevel; score = 0; lives = 3; over = false; paused = false; hitsPala = 0; objetivoX = null; paddle.x = W / 2;
+    level = startLevel; fuego = 0; score = 0; lives = 3; over = false; paused = false; hitsPala = 0; objetivoX = null; paddle.x = W / 2;
     $('brkStart').style.display = 'none'; $('brkOver').classList.remove('show');
     construirNivel(); hud(); running = true; last = 0; cancelAnimationFrame(raf); raf = requestAnimationFrame(bucle);
   }
@@ -162,7 +184,7 @@
   window.pauseBrk = function () { pausar(true); };
   window.initBrk = function () { if (!running) { balls = []; bricks = []; dibujar(); } };
   window.brkStartNew = function () { $('brkStart').style.display = 'flex'; running = false; over = false; cancelAnimationFrame(raf); };
-  window.brkEstado = function () { return { level: level, score: score, lives: lives, bricks: bricks.length, balls: balls.length, bx: balls[0] ? balls[0].x : null, by: balls[0] ? balls[0].y : null, paddle: paddle.x, pegada: pegada, running: running, over: over, caps: caps.length }; };
+  window.brkEstado = function () { return { level: level, score: score, lives: lives, bricks: bricks.filter(function (b) { return !b.ind; }).length, indestructibles: bricks.filter(function (b) { return b.ind; }).length, duros: bricks.filter(function (b) { return b.max > 1; }).length, balls: balls.length, bx: balls[0] ? balls[0].x : null, by: balls[0] ? balls[0].y : null, paddle: paddle.x, pegada: pegada, running: running, over: over, caps: caps.length }; };
   window.brkMoverA = function (x) { objetivoX = x; };                  // solo pruebas
   window.brkLanzar = lanzar;
 
